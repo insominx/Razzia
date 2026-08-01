@@ -21,7 +21,9 @@
     "readFailed": "Bild konnte nicht gelesen werden",
     "updated": "Hintergrund aktualisiert",
     "upload": "Hintergrund hochladen",
-    "uploading": "Wird hochgeladen"
+    "uploading": "Wird hochgeladen",
+    "globalDefaultHelp": "Dies ist der globale Standardhintergrund für Spiele ohne Quiz-Override.",
+    "uploadLimits": "PNG, JPEG, WebP oder GIF bis 5 MB."
   },
   "quizz": {
     "create": "Quiz erstellen",

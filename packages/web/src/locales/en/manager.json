@@ -21,7 +21,9 @@
     "readFailed": "Could not read image",
     "updated": "Background updated",
     "upload": "Upload background",
-    "uploading": "Uploading"
+    "uploading": "Uploading",
+    "globalDefaultHelp": "This is the global default background for games that do not set a quiz override.",
+    "uploadLimits": "PNG, JPEG, WebP, or GIF up to 5 MB."
   },
   "quizz": {
     "create": "Create Quizz",

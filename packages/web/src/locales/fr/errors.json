@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Impossible de lire la configuration",
     "invalidPassword": "Mot de passe invalide",
-    "passwordNotConfigured": "Mot de passe manager non configuré"
+    "passwordNotConfigured": "Mot de passe manager non configuré",
+    "unauthorized": "Vous n'êtes pas autorisé"
   },
   "notFound": {
     "back": "Retour à l'accueil",

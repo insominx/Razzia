@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Error al leer la configuración del juego",
     "invalidPassword": "Contraseña incorrecta",
-    "passwordNotConfigured": "La contraseña del administrador no está configurada"
+    "passwordNotConfigured": "La contraseña del administrador no está configurada",
+    "unauthorized": "No estás autorizado"
   },
   "notFound": {
     "back": "Volver al inicio",

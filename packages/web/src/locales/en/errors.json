@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Failed to read game config",
     "invalidPassword": "Invalid password",
-    "passwordNotConfigured": "Manager password is not configured"
+    "passwordNotConfigured": "Manager password is not configured",
+    "unauthorized": "You are not authorized"
   },
   "notFound": {
     "back": "Go back home",

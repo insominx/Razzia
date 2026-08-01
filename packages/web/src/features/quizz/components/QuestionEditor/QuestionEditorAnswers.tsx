@@ -1,6 +1,5 @@
 import {
-  ANSWER_BADGE_COLORS,
-  ANSWERS_COLORS,
+  ANSWER_IDENTITY,
   ANSWERS_LABELS,
 } from "@razzia/web/features/game/utils/constants"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
@@ -88,15 +87,10 @@ const QuestionEditorAnswers = () => {
               key={i}
               className={clsx(
                 "flex items-center gap-3 rounded-rz-xl border-2 px-4 py-6",
-                ANSWERS_COLORS[i],
+                ANSWER_IDENTITY[i],
               )}
             >
-              <span
-                className={clsx(
-                  "font-mono flex size-8 shrink-0 items-center justify-center rounded-rz-sm border-2 text-base font-bold md:size-10 md:text-lg",
-                  ANSWER_BADGE_COLORS[i],
-                )}
-              >
+              <span className="font-mono flex size-8 shrink-0 items-center justify-center rounded-rz-sm border-2 border-current bg-canvas/25 text-base font-bold md:size-10 md:text-lg">
                 {ANSWERS_LABELS[i]}
               </span>
               <div className="flex flex-1 items-center justify-between gap-1.5">

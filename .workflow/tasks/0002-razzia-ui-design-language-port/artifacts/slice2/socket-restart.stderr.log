@@ -1,7 +1,0 @@
-Failed to set dialect: Error: errors:visuals.invalidDialect
-    at <anonymous> (D:\Projects\class\ai-research\4. Razzia\packages\socket\src\handlers\manager.ts:164:17)
-    at Socket.<anonymous> (D:\Projects\class\ai-research\4. Razzia\packages\socket\src\services\manager.ts:53:7)
-    at Socket.emit (node:events:509:20)
-    at Socket.emitUntyped (D:\Projects\class\ai-research\4. Razzia\node_modules\.pnpm\socket.io@4.8.3\node_modules\socket.io\dist\typed-events.js:69:22)
-    at D:\Projects\class\ai-research\4. Razzia\node_modules\.pnpm\socket.io@4.8.3\node_modules\socket.io\dist\socket.js:697:39
-    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)

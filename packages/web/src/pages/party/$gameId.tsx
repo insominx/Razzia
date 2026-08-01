@@ -69,16 +69,14 @@ const PlayerGamePage = () => {
       ? GAME_STATE_COMPONENTS[status.name]
       : null
 
-  if (!status) {
-    return null
-  }
-
   return (
     <GameWrapper
-      statusName={status.name}
+      statusName={status?.name}
       backgroundUrl={visuals.backgroundUrl}
     >
-      {CurrentComponent && <CurrentComponent data={status.data as never} />}
+      {CurrentComponent && status && (
+        <CurrentComponent data={status.data as never} />
+      )}
     </GameWrapper>
   )
 }

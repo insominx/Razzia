@@ -1,3 +1,9 @@
+import { detectImageMimeType } from "@razzia/common/utils/image-bytes"
+import {
+  BACKGROUND_UPLOAD_MAX_BYTES,
+  contentTypeForExtension,
+  extensionForMime,
+} from "@razzia/common/utils/background-image"
 import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 import type { GameConfig } from "@razzia/common/validators/game-config"
 import type { Quizz } from "@razzia/common/types/game"
@@ -5,7 +11,10 @@ import type {
   BackgroundRef,
   ResolvedVisuals,
 } from "@razzia/common/types/visuals"
-import { getConfigPath } from "@razzia/socket/services/config"
+import {
+  getConfigPath,
+  updateGameConfig,
+} from "@razzia/socket/services/config"
 import fs from "fs"
 import type { IncomingMessage, ServerResponse } from "http"
 import { nanoid } from "nanoid"
@@ -13,34 +22,9 @@ import { extname } from "path"
 
 export const BACKGROUND_ASSETS_CONFIG_PATH = "assets/backgrounds"
 
-export const CONFIG_ASSETS_PUBLIC_PREFIX = "/config-assets"
+export const BACKGROUND_ASSETS_PUBLIC_PREFIX = "/config-assets/backgrounds"
 
-export const BACKGROUND_ASSETS_PUBLIC_PREFIX = `${CONFIG_ASSETS_PUBLIC_PREFIX}/backgrounds`
-
-export const BACKGROUND_UPLOAD_MAX_BYTES = 5 * 1024 * 1024
-
-export const SOCKET_MAX_HTTP_BUFFER_SIZE = 8 * 1024 * 1024
-
-const contentTypes: Record<string, string> = {
-  ".gif": "image/gif",
-  ".jpeg": "image/jpeg",
-  ".jpg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-}
-
-const extensionsByMimeType: Record<string, string> = {
-  "image/gif": "gif",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-}
-
-export interface StoreBackgroundAssetRequest {
-  fileName: string
-  mimeType: string
-  dataBase64: string
-}
+export { BACKGROUND_UPLOAD_MAX_BYTES }
 
 export const ensureBackgroundAssetsDirectory = () => {
   fs.mkdirSync(getConfigPath(BACKGROUND_ASSETS_CONFIG_PATH), {
@@ -58,6 +42,9 @@ export const getBackgroundAssetPath = (path: string): string | null => {
   return getConfigPath(`${BACKGROUND_ASSETS_CONFIG_PATH}/${result.data}`)
 }
 
+export const publicBackgroundUrl = (path: string): string =>
+  `${BACKGROUND_ASSETS_PUBLIC_PREFIX}/${encodeURIComponent(path)}`
+
 export const getBackgroundAssetUrl = (
   background?: BackgroundRef,
 ): string | undefined => {
@@ -71,32 +58,26 @@ export const getBackgroundAssetUrl = (
     return undefined
   }
 
-  return `${BACKGROUND_ASSETS_PUBLIC_PREFIX}/${encodeURIComponent(background.path)}`
+  return publicBackgroundUrl(background.path)
 }
 
-export const storeBackgroundAsset = ({
-  fileName,
-  mimeType,
-  dataBase64,
-}: StoreBackgroundAssetRequest): { ref: BackgroundRef; url: string } => {
-  const extension = extensionsByMimeType[mimeType]
-
-  if (!extension) {
-    throw new Error("errors:visuals.unsupportedBackgroundType")
-  }
-
-  const normalizedBase64 = dataBase64.includes(",")
-    ? dataBase64.slice(dataBase64.indexOf(",") + 1)
-    : dataBase64
-
-  const data = Buffer.from(normalizedBase64, "base64")
-
+export const storeBackgroundAsset = (
+  fileName: string,
+  data: Buffer,
+): { ref: BackgroundRef; url: string } => {
   if (data.byteLength === 0) {
     throw new Error("errors:visuals.emptyBackground")
   }
 
   if (data.byteLength > BACKGROUND_UPLOAD_MAX_BYTES) {
     throw new Error("errors:visuals.backgroundTooLarge")
+  }
+
+  const sniffed = detectImageMimeType(data)
+  const extension = sniffed ? extensionForMime(sniffed) : undefined
+
+  if (!sniffed || !extension) {
+    throw new Error("errors:visuals.unsupportedBackgroundType")
   }
 
   ensureBackgroundAssetsDirectory()
@@ -112,15 +93,10 @@ export const storeBackgroundAsset = ({
 
   fs.writeFileSync(filePath, data)
 
-  const ref: BackgroundRef = { kind: "config-asset", path }
-  const url = getBackgroundAssetUrl(ref)
-
-  if (!url) {
-    fs.unlinkSync(filePath)
-    throw new Error("errors:visuals.backgroundUploadFailed")
+  return {
+    ref: { kind: "config-asset", path },
+    url: publicBackgroundUrl(path),
   }
-
-  return { ref, url }
 }
 
 export const deleteBackgroundAsset = (background: BackgroundRef): void => {
@@ -131,6 +107,56 @@ export const deleteBackgroundAsset = (background: BackgroundRef): void => {
   }
 
   fs.unlinkSync(filePath)
+}
+
+export const setGlobalBackground = (
+  background: BackgroundRef,
+): GameConfig => {
+  const assetPath = getBackgroundAssetPath(background.path)
+
+  if (!assetPath || !fs.existsSync(assetPath)) {
+    throw new Error("errors:visuals.invalidBackgroundPath")
+  }
+
+  let previous: BackgroundRef | undefined
+
+  const next = updateGameConfig((config) => {
+    previous = config.visuals?.background
+
+    return {
+      ...config,
+      visuals: {
+        ...config.visuals,
+        background,
+      },
+    }
+  })
+
+  if (previous && previous.path !== background.path) {
+    deleteBackgroundAsset(previous)
+  }
+
+  return next
+}
+
+export const clearGlobalBackground = (): GameConfig => {
+  let previous: BackgroundRef | undefined
+
+  const next = updateGameConfig((config) => {
+    previous = config.visuals?.background
+    const { background: _background, ...visuals } = config.visuals ?? {}
+
+    return {
+      ...config,
+      visuals: Object.keys(visuals).length ? visuals : undefined,
+    }
+  })
+
+  if (previous) {
+    deleteBackgroundAsset(previous)
+  }
+
+  return next
 }
 
 export const resolveVisuals = (
@@ -193,10 +219,106 @@ export const serveConfigAsset = (
   response.writeHead(200, {
     "Cache-Control": "public, max-age=31536000, immutable",
     "Content-Type":
-      contentTypes[extname(filePath).toLowerCase()] ??
-      "application/octet-stream",
+      contentTypeForExtension(extname(filePath)) ?? "application/octet-stream",
+    "X-Content-Type-Options": "nosniff",
   })
   fs.createReadStream(filePath).pipe(response)
+
+  return true
+}
+
+const readRequestBody = (
+  request: IncomingMessage,
+  maxBytes: number,
+): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let total = 0
+
+    request.on("data", (chunk: Buffer) => {
+      total += chunk.length
+
+      if (total > maxBytes) {
+        reject(new Error("errors:visuals.backgroundTooLarge"))
+        request.destroy()
+
+        return
+      }
+
+      chunks.push(chunk)
+    })
+    request.on("end", () => resolve(Buffer.concat(chunks)))
+    request.on("error", reject)
+  })
+
+export const serveBackgroundUpload = async (
+  request: IncomingMessage,
+  response: ServerResponse,
+  isAuthorized: (_clientId: string) => boolean,
+): Promise<boolean> => {
+  if (!request.url) {
+    return false
+  }
+
+  const url = new URL(request.url, "http://localhost")
+
+  if (url.pathname !== BACKGROUND_ASSETS_PUBLIC_PREFIX) {
+    return false
+  }
+
+  if (request.method !== "POST") {
+    response.writeHead(405, { Allow: "POST" })
+    response.end()
+
+    return true
+  }
+
+  const clientId = request.headers["x-client-id"]
+
+  if (typeof clientId !== "string" || !isAuthorized(clientId)) {
+    response.writeHead(401, { "Content-Type": "application/json" })
+    response.end(JSON.stringify({ error: "errors:manager.unauthorized" }))
+
+    return true
+  }
+
+  let uploaded: ReturnType<typeof storeBackgroundAsset> | undefined
+
+  try {
+    const fileNameHeader = request.headers["x-file-name"]
+    const fileName =
+      typeof fileNameHeader === "string" && fileNameHeader.length > 0
+        ? fileNameHeader
+        : "background.png"
+    const data = await readRequestBody(
+      request,
+      BACKGROUND_UPLOAD_MAX_BYTES + 1024,
+    )
+    uploaded = storeBackgroundAsset(fileName, data)
+
+    if (url.searchParams.get("setGlobal") === "1") {
+      setGlobalBackground(uploaded.ref)
+    }
+
+    response.writeHead(201, { "Content-Type": "application/json" })
+    response.end(JSON.stringify(uploaded))
+  } catch (error) {
+    if (uploaded) {
+      try {
+        deleteBackgroundAsset(uploaded.ref)
+      } catch (cleanupError) {
+        console.error("Failed to clean up uploaded background:", cleanupError)
+      }
+    }
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "errors:visuals.backgroundUploadFailed"
+
+    response.writeHead(400, { "Content-Type": "application/json" })
+    response.end(JSON.stringify({ error: message }))
+  }
 
   return true
 }

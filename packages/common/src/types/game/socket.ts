@@ -7,8 +7,6 @@ import type {
 } from "@razzia/common/types/game"
 import type { Status, StatusDataMap } from "@razzia/common/types/game/status"
 import type {
-  BackgroundUploadRequest,
-  BackgroundUploadResponse,
   ManagerConfig,
   ManagerMutationResponse,
 } from "@razzia/common/types/manager"
@@ -124,18 +122,6 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
-  [EVENTS.MANAGER.BACKGROUND_UPLOAD]: (
-    _request: BackgroundUploadRequest,
-    _callback?: (
-      _response: BackgroundUploadResponse | { error: string },
-    ) => void,
-  ) => void
-  [EVENTS.MANAGER.BACKGROUND_ASSET_UPLOAD]: (
-    _request: BackgroundUploadRequest,
-    _callback?: (
-      _response: BackgroundUploadResponse | { error: string },
-    ) => void,
-  ) => void
   [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET]: (_request: {
     background: BackgroundRef
   }, _callback?: (_response: ManagerMutationResponse) => void) => void

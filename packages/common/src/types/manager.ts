@@ -14,12 +14,6 @@ export interface ManagerConfig {
   }
 }
 
-export interface BackgroundUploadRequest {
-  fileName: string
-  mimeType: string
-  dataBase64: string
-}
-
 export interface BackgroundUploadResponse {
   ref: BackgroundRef
   url: string

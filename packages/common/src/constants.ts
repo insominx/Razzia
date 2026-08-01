@@ -39,8 +39,6 @@ export const EVENTS = {
     NEXT_QUESTION: "manager:nextQuestion",
     SHOW_LEADERBOARD: "manager:showLeaderboard",
     GET_CONFIG: "manager:getConfig",
-    BACKGROUND_UPLOAD: "manager:backgroundUpload",
-    BACKGROUND_ASSET_UPLOAD: "manager:backgroundAssetUpload",
     GLOBAL_BACKGROUND_SET: "manager:globalBackgroundSet",
     GLOBAL_BACKGROUND_CLEAR: "manager:globalBackgroundClear",
     DIALECT_SET: "manager:dialectSet",

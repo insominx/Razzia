@@ -25,7 +25,7 @@ const Fire = ({ className }: Props) => (
 
     <path
       d="M21.9 43.9s2.8 3.8 4.9 2.9c0 0 4-6.3 9.8-9.8c0 0-1.2 9.6.2 11.3c1.8 2.3 6.7-2.5 6.7-2.5c0 5.7-6.2 12.8-11.8 12.8c-5.4 0-13.2-6.2-9.8-14.7"
-      fill="var(--rz-on-accent)"
+      fill="var(--rz-warning-core)"
     ></path>
 
     <g fill="var(--rz-warning)">

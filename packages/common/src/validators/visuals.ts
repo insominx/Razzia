@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { DEFAULT_DIALECT } from "@razzia/common/types/visuals"
+import { BACKGROUND_IMAGE_EXTENSION_PATTERN } from "@razzia/common/utils/background-image"
 
 export const backgroundAssetPathValidator = z
   .string()
@@ -14,7 +15,7 @@ export const backgroundAssetPathValidator = z
       !path.includes("\\") &&
       !path.includes(":") &&
       !path.startsWith("config-assets") &&
-      !path.startsWith("/config-assets"),
+      BACKGROUND_IMAGE_EXTENSION_PATTERN.test(path),
     "errors:visuals.invalidBackgroundPath",
   )
 

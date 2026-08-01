@@ -21,7 +21,9 @@
     "readFailed": "画像を読み込めませんでした",
     "updated": "背景を更新しました",
     "upload": "背景をアップロード",
-    "uploading": "アップロード中"
+    "uploading": "アップロード中",
+    "globalDefaultHelp": "クイズ固有の背景がないゲームに使うグローバル既定背景です。",
+    "uploadLimits": "PNG / JPEG / WebP / GIF、最大 5 MB。"
   },
   "quizz": {
     "create": "クイズを作成",

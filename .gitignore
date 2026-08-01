@@ -4,3 +4,11 @@
 .secrets
 release.json
 web2
+
+# Local agent / workflow scratch (do not commit runtime dumps or screenshot scrapbooks)
+.workflow/runtime/
+.workflow/tasks/
+.workflow/distillations/
+.workflow/**/artifacts/
+.workflow/**/*.log
+*.log

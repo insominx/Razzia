@@ -7,7 +7,9 @@
     "start": "node dist/index.cjs",
     "types": "tsc --noEmit",
     "format": "prettier --check . --log-level warn",
-    "format:fix": "prettier --write . --log-level warn"
+    "format:fix": "prettier --write . --log-level warn",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "license": "ISC",
   "dependencies": {
@@ -23,6 +25,8 @@
     "@types/node": "^25.9.2",
     "esbuild": "^0.28.1",
     "prettier": "^3.8.3",
-    "tsx": "^4.22.4"
+    "tsx": "^4.22.4",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.10"
   }
 }

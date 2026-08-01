@@ -5,14 +5,12 @@ import type { ButtonHTMLAttributes, PropsWithChildren } from "react"
 type Props = PropsWithChildren &
   ButtonHTMLAttributes<HTMLButtonElement> & {
     label: string
-    labelClassName?: string
     correct?: boolean
   }
 
 const AnswerButton = ({
   className,
   label,
-  labelClassName,
   children,
   correct,
   ...otherProps
@@ -27,19 +25,19 @@ const AnswerButton = ({
       )}
       {...otherProps}
     >
-      <span
-        className={clsx(
-          "font-mono flex size-8 shrink-0 items-center justify-center rounded-rz-sm border-2 text-base font-bold md:size-10 md:text-lg",
-          labelClassName,
-        )}
-      >
+      <span className="font-mono flex size-8 shrink-0 items-center justify-center rounded-rz-sm border-2 border-current bg-canvas/25 text-base font-bold md:size-10 md:text-lg">
         {label}
       </span>
       <p className="w-full flex-1 text-sm break-all md:text-lg">
         {children}
       </p>
       {correct !== undefined && (
-        <CorrectIcon className="size-4 stroke-6 md:size-6" />
+        <CorrectIcon
+          className={clsx(
+            "size-4 stroke-6 md:size-6",
+            correct ? "text-success" : "text-danger",
+          )}
+        />
       )}
     </button>
   )

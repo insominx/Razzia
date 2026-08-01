@@ -1,4 +1,5 @@
 import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
+import Atmosphere from "@razzia/web/components/Atmosphere"
 import NotFound from "@razzia/web/components/NotFound"
 import Answers from "@razzia/web/features/game/components/states/Answers"
 import Leaderboard from "@razzia/web/features/game/components/states/Leaderboard"
@@ -173,72 +174,6 @@ const STATE_PREVIEWS = [
   },
 ] as const
 
-const ROLE_SWATCHES = [
-  {
-    label: "Brand",
-    accent: "bg-brand",
-    border: "border-brand-border",
-    tint: "bg-brand-tint",
-  },
-  {
-    label: "Success",
-    accent: "bg-success",
-    border: "border-success-border",
-    tint: "bg-success-tint",
-  },
-  {
-    label: "Danger",
-    accent: "bg-danger",
-    border: "border-danger-border",
-    tint: "bg-danger-tint",
-  },
-  {
-    label: "Info",
-    accent: "bg-info",
-    border: "border-info-border",
-    tint: "bg-info-tint",
-  },
-  {
-    label: "Warning",
-    accent: "bg-warning",
-    border: "border-warning-border",
-    tint: "bg-warning-tint",
-  },
-  {
-    label: "Sequence",
-    accent: "bg-sequence",
-    border: "border-sequence-border",
-    tint: "bg-sequence-tint",
-  },
-] as const
-
-const ANSWER_SWATCHES = [
-  {
-    label: "A",
-    accent: "bg-answer-a",
-    border: "border-answer-a-border",
-    tint: "bg-answer-a-tint",
-  },
-  {
-    label: "B",
-    accent: "bg-answer-b",
-    border: "border-answer-b-border",
-    tint: "bg-answer-b-tint",
-  },
-  {
-    label: "C",
-    accent: "bg-answer-c",
-    border: "border-answer-c-border",
-    tint: "bg-answer-c-tint",
-  },
-  {
-    label: "D",
-    accent: "bg-answer-d",
-    border: "border-answer-d-border",
-    tint: "bg-answer-d-tint",
-  },
-] as const
-
 const Toggle = <T extends string>({
   label,
   options,
@@ -298,22 +233,18 @@ const Gallery = () => {
 
   return (
     <main className="min-h-dvh bg-canvas text-text-body transition-colors duration-300">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 py-8 md:px-8">
-        <header className="flex flex-col gap-6 border-b border-border pb-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 md:px-8">
+        <header className="flex flex-col gap-4 border-b border-border pb-6">
           <div>
-            <p className="text-xs font-bold tracking-[0.2em] text-brand uppercase">
-              Razzia · development reference
-            </p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-text-primary md:text-6xl">
-              Design-language gallery
+            <h1 className="text-3xl font-semibold tracking-tight text-text-primary md:text-4xl">
+              State gallery
             </h1>
-            <p className="mt-3 max-w-3xl text-base text-text-muted md:text-lg">
-              One semantic role table, two operator dialects, and every live
-              game-state component on deterministic fixtures.
+            <p className="mt-2 text-sm text-text-muted">
+              Deterministic fixtures for live game states. Role tables live in{" "}
+              <code className="font-mono">STYLE.md</code>.
             </p>
           </div>
-
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <Toggle
               label="Dialect"
               value={dialect}
@@ -335,149 +266,41 @@ const Gallery = () => {
           </div>
         </header>
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ROLE_SWATCHES.map((swatch) => (
-            <article
-              key={swatch.label}
+        <nav className="flex flex-wrap gap-2" aria-label="Gallery states">
+          {STATE_PREVIEWS.map((state, index) => (
+            <button
+              key={state.id}
+              type="button"
+              aria-pressed={selectedIndex === index}
               className={clsx(
-                "overflow-hidden rounded-rz-md border",
-                swatch.border,
-                swatch.tint,
+                "rounded-rz-sm border px-3 py-2 text-sm font-semibold transition",
+                selectedIndex === index
+                  ? "border-info-border bg-info-tint text-info"
+                  : "border-border bg-panel text-text-muted hover:text-text-primary",
               )}
+              onClick={() => setSelectedIndex(index)}
             >
-              <div className={clsx("h-2", swatch.accent)} />
-              <div className="p-4">
-                <p className="text-xs font-bold tracking-widest text-text-muted uppercase">
-                  Semantic role
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-text-primary">
-                  {swatch.label}
-                </h2>
-              </div>
-            </article>
+              {state.label}
+            </button>
           ))}
-        </section>
+        </nav>
 
-        <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <article className="rounded-rz-lg border border-border bg-surface p-6">
-            <p className="text-xs font-bold tracking-[0.18em] text-brand uppercase">
-              Type specimen
+        <article className="overflow-hidden rounded-rz-xl border border-border bg-canvas">
+          <header className="flex items-center justify-between border-b border-border bg-panel px-4 py-3">
+            <p className="text-sm font-semibold text-text-primary">
+              {currentState.label}
             </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-text-primary md:text-5xl">
-              Content owns the stage.
-            </h2>
-            <p className="mt-4 max-w-2xl text-lg text-text-body">
-              Semantic roles keep authoring chrome calm while the quiz remains
-              legible, direct, and projector-ready.
+            <p className="text-xs tracking-wider text-text-muted uppercase">
+              fixture
             </p>
-            <p className="font-mono mt-5 text-sm tracking-wider text-text-muted uppercase">
-              07 / 11 · 20 seconds · 9,640 points
-            </p>
-          </article>
-
-          <article className="animate-rz-enter rounded-rz-lg border border-brand-border bg-brand-tint p-6 shadow-bloom-brand">
-            <p className="text-xs font-bold tracking-widest text-brand uppercase">
-              Motion + depth
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold text-text-primary">
-              Calm entrance, inset bloom
-            </h2>
-            <p className="mt-2 text-text-muted">
-              No neutral shadow token exists. Depth follows the active accent.
-            </p>
-          </article>
-        </section>
-
-        <section>
-          <div className="mb-4 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold tracking-widest text-sequence uppercase">
-                Answer identity
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold text-text-primary">
-                Hue plus mono badge
-              </h2>
+          </header>
+          <div className="relative flex min-h-[680px] flex-col overflow-hidden bg-canvas p-4">
+            <Atmosphere recipe="photo" />
+            <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+              {currentState.render()}
             </div>
-            <p className="font-mono text-sm text-text-muted">4 / 4 channels</p>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {ANSWER_SWATCHES.map((swatch) => (
-              <div
-                key={swatch.label}
-                className={clsx(
-                  "flex items-center gap-3 rounded-rz-md border p-3",
-                  swatch.border,
-                  swatch.tint,
-                )}
-              >
-                <span
-                  className={clsx(
-                    "text-on-answer font-mono grid size-10 place-items-center rounded-rz-sm border-2 text-lg font-bold",
-                    swatch.accent,
-                    swatch.border,
-                  )}
-                >
-                  {swatch.label}
-                </span>
-                <span className="font-semibold text-text-primary">
-                  Answer {swatch.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="border-t border-border pt-8">
-          <div className="mb-5 flex flex-col gap-4">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold tracking-widest text-info uppercase">
-                  Runtime fixtures
-                </p>
-                <h2 className="mt-1 text-3xl font-semibold text-text-primary">
-                  All 11 state components
-                </h2>
-              </div>
-              <p className="text-sm text-text-muted">11 / 11 reachable</p>
-            </div>
-
-            <nav className="flex flex-wrap gap-2" aria-label="Gallery states">
-              {STATE_PREVIEWS.map((state, index) => (
-                <button
-                  key={state.id}
-                  type="button"
-                  aria-pressed={selectedIndex === index}
-                  className={clsx(
-                    "rounded-rz-sm border px-3 py-2 text-sm font-semibold transition",
-                    selectedIndex === index
-                      ? "border-info-border bg-info-tint text-info"
-                      : "border-border bg-panel text-text-muted hover:text-text-primary",
-                  )}
-                  onClick={() => setSelectedIndex(index)}
-                >
-                  {state.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          <article className="overflow-hidden rounded-rz-xl border border-border bg-canvas">
-            <header className="flex items-center justify-between border-b border-border bg-panel px-4 py-3">
-              <p className="text-sm font-semibold text-text-primary">
-                {currentState.label}
-              </p>
-              <p className="text-xs tracking-wider text-text-muted uppercase">
-                deterministic fixture
-              </p>
-            </header>
-            <div className="relative flex min-h-[680px] flex-col overflow-hidden bg-canvas p-4">
-              <div className="pointer-events-none absolute inset-0 bg-brand-tint opacity-40" />
-              <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-                {currentState.render()}
-              </div>
-            </div>
-          </article>
-        </section>
+        </article>
       </div>
     </main>
   )

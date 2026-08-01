@@ -1,8 +1,7 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
 import {
-  ANSWER_BADGE_COLORS,
-  ANSWERS_COLORS,
+  ANSWER_IDENTITY,
   ANSWERS_LABELS,
   SFX,
 } from "@razzia/web/features/game/utils/constants"
@@ -68,7 +67,7 @@ const Responses = ({
               key={key}
               className={clsx(
                 "rounded-rz-md flex flex-col justify-end self-end overflow-hidden border-2",
-                ANSWERS_COLORS[key],
+                ANSWER_IDENTITY[key],
               )}
               style={{ height: percentages[key] }}
             >
@@ -85,12 +84,11 @@ const Responses = ({
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
-              className={clsx(ANSWERS_COLORS[key], {
+              className={clsx(ANSWER_IDENTITY[key], {
                 // oxlint-disable-next-line typescript/no-unnecessary-condition
-                "opacity-65": responses && !solutions.includes(key),
+                "opacity-80": responses && !solutions.includes(key),
               })}
               label={ANSWERS_LABELS[key]}
-              labelClassName={ANSWER_BADGE_COLORS[key]}
               correct={solutions.includes(key)}
             >
               {answer}

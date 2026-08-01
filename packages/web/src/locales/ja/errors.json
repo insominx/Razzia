@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "ゲーム設定の読み込みに失敗しました",
     "invalidPassword": "パスワードが無効です",
-    "passwordNotConfigured": "管理者パスワードが設定されていません"
+    "passwordNotConfigured": "管理者パスワードが設定されていません",
+    "unauthorized": "権限がありません"
   },
   "notFound": {
     "back": "ホームに戻る",

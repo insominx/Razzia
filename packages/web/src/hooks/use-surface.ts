@@ -4,11 +4,13 @@ import {
 } from "@razzia/common/types/visuals"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useRouterState } from "@tanstack/react-router"
-import { createContext, useContext, useEffect } from "react"
+import { createContext, useContext, useLayoutEffect } from "react"
 
 export type Surface = "stage" | "studio"
 
 export type SurfaceDialect = Dialect
+
+export type Register = "dark" | "light"
 
 export interface SurfaceOverride {
   dialect?: SurfaceDialect
@@ -18,6 +20,16 @@ export interface SurfaceOverride {
 export const SurfaceOverrideContext = createContext<
   ((override: SurfaceOverride | null) => void) | null
 >(null)
+
+export const isLightRegister = (
+  dialect: SurfaceDialect,
+  surface: Surface,
+): boolean => dialect === "stage-studio" && surface === "studio"
+
+export const resolveRegister = (
+  dialect: SurfaceDialect,
+  surface: Surface,
+): Register => (isLightRegister(dialect, surface) ? "light" : "dark")
 
 export const useSurfaceOverride = ({
   dialect,
@@ -29,13 +41,21 @@ export const useSurfaceOverride = ({
     throw new Error("useSurfaceOverride must be used inside GameLayout")
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setOverride({ dialect, surface })
 
     return () => {
       setOverride(null)
     }
   }, [dialect, setOverride, surface])
+}
+
+const applyRegister = (register: Register) => {
+  document.documentElement.dataset.register = register
+}
+
+const clearRegister = () => {
+  delete document.documentElement.dataset.register
 }
 
 export const useSurface = (override: SurfaceOverride | null = null) => {
@@ -51,16 +71,13 @@ export const useSurface = (override: SurfaceOverride | null = null) => {
       ? "studio"
       : "stage")
   const activeDialect = override?.dialect ?? dialect
+  const register = resolveRegister(activeDialect, surface)
 
-  useEffect(() => {
-    const root = document.documentElement
+  useLayoutEffect(() => {
+    applyRegister(register)
+  }, [register])
 
-    root.dataset.surface = surface
-    root.dataset.dialect = activeDialect
-
-    return () => {
-      delete root.dataset.surface
-      delete root.dataset.dialect
-    }
-  }, [activeDialect, surface])
+  useLayoutEffect(() => () => {
+    clearRegister()
+  }, [])
 }
