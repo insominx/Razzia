@@ -96,24 +96,25 @@ describe("getQuizz soft-strips invalid visuals", () => {
   })
 })
 
-describe("updateGameConfig serialization", () => {
-  it("does not lose concurrent dialect and background updates", async () => {
+describe("updateGameConfig", () => {
+  it("preserves prior fields across sequential updates", async () => {
     const root = process.env.CONFIG_PATH!
     fs.writeFileSync(
       path.join(root, "game.json"),
       JSON.stringify({ managerPassword: "secret" }),
     )
+    fs.mkdirSync(path.join(root, "assets/backgrounds"), { recursive: true })
+    fs.writeFileSync(path.join(root, "assets/backgrounds/room.png"), "x")
 
     const { getGameConfig, updateGameConfig } = await import(
       "@razzia/socket/services/config"
     )
 
-    const first = updateGameConfig((config) => ({
+    updateGameConfig((config) => ({
       ...config,
       visuals: { ...config.visuals, dialect: "stage-studio" },
     }))
-
-    const second = updateGameConfig((config) => ({
+    updateGameConfig((config) => ({
       ...config,
       visuals: {
         ...config.visuals,
@@ -121,12 +122,6 @@ describe("updateGameConfig serialization", () => {
       },
     }))
 
-    // Create a real room.png so existence checks can pass later if enforced
-    fs.mkdirSync(path.join(root, "assets/backgrounds"), { recursive: true })
-    fs.writeFileSync(path.join(root, "assets/backgrounds/room.png"), "x")
-
-    expect(first.visuals?.dialect).toBe("stage-studio")
-    expect(second.visuals?.background?.path).toBe("room.png")
     expect(getGameConfig().visuals?.dialect).toBe("stage-studio")
     expect(getGameConfig().visuals?.background?.path).toBe("room.png")
   })

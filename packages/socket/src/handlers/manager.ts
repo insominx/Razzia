@@ -11,93 +11,15 @@ import {
 import { verifyManagerAuth } from "@razzia/socket/services/manager-auth"
 import manager, { emitConfig } from "@razzia/socket/services/manager"
 import {
-  deleteBackgroundAsset,
-  getBackgroundAssetPath,
-  replaceBackgroundAsset,
-  storeBackgroundAsset,
+  clearGlobalBackground,
+  setGlobalBackground,
 } from "@razzia/socket/services/visuals"
-import fs from "fs"
 
 export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.MANAGER.GET_CONFIG,
     manager.withAuth(socket, () => {
       emitConfig(socket)
-    }),
-  )
-
-  socket.on(
-    EVENTS.MANAGER.BACKGROUND_UPLOAD,
-    manager.withAuth(socket, (request, callback) => {
-      if (typeof callback !== "function") {
-        socket.emit(
-          EVENTS.MANAGER.ERROR_MESSAGE,
-          "errors:visuals.backgroundUploadFailed",
-        )
-
-        return
-      }
-
-      let uploaded: ReturnType<typeof storeBackgroundAsset> | undefined =
-        undefined
-
-      try {
-        const previous = getGameConfig().visuals?.background
-        uploaded = replaceBackgroundAsset(previous, request)
-        const background = uploaded.ref
-
-        updateGameConfig((config) => ({
-          ...config,
-          visuals: {
-            ...config.visuals,
-            background,
-          },
-        }))
-        emitConfig(socket)
-        callback(uploaded)
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "errors:visuals.backgroundUploadFailed"
-
-        if (uploaded) {
-          try {
-            deleteBackgroundAsset(uploaded.ref)
-          } catch (cleanupError) {
-            console.error("Failed to clean up uploaded background:", cleanupError)
-          }
-        }
-
-        callback({ error: message })
-      }
-    }),
-  )
-
-  socket.on(
-    EVENTS.MANAGER.BACKGROUND_ASSET_UPLOAD,
-    manager.withAuth(socket, (request, callback) => {
-      if (typeof callback !== "function") {
-        socket.emit(
-          EVENTS.MANAGER.ERROR_MESSAGE,
-          "errors:visuals.backgroundUploadFailed",
-        )
-
-        return
-      }
-
-      try {
-        const uploaded = storeBackgroundAsset(request)
-
-        callback(uploaded)
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "errors:visuals.backgroundUploadFailed"
-
-        callback({ error: message })
-      }
     }),
   )
 
@@ -111,30 +33,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           throw new Error(result.error.issues[0].message)
         }
 
-        const assetPath = getBackgroundAssetPath(result.data.path)
-
-        if (!assetPath || !fs.existsSync(assetPath)) {
-          throw new Error("errors:visuals.invalidBackgroundPath")
-        }
-
-        let previous: Parameters<typeof deleteBackgroundAsset>[0] | undefined
-
-        updateGameConfig((config) => {
-          previous = config.visuals?.background
-
-          return {
-            ...config,
-            visuals: {
-              ...config.visuals,
-              background: result.data,
-            },
-          }
-        })
-
-        if (previous && previous.path !== result.data.path) {
-          deleteBackgroundAsset(previous)
-        }
-
+        setGlobalBackground(result.data)
         emitConfig(socket)
         callback?.({ ok: true })
       } catch (error) {
@@ -153,29 +52,12 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR,
     manager.withAuth(socket, (callback) => {
       try {
-        let previous: Parameters<typeof deleteBackgroundAsset>[0] | undefined
-
-        updateGameConfig((config) => {
-          previous = config.visuals?.background
-          const { background: _background, ...visuals } = config.visuals ?? {}
-
-          return {
-            ...config,
-            visuals: Object.keys(visuals).length ? visuals : undefined,
-          }
-        })
-
-        if (previous) {
-          deleteBackgroundAsset(previous)
-        }
-
+        clearGlobalBackground()
         emitConfig(socket)
         callback?.({ ok: true })
       } catch (error) {
         console.error("Failed to clear global background:", error)
-        const message = "errors:visuals.backgroundClearFailed"
-
-        callback?.({ error: message })
+        callback?.({ error: "errors:visuals.backgroundClearFailed" })
       }
     }),
   )

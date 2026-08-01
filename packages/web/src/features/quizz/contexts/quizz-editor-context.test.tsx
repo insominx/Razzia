@@ -1,6 +1,9 @@
 import { act, renderHook } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
-import { QuizzEditorProvider, useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
+import {
+  QuizzEditorProvider,
+  useQuizzEditor,
+} from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 
 describe("QuizzEditorProvider background clear", () => {
   it("restores the global fallback url when clearing a quiz override", () => {
@@ -38,7 +41,10 @@ describe("QuizzEditorProvider background clear", () => {
     })
 
     act(() => {
-      result.current.clearBackground("/config-assets/backgrounds/global.png")
+      result.current.setBackground(
+        undefined,
+        "/config-assets/backgrounds/global.png",
+      )
     })
 
     expect(result.current.background).toBeUndefined()

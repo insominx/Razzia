@@ -11,7 +11,6 @@ import {
   ensureBackgroundAssetsDirectory,
   serveBackgroundUpload,
   serveConfigAsset,
-  SOCKET_MAX_HTTP_BUFFER_SIZE,
 } from "@razzia/socket/services/visuals"
 import { createServer } from "http"
 import { Server as ServerIO } from "socket.io"
@@ -20,9 +19,11 @@ const WS_PORT = 3001
 
 const httpServer = createServer((request, response) => {
   void (async () => {
-    if (await serveBackgroundUpload(request, response, (clientId) =>
-      manager.isLoggedByClientId(clientId),
-    )) {
+    if (
+      await serveBackgroundUpload(request, response, (clientId) =>
+        manager.isLoggedByClientId(clientId),
+      )
+    ) {
       return
     }
 
@@ -35,9 +36,9 @@ const httpServer = createServer((request, response) => {
   })()
 })
 
+// Background bytes use HTTP; keep the Socket.IO default buffer for events.
 const io: Server = new ServerIO(httpServer, {
   path: "/ws",
-  maxHttpBufferSize: SOCKET_MAX_HTTP_BUFFER_SIZE,
 })
 initConfig()
 ensureBackgroundAssetsDirectory()

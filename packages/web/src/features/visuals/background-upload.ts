@@ -1,11 +1,13 @@
-export const BACKGROUND_UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+import {
+  BACKGROUND_UPLOAD_MAX_BYTES,
+  BACKGROUND_UPLOAD_MIME_TYPES,
+  isBackgroundImageMime,
+} from "@razzia/common/utils/background-image"
+import type { BackgroundUploadResponse } from "@razzia/common/types/manager"
 
-export const BACKGROUND_UPLOAD_ACCEPT = [
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-] as const
+export { BACKGROUND_UPLOAD_MAX_BYTES }
+
+export const BACKGROUND_UPLOAD_ACCEPT = BACKGROUND_UPLOAD_MIME_TYPES
 
 export type BackgroundFileValidation =
   | { ok: true }
@@ -14,11 +16,7 @@ export type BackgroundFileValidation =
 export const validateBackgroundFile = (
   file: File,
 ): BackgroundFileValidation => {
-  if (
-    !BACKGROUND_UPLOAD_ACCEPT.includes(
-      file.type as (typeof BACKGROUND_UPLOAD_ACCEPT)[number],
-    )
-  ) {
+  if (!isBackgroundImageMime(file.type)) {
     return { ok: false, error: "errors:visuals.unsupportedBackgroundType" }
   }
 
@@ -29,22 +27,22 @@ export const validateBackgroundFile = (
   return { ok: true }
 }
 
-export interface BackgroundUploadResult {
-  ref: { kind: "config-asset"; path: string }
-  url: string
-}
-
 export const uploadBackgroundViaHttp = async (
   file: File,
   clientId: string,
-): Promise<BackgroundUploadResult> => {
+  options: { setGlobal?: boolean } = {},
+): Promise<BackgroundUploadResponse> => {
   const validation = validateBackgroundFile(file)
 
   if (!validation.ok) {
     throw new Error(validation.error)
   }
 
-  const response = await fetch("/config-assets/backgrounds", {
+  const url = options.setGlobal
+    ? "/config-assets/backgrounds?setGlobal=1"
+    : "/config-assets/backgrounds"
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": file.type,
@@ -55,7 +53,7 @@ export const uploadBackgroundViaHttp = async (
   })
 
   const payload = (await response.json()) as
-    | BackgroundUploadResult
+    | BackgroundUploadResponse
     | { error: string }
 
   if (!response.ok || "error" in payload) {

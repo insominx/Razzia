@@ -123,12 +123,10 @@
   --rz-bloom-warning: inset 0 0 12px rgba(240, 138, 60, 0.04);
   --rz-bloom-sequence: inset 0 0 12px rgba(181, 138, 245, 0.04);
   --rz-scrim: rgba(6, 9, 15, 0.75);
-  --rz-atmosphere-blob: rgba(70, 213, 192, 0.08);
   --rz-warning-core: #ffdf85;
-  --rz-focus-ring: #46d5c0;
 }
 
-:root[data-dialect="stage-studio"][data-surface="studio"] {
+:root[data-register="light"] {
   color-scheme: light;
 
   --rz-brand: #0d9488;
@@ -176,9 +174,7 @@
   --rz-bloom-info: inset 0 0 20px rgba(37, 99, 235, 0.08);
   --rz-bloom-warning: inset 0 0 12px rgba(194, 65, 12, 0.06);
   --rz-bloom-sequence: inset 0 0 12px rgba(124, 58, 237, 0.06);
-  --rz-atmosphere-blob: rgba(13, 148, 136, 0.12);
   --rz-warning-core: #fdba74;
-  --rz-focus-ring: #0d9488;
 }
 
 button:not(:disabled),

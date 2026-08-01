@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  backgroundAssetPathValidator,
-  backgroundUploadRequestValidator,
-} from "@razzia/common/validators/visuals"
+import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 
 describe("backgroundAssetPathValidator", () => {
   it("accepts safe image basenames", () => {
@@ -35,27 +32,5 @@ describe("backgroundAssetPathValidator", () => {
       false,
     )
     expect(backgroundAssetPathValidator.safeParse("noext").success).toBe(false)
-  })
-})
-
-describe("backgroundUploadRequestValidator", () => {
-  it("accepts allowlisted mime types with non-empty payload", () => {
-    const result = backgroundUploadRequestValidator.safeParse({
-      fileName: "bg.png",
-      mimeType: "image/png",
-      dataBase64: Buffer.from("fake").toString("base64"),
-    })
-
-    expect(result.success).toBe(true)
-  })
-
-  it("rejects unsupported mime types", () => {
-    expect(
-      backgroundUploadRequestValidator.safeParse({
-        fileName: "bg.svg",
-        mimeType: "image/svg+xml",
-        dataBase64: "AAAA",
-      }).success,
-    ).toBe(false)
   })
 })

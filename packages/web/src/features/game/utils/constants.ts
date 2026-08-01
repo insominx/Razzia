@@ -13,21 +13,14 @@ import Wait from "@razzia/web/features/game/components/states/Wait"
 
 import { STATUS } from "@razzia/common/types/game/status"
 
-export const ANSWERS_COLORS = [
+export const ANSWER_IDENTITY = [
   "border-answer-a-border bg-answer-a text-on-answer",
   "border-answer-b-border bg-answer-b text-on-answer",
   "border-answer-c-border bg-answer-c text-on-answer",
   "border-answer-d-border bg-answer-d text-on-answer",
-]
+] as const
 
 export const ANSWERS_LABELS = ["A", "B", "C", "D"]
-
-export const ANSWER_BADGE_COLORS = [
-  "border-answer-a-border bg-answer-a text-on-answer",
-  "border-answer-b-border bg-answer-b text-on-answer",
-  "border-answer-c-border bg-answer-c text-on-answer",
-  "border-answer-d-border bg-answer-d text-on-answer",
-]
 
 export const GAME_STATES = {
   status: {

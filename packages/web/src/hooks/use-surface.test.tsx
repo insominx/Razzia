@@ -1,5 +1,9 @@
 import { renderHook } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  isLightRegister,
+  resolveRegister,
+} from "@razzia/web/hooks/use-surface"
 
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: (
@@ -18,13 +22,23 @@ vi.mock("@razzia/web/features/game/stores/manager", () => ({
     }),
 }))
 
+describe("resolveRegister", () => {
+  it("is light only for stage-studio studio", () => {
+    expect(isLightRegister("stage-studio", "studio")).toBe(true)
+    expect(resolveRegister("stage-studio", "studio")).toBe("light")
+    expect(resolveRegister("stage-studio", "stage")).toBe("dark")
+    expect(resolveRegister("dark-everywhere", "studio")).toBe("dark")
+  })
+})
+
 describe("useSurface", () => {
   beforeEach(() => {
+    delete document.documentElement.dataset.register
     delete document.documentElement.dataset.surface
     delete document.documentElement.dataset.dialect
   })
 
-  it("writes surface/dialect in a layout effect before paint cleanup thrash", async () => {
+  it("writes a single data-register attr and keeps it across updates", async () => {
     const { useSurface } = await import("@razzia/web/hooks/use-surface")
 
     type Props = {
@@ -41,26 +55,12 @@ describe("useSurface", () => {
       { initialProps },
     )
 
-    expect(document.documentElement.dataset.surface).toBe("studio")
-    expect(document.documentElement.dataset.dialect).toBe("stage-studio")
+    expect(document.documentElement.dataset.register).toBe("light")
 
     rerender({ dialect: "dark-everywhere", surface: "studio" })
-
-    // Must not clear attributes between dependency updates
-    expect(document.documentElement.dataset.surface).toBe("studio")
-    expect(document.documentElement.dataset.dialect).toBe("dark-everywhere")
+    expect(document.documentElement.dataset.register).toBe("dark")
 
     unmount()
-    expect(document.documentElement.dataset.surface).toBeUndefined()
-    expect(document.documentElement.dataset.dialect).toBeUndefined()
-  })
-
-  it("applies pathname-derived studio surface without override", async () => {
-    const { useSurface } = await import("@razzia/web/hooks/use-surface")
-
-    renderHook(() => useSurface(null))
-
-    expect(document.documentElement.dataset.surface).toBe("studio")
-    expect(document.documentElement.dataset.dialect).toBe("stage-studio")
+    expect(document.documentElement.dataset.register).toBeUndefined()
   })
 })

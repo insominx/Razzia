@@ -5,14 +5,9 @@ import {
   type Dialect,
 } from "@razzia/common/types/visuals"
 import Button from "@razzia/web/components/Button"
-import {
-  useSocket,
-} from "@razzia/web/features/game/contexts/socket-context"
+import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
-import {
-  uploadBackgroundViaHttp,
-  validateBackgroundFile,
-} from "@razzia/web/features/visuals/background-upload"
+import { useBackgroundUpload } from "@razzia/web/features/visuals/use-background-upload"
 import clsx from "clsx"
 import { Image, Trash2, Upload } from "lucide-react"
 import {
@@ -44,70 +39,20 @@ const DIALECT_OPTIONS = [
 
 const ConfigVisuals = () => {
   const { game } = useConfig()
-  const { socket, clientId } = useSocket()
+  const { socket } = useSocket()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadGeneration = useRef(0)
-  const [uploading, setUploading] = useState(false)
   const [clearing, setClearing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [pendingDialect, setPendingDialect] = useState<Dialect | null>(null)
   const { t } = useTranslation()
   const activeDialect = game.visuals?.dialect ?? DEFAULT_DIALECT
-
-  const uploadFile = async (file: File | undefined) => {
-    if (!file || uploading) {
-      return
-    }
-
-    const validation = validateBackgroundFile(file)
-
-    if (!validation.ok) {
-      toast.error(t(validation.error))
-
-      return
-    }
-
-    const generation = ++uploadGeneration.current
-    setUploading(true)
-    setIsDragging(false)
-
-    try {
-      const uploaded = await uploadBackgroundViaHttp(file, clientId)
-
-      await new Promise<void>((resolve, reject) => {
-        socket.emit(
-          EVENTS.MANAGER.GLOBAL_BACKGROUND_SET,
-          { background: uploaded.ref },
-          (response: ManagerMutationResponse) => {
-            if ("error" in response) {
-              reject(new Error(response.error))
-
-              return
-            }
-
-            resolve()
-          },
-        )
-      })
-
-      if (generation === uploadGeneration.current) {
-        toast.success(t("manager:visuals.updated"))
-      }
-    } catch (error) {
-      if (generation === uploadGeneration.current) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "errors:visuals.backgroundUploadFailed"
-
-        toast.error(t(message))
-      }
-    } finally {
-      if (generation === uploadGeneration.current) {
-        setUploading(false)
-      }
-    }
-  }
+  const { uploading, uploadFile } = useBackgroundUpload({
+    setGlobal: true,
+    onSuccess: async () => {
+      socket.emit(EVENTS.MANAGER.GET_CONFIG)
+      toast.success(t("manager:visuals.updated"))
+    },
+  })
 
   const handleUpload = (event: ChangeEvent<HTMLInputElement>) => {
     void uploadFile(event.target.files?.[0])
@@ -132,19 +77,13 @@ const ConfigVisuals = () => {
     event.preventDefault()
     setIsDragging(false)
 
-    if (uploading) {
-      return
+    if (!uploading) {
+      void uploadFile(event.dataTransfer.files[0])
     }
-
-    void uploadFile(event.dataTransfer.files[0])
   }
 
   const handlePreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (uploading) {
-      return
-    }
-
-    if (event.key === "Enter" || event.key === " ") {
+    if (!uploading && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault()
       fileInputRef.current?.click()
     }
@@ -214,7 +153,7 @@ const ConfigVisuals = () => {
                 role="radio"
                 aria-checked={active}
                 className={clsx(
-                  "rounded-rz-md border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rz-focus-ring)] disabled:cursor-wait disabled:opacity-60",
+                  "rounded-rz-md border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60",
                   active
                     ? "border-brand-border bg-brand-tint text-brand"
                     : "border-border bg-surface text-text-body hover:bg-panel",
@@ -241,7 +180,7 @@ const ConfigVisuals = () => {
 
       <div
         className={clsx(
-          "border-border bg-panel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rz-focus-ring)] relative aspect-video overflow-hidden rounded-rz-md border-2 transition-colors duration-[var(--rz-dur-fast)] ease-calm",
+          "border-border bg-panel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand relative aspect-video overflow-hidden rounded-rz-md border-2 transition-colors duration-[var(--rz-dur-fast)] ease-calm",
           isDragging && "border-brand-border bg-brand-tint",
           uploading && "pointer-events-none opacity-60",
         )}

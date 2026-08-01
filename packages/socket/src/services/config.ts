@@ -85,8 +85,6 @@ export const writeGameConfig = (data: GameConfig): void => {
   )
 }
 
-let configWriteChain: Promise<unknown> = Promise.resolve()
-
 export const updateGameConfig = (
   updater: (_config: GameConfig) => GameConfig,
 ): GameConfig => {
@@ -95,20 +93,6 @@ export const updateGameConfig = (
   writeGameConfig(next)
 
   return next
-}
-
-/** Serializes async config mutations that await between read and write. */
-export const updateGameConfigAsync = (
-  updater: (_config: GameConfig) => GameConfig,
-): Promise<GameConfig> => {
-  const run = configWriteChain.then(() => updateGameConfig(updater))
-
-  configWriteChain = run.then(
-    () => undefined,
-    () => undefined,
-  )
-
-  return run
 }
 
 export const getQuizzMeta = () =>

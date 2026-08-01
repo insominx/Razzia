@@ -12,6 +12,10 @@ beforeEach(() => {
   tempRoots.push(root)
   process.env.CONFIG_PATH = root
   fs.mkdirSync(path.join(root, "assets/backgrounds"), { recursive: true })
+  fs.writeFileSync(
+    path.join(root, "game.json"),
+    JSON.stringify({ managerPassword: "secret" }),
+  )
 })
 
 afterEach(() => {
@@ -26,59 +30,44 @@ const pngBytes = Buffer.from([
 ])
 
 describe("storeBackgroundAsset", () => {
-  it("sniffs magic bytes and rejects mismatched mime claims", async () => {
-    const { storeBackgroundAsset } = await import(
-      "@razzia/socket/services/visuals"
-    )
-
-    expect(() =>
-      storeBackgroundAsset({
-        fileName: "fake.png",
-        mimeType: "image/png",
-        dataBase64: Buffer.from("not-an-image").toString("base64"),
-      }),
-    ).toThrow("errors:visuals.unsupportedBackgroundType")
-  })
-
-  it("stores a real PNG and returns a public url", async () => {
+  it("stores raw bytes after sniffing magic and builds a public url", async () => {
     const { storeBackgroundAsset, getBackgroundAssetPath } = await import(
       "@razzia/socket/services/visuals"
     )
 
-    const uploaded = storeBackgroundAsset({
-      fileName: "room.png",
-      mimeType: "image/png",
-      dataBase64: pngBytes.toString("base64"),
-    })
+    const uploaded = storeBackgroundAsset("room.png", pngBytes)
 
     expect(uploaded.ref.kind).toBe("config-asset")
     expect(uploaded.ref.path.endsWith(".png")).toBe(true)
     expect(uploaded.url).toContain("/config-assets/backgrounds/")
     expect(fs.existsSync(getBackgroundAssetPath(uploaded.ref.path)!)).toBe(true)
   })
+
+  it("rejects non-image payloads", async () => {
+    const { storeBackgroundAsset } = await import(
+      "@razzia/socket/services/visuals"
+    )
+
+    expect(() =>
+      storeBackgroundAsset("fake.png", Buffer.from("not-an-image")),
+    ).toThrow("errors:visuals.unsupportedBackgroundType")
+  })
 })
 
-describe("delete-on-replace helpers", () => {
-  it("replaces a background and deletes the previous asset file", async () => {
-    const {
-      storeBackgroundAsset,
-      replaceBackgroundAsset,
-      getBackgroundAssetPath,
-    } = await import("@razzia/socket/services/visuals")
+describe("setGlobalBackground", () => {
+  it("persists the ref and deletes the previous asset file", async () => {
+    const { storeBackgroundAsset, setGlobalBackground, getBackgroundAssetPath } =
+      await import("@razzia/socket/services/visuals")
+    const { getGameConfig } = await import("@razzia/socket/services/config")
 
-    const first = storeBackgroundAsset({
-      fileName: "one.png",
-      mimeType: "image/png",
-      dataBase64: pngBytes.toString("base64"),
-    })
+    const first = storeBackgroundAsset("one.png", pngBytes)
+    setGlobalBackground(first.ref)
     const firstPath = getBackgroundAssetPath(first.ref.path)!
 
-    const second = replaceBackgroundAsset(first.ref, {
-      fileName: "two.png",
-      mimeType: "image/png",
-      dataBase64: pngBytes.toString("base64"),
-    })
+    const second = storeBackgroundAsset("two.png", pngBytes)
+    setGlobalBackground(second.ref)
 
+    expect(getGameConfig().visuals?.background?.path).toBe(second.ref.path)
     expect(fs.existsSync(firstPath)).toBe(false)
     expect(fs.existsSync(getBackgroundAssetPath(second.ref.path)!)).toBe(true)
   })
@@ -89,11 +78,7 @@ describe("serveConfigAsset", () => {
     const { storeBackgroundAsset, serveConfigAsset } = await import(
       "@razzia/socket/services/visuals"
     )
-    const uploaded = storeBackgroundAsset({
-      fileName: "serve.png",
-      mimeType: "image/png",
-      dataBase64: pngBytes.toString("base64"),
-    })
+    const uploaded = storeBackgroundAsset("serve.png", pngBytes)
 
     const headers: Record<string, string | number> = {}
     let ended!: () => void
@@ -114,12 +99,10 @@ describe("serveConfigAsset", () => {
       },
     } as unknown as ServerResponse
 
-    const request = {
-      url: uploaded.url,
-      method: "GET",
-    } as IncomingMessage
-
-    const handled = serveConfigAsset(request, response)
+    const handled = serveConfigAsset(
+      { url: uploaded.url, method: "GET" } as IncomingMessage,
+      response,
+    )
     expect(handled).toBe(true)
     expect(headers["X-Content-Type-Options"]).toBe("nosniff")
     expect(headers["Content-Type"]).toBe("image/png")
@@ -127,13 +110,58 @@ describe("serveConfigAsset", () => {
   })
 })
 
-describe("socket buffer sizing", () => {
-  it("keeps the socket buffer at the default 1MB because uploads use HTTP", async () => {
-    const { SOCKET_MAX_HTTP_BUFFER_SIZE, BACKGROUND_UPLOAD_MAX_BYTES } =
-      await import("@razzia/socket/services/visuals")
+describe("serveBackgroundUpload", () => {
+  it("stores only by default and can set global via query", async () => {
+    const { serveBackgroundUpload } = await import(
+      "@razzia/socket/services/visuals"
+    )
+    const { getGameConfig } = await import("@razzia/socket/services/config")
 
-    expect(SOCKET_MAX_HTTP_BUFFER_SIZE).toBe(1 * 1024 * 1024)
-    expect(BACKGROUND_UPLOAD_MAX_BYTES).toBe(5 * 1024 * 1024)
-    expect(SOCKET_MAX_HTTP_BUFFER_SIZE).toBeLessThan(BACKGROUND_UPLOAD_MAX_BYTES)
+    const runUpload = async (urlPath: string) => {
+      let body = ""
+      const chunks = [pngBytes]
+      const request = {
+        url: urlPath,
+        method: "POST",
+        headers: {
+          "x-client-id": "manager-1",
+          "x-file-name": "global.png",
+        },
+        on: (event: string, handler: (...args: unknown[]) => void) => {
+          if (event === "data") {
+            for (const chunk of chunks) {
+              handler(chunk)
+            }
+          }
+          if (event === "end") {
+            handler()
+          }
+          return request
+        },
+        destroy: () => undefined,
+      } as unknown as IncomingMessage
+
+      const response = {
+        writeHead: () => undefined,
+        end: (payload?: string) => {
+          body = payload ?? ""
+        },
+      } as unknown as ServerResponse
+
+      const handled = await serveBackgroundUpload(
+        request,
+        response,
+        (clientId) => clientId === "manager-1",
+      )
+      expect(handled).toBe(true)
+      return JSON.parse(body) as { ref: { path: string }; url: string }
+    }
+
+    const assetOnly = await runUpload("/config-assets/backgrounds")
+    expect(assetOnly.url).toContain("/config-assets/backgrounds/")
+    expect(getGameConfig().visuals?.background).toBeUndefined()
+
+    const withGlobal = await runUpload("/config-assets/backgrounds?setGlobal=1")
+    expect(getGameConfig().visuals?.background?.path).toBe(withGlobal.ref.path)
   })
 })

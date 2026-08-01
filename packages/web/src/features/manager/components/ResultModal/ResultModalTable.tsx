@@ -1,5 +1,5 @@
 import {
-  ANSWER_BADGE_COLORS,
+  ANSWER_IDENTITY,
   ANSWERS_LABELS,
 } from "@razzia/web/features/game/utils/constants"
 import { useResultModal } from "@razzia/web/features/manager/contexts/result-modal-context"
@@ -41,7 +41,7 @@ const ResultModalTable = () => {
                   <span
                     className={clsx(
                       "rounded-rz-sm inline-flex items-center gap-1.5 border px-2 py-1 text-xs",
-                      ANSWER_BADGE_COLORS[pa.answerId % 4],
+                      ANSWER_IDENTITY[pa.answerId % 4],
                     )}
                   >
                     <span className="font-bold">{answerLabel}</span>

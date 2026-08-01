@@ -30,7 +30,6 @@ interface QuizzEditorContextType {
     _ref: BackgroundRef | undefined,
     _url: string | undefined,
   ) => void
-  clearBackground: (_fallbackUrl?: string) => void
 }
 
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
@@ -84,11 +83,6 @@ export const QuizzEditorProvider = ({
     setBackgroundUrl(url)
   }
 
-  const clearBackground = (fallbackUrl?: string) => {
-    setBackgroundRef(undefined)
-    setBackgroundUrl(fallbackUrl)
-  }
-
   const addQuestion = () => {
     setQuestions((prev) => [...prev, defaultQuestion()])
     setCurrentIndex(questions.length)
@@ -139,7 +133,6 @@ export const QuizzEditorProvider = ({
         background,
         backgroundUrl,
         setBackground,
-        clearBackground,
       }}
     >
       {children}

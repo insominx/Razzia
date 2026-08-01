@@ -1,8 +1,3 @@
-export const stripDataUrlBase64 = (dataBase64: string): string =>
-  dataBase64.includes(",")
-    ? dataBase64.slice(dataBase64.indexOf(",") + 1)
-    : dataBase64
-
 export const detectImageMimeType = (data: Buffer | Uint8Array): string | null => {
   if (data.length >= 8) {
     if (

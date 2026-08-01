@@ -10,6 +10,8 @@ export type Surface = "stage" | "studio"
 
 export type SurfaceDialect = Dialect
 
+export type Register = "dark" | "light"
+
 export interface SurfaceOverride {
   dialect?: SurfaceDialect
   surface: Surface
@@ -18,6 +20,16 @@ export interface SurfaceOverride {
 export const SurfaceOverrideContext = createContext<
   ((override: SurfaceOverride | null) => void) | null
 >(null)
+
+export const isLightRegister = (
+  dialect: SurfaceDialect,
+  surface: Surface,
+): boolean => dialect === "stage-studio" && surface === "studio"
+
+export const resolveRegister = (
+  dialect: SurfaceDialect,
+  surface: Surface,
+): Register => (isLightRegister(dialect, surface) ? "light" : "dark")
 
 export const useSurfaceOverride = ({
   dialect,
@@ -38,21 +50,12 @@ export const useSurfaceOverride = ({
   }, [dialect, setOverride, surface])
 }
 
-const applySurfaceAttributes = (
-  surface: Surface,
-  dialect: SurfaceDialect,
-) => {
-  const root = document.documentElement
-
-  root.dataset.surface = surface
-  root.dataset.dialect = dialect
+const applyRegister = (register: Register) => {
+  document.documentElement.dataset.register = register
 }
 
-const clearSurfaceAttributes = () => {
-  const root = document.documentElement
-
-  delete root.dataset.surface
-  delete root.dataset.dialect
+const clearRegister = () => {
+  delete document.documentElement.dataset.register
 }
 
 export const useSurface = (override: SurfaceOverride | null = null) => {
@@ -68,12 +71,13 @@ export const useSurface = (override: SurfaceOverride | null = null) => {
       ? "studio"
       : "stage")
   const activeDialect = override?.dialect ?? dialect
+  const register = resolveRegister(activeDialect, surface)
 
   useLayoutEffect(() => {
-    applySurfaceAttributes(surface, activeDialect)
-  }, [activeDialect, surface])
+    applyRegister(register)
+  }, [register])
 
   useLayoutEffect(() => () => {
-    clearSurfaceAttributes()
+    clearRegister()
   }, [])
 }

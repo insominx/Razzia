@@ -9,8 +9,7 @@ import {
 } from "@razzia/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import {
-  ANSWER_BADGE_COLORS,
-  ANSWERS_COLORS,
+  ANSWER_IDENTITY,
   ANSWERS_LABELS,
   SFX,
 } from "@razzia/web/features/game/utils/constants"
@@ -118,9 +117,8 @@ const Answers = ({
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
-              className={clsx(ANSWERS_COLORS[key])}
+              className={clsx(ANSWER_IDENTITY[key])}
               label={ANSWERS_LABELS[key]}
-              labelClassName={ANSWER_BADGE_COLORS[key]}
               onClick={handleAnswer(key)}
             >
               {answer}

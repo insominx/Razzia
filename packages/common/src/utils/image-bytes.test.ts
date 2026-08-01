@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  detectImageMimeType,
-  stripDataUrlBase64,
-} from "@razzia/common/utils/image-bytes"
+import { detectImageMimeType } from "@razzia/common/utils/image-bytes"
 
 describe("detectImageMimeType", () => {
   it("detects PNG magic bytes", () => {
@@ -25,12 +22,5 @@ describe("detectImageMimeType", () => {
 
   it("returns null for unknown payloads", () => {
     expect(detectImageMimeType(Buffer.from("not-an-image"))).toBeNull()
-  })
-})
-
-describe("stripDataUrlBase64", () => {
-  it("strips data-url prefixes", () => {
-    expect(stripDataUrlBase64("data:image/png;base64,QUJD")).toBe("QUJD")
-    expect(stripDataUrlBase64("QUJD")).toBe("QUJD")
   })
 })

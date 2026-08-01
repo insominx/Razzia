@@ -1,5 +1,5 @@
 import background from "@razzia/web/assets/background.png"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 type Props =
   | { recipe: "ambient" }
@@ -13,21 +13,23 @@ const Atmosphere = (props: Props) => {
         aria-hidden="true"
       >
         <div className="bg-canvas absolute inset-0" />
-        <div className="bg-[var(--rz-atmosphere-blob)] absolute top-[-70vmin] left-[-50vmin] min-h-[120vmin] min-w-[120vmin] rotate-20 rounded-rz-xl" />
-        <div className="bg-[var(--rz-atmosphere-blob)] absolute right-[-10vmin] bottom-[-45vmin] min-h-[75vmin] min-w-[75vmin] rotate-20 rounded-rz-xl" />
+        <div className="bg-brand-tint absolute top-[-70vmin] left-[-50vmin] min-h-[120vmin] min-w-[120vmin] rotate-20 rounded-rz-xl" />
+        <div className="bg-brand-tint absolute right-[-10vmin] bottom-[-45vmin] min-h-[75vmin] min-w-[75vmin] rotate-20 rounded-rz-xl" />
       </div>
     )
   }
 
-  return <PhotoAtmosphere backgroundUrl={props.backgroundUrl} />
+  return (
+    <PhotoAtmosphere
+      key={props.backgroundUrl ?? "bundled"}
+      backgroundUrl={props.backgroundUrl}
+    />
+  )
 }
 
 const PhotoAtmosphere = ({ backgroundUrl }: { backgroundUrl?: string }) => {
-  const [src, setSrc] = useState(backgroundUrl ?? background)
-
-  useEffect(() => {
-    setSrc(backgroundUrl ?? background)
-  }, [backgroundUrl])
+  const [failed, setFailed] = useState(false)
+  const src = failed ? background : (backgroundUrl ?? background)
 
   return (
     <div
@@ -40,11 +42,7 @@ const PhotoAtmosphere = ({ backgroundUrl }: { backgroundUrl?: string }) => {
         src={src}
         alt=""
         role="presentation"
-        onError={() => {
-          if (src !== background) {
-            setSrc(background)
-          }
-        }}
+        onError={() => setFailed(true)}
       />
       <div className="absolute inset-0 bg-[var(--rz-scrim)]" />
     </div>
