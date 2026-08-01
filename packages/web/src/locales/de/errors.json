@@ -16,7 +16,8 @@
   "manager": {
     "failedToReadConfig": "Spielkonfiguration konnte nicht gelesen werden",
     "invalidPassword": "Ungültiges Passwort",
-    "passwordNotConfigured": "Manager-Passwort ist nicht konfiguriert"
+    "passwordNotConfigured": "Manager-Passwort ist nicht konfiguriert",
+    "unauthorized": "Nicht autorisiert"
   },
   "notFound": {
     "back": "Zurück zur Startseite",

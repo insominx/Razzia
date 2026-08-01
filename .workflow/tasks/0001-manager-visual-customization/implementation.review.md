@@ -111,4 +111,4 @@ Last Edited: 2026-06-26
 - `packages/web/src/features/game/components/GameWrapper.tsx`
 - `pnpm -r run types`
 - `git diff --check`
-- `node C:\Users\mlinh\.codex\skills\.g-skills\bin\workflow-verify.js .workflow/tasks/0001-manager-visual-customization`
+- `node [REDACTED-PATH] .workflow/tasks/0001-manager-visual-customization`

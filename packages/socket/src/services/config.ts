@@ -13,12 +13,13 @@ import { normalizeFilename } from "@razzia/socket/utils/game"
 import fs from "fs"
 import { resolve } from "path"
 
-const inContainerPath = process.env.CONFIG_PATH
+export const getConfigPath = (path = "") => {
+  const configRoot = process.env.CONFIG_PATH
 
-export const getConfigPath = (path = "") =>
-  inContainerPath
-    ? resolve(inContainerPath, path)
+  return configRoot
+    ? resolve(configRoot, path)
     : resolve(process.cwd(), "../../config", path)
+}
 
 export const initConfig = () => {
   const isConfigFolderExists = fs.existsSync(getConfigPath())
@@ -61,20 +62,14 @@ export const getGameConfig = (): GameConfig => {
     throw new Error("Game config not found")
   }
 
-  try {
-    const config = fs.readFileSync(getConfigPath("game.json"), "utf-8")
-    const result = gameConfigValidator.safeParse(JSON.parse(config))
+  const config = fs.readFileSync(getConfigPath("game.json"), "utf-8")
+  const result = gameConfigValidator.safeParse(JSON.parse(config))
 
-    if (!result.success) {
-      throw new Error(result.error.issues[0].message)
-    }
-
-    return result.data
-  } catch (error) {
-    console.error("Failed to read game config:", error)
+  if (!result.success) {
+    throw new Error(result.error.issues[0].message)
   }
 
-  return {} as GameConfig
+  return result.data
 }
 
 export const writeGameConfig = (data: GameConfig): void => {
@@ -90,6 +85,8 @@ export const writeGameConfig = (data: GameConfig): void => {
   )
 }
 
+let configWriteChain: Promise<unknown> = Promise.resolve()
+
 export const updateGameConfig = (
   updater: (_config: GameConfig) => GameConfig,
 ): GameConfig => {
@@ -100,8 +97,53 @@ export const updateGameConfig = (
   return next
 }
 
+/** Serializes async config mutations that await between read and write. */
+export const updateGameConfigAsync = (
+  updater: (_config: GameConfig) => GameConfig,
+): Promise<GameConfig> => {
+  const run = configWriteChain.then(() => updateGameConfig(updater))
+
+  configWriteChain = run.then(
+    () => undefined,
+    () => undefined,
+  )
+
+  return run
+}
+
 export const getQuizzMeta = () =>
   getQuizz().map(({ id, subject }) => ({ id, subject }))
+
+const parseQuizzData = (data: unknown, label: string) => {
+  const result = quizzValidator.safeParse(data)
+
+  if (result.success) {
+    return result.data
+  }
+
+  if (
+    data &&
+    typeof data === "object" &&
+    "visuals" in data &&
+    (data as { visuals?: unknown }).visuals !== undefined
+  ) {
+    const { visuals: _visuals, ...withoutVisuals } = data as {
+      visuals?: unknown
+    } & Record<string, unknown>
+    const stripped = quizzValidator.safeParse(withoutVisuals)
+
+    if (stripped.success) {
+      console.warn(
+        `Stripped invalid visuals from quizz "${label}":`,
+        result.error.issues,
+      )
+
+      return stripped.data
+    }
+  }
+
+  return null
+}
 
 export const getQuizzById = (id: string) => {
   const filePath = getConfigPath(`quizz/${id}.json`)
@@ -110,14 +152,14 @@ export const getQuizzById = (id: string) => {
     throw new Error(`Quizz "${id}" not found`)
   }
 
-  const data = fs.readFileSync(filePath, "utf-8")
-  const result = quizzValidator.safeParse(JSON.parse(data))
+  const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+  const parsed = parseQuizzData(data, id)
 
-  if (!result.success) {
+  if (!parsed) {
     throw new Error(`Invalid quizz "${id}"`)
   }
 
-  return { id, ...result.data }
+  return { id, ...parsed }
 }
 
 export const getQuizz = () => {
@@ -133,17 +175,19 @@ export const getQuizz = () => {
       .filter((file) => file.endsWith(".json"))
 
     const quizz: QuizzWithId[] = files.flatMap((file) => {
-      const data = fs.readFileSync(getConfigPath(`quizz/${file}`), "utf-8")
+      const data = JSON.parse(
+        fs.readFileSync(getConfigPath(`quizz/${file}`), "utf-8"),
+      )
       const id = file.replace(".json", "")
-      const result = quizzValidator.safeParse(JSON.parse(data))
+      const parsed = parseQuizzData(data, file)
 
-      if (!result.success) {
-        console.warn(`Invalid quizz config "${file}":`, result.error.issues)
+      if (!parsed) {
+        console.warn(`Invalid quizz config "${file}"`)
 
         return []
       }
 
-      return [{ id, ...result.data }]
+      return [{ id, ...parsed }]
     })
 
     return quizz

@@ -40,7 +40,7 @@ implementation or verification items.
 - Execution authority: `plan.md`, `progress.md`, and `implementation.md` in this task directory.
 
 The inherited task-0001 batch is intentionally present in the dirty worktree. Baseline configuration is
-restored to password `razzia`, the original background, no quiz override, and `dark-everywhere`.
+restored to password `[REDACTED], the original background, no quiz override, and `dark-everywhere`.
 
 ## Optional next step
 

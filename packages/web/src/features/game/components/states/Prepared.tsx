@@ -1,6 +1,6 @@
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
 import {
-  ANSWERS_COLORS,
+  ANSWER_BADGE_COLORS,
   ANSWERS_LABELS,
 } from "@razzia/web/features/game/utils/constants"
 import clsx from "clsx"
@@ -25,7 +25,7 @@ const Prepared = ({ data: { totalAnswers, questionNumber } }: Props) => {
             key={key}
             className={clsx(
               "button rounded-rz-lg flex aspect-square h-full w-full items-center justify-center",
-              ANSWERS_COLORS[key],
+              ANSWER_BADGE_COLORS[key],
             )}
           >
             <span className="font-mono text-2xl font-bold md:text-3xl">

@@ -25,10 +25,14 @@ export const emitConfig = (socket: SocketContext["socket"]) => {
 }
 
 class Manager {
-  private loggedClients = new Set()
+  private loggedClients = new Set<string>()
 
   isLogged(socket: Socket) {
     return this.loggedClients.has(getClientId(socket))
+  }
+
+  isLoggedByClientId(clientId: string) {
+    return this.loggedClients.has(clientId)
   }
 
   login(socket: Socket) {
@@ -43,14 +47,19 @@ class Manager {
     socket: Socket,
     handler: (..._args: T) => void,
   ) {
-    return (..._args: T) => {
+    return (...args: T) => {
       if (!this.isLogged(socket)) {
         socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+        const maybeCallback = args[args.length - 1]
+
+        if (typeof maybeCallback === "function") {
+          maybeCallback({ error: "errors:manager.unauthorized" })
+        }
 
         return
       }
 
-      handler(..._args)
+      handler(...args)
     }
   }
 }

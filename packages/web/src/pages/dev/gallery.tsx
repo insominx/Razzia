@@ -1,4 +1,5 @@
 import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
+import Atmosphere from "@razzia/web/components/Atmosphere"
 import NotFound from "@razzia/web/components/NotFound"
 import Answers from "@razzia/web/features/game/components/states/Answers"
 import Leaderboard from "@razzia/web/features/game/components/states/Leaderboard"
@@ -13,6 +14,10 @@ import Start from "@razzia/web/features/game/components/states/Start"
 import Wait from "@razzia/web/features/game/components/states/Wait"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
+import {
+  ANSWER_BADGE_COLORS,
+  ANSWERS_COLORS,
+} from "@razzia/web/features/game/utils/constants"
 import {
   type Surface,
   type SurfaceDialect,
@@ -401,27 +406,23 @@ const Gallery = () => {
             <p className="font-mono text-sm text-text-muted">4 / 4 channels</p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {ANSWER_SWATCHES.map((swatch) => (
+            {ANSWER_SWATCHES.map((swatch, index) => (
               <div
                 key={swatch.label}
                 className={clsx(
-                  "flex items-center gap-3 rounded-rz-md border p-3",
-                  swatch.border,
-                  swatch.tint,
+                  "flex items-center gap-3 rounded-rz-md border-2 p-3",
+                  ANSWERS_COLORS[index],
                 )}
               >
                 <span
                   className={clsx(
-                    "text-on-answer font-mono grid size-10 place-items-center rounded-rz-sm border-2 text-lg font-bold",
-                    swatch.accent,
-                    swatch.border,
+                    "font-mono grid size-10 place-items-center rounded-rz-sm border-2 text-lg font-bold",
+                    ANSWER_BADGE_COLORS[index],
                   )}
                 >
                   {swatch.label}
                 </span>
-                <span className="font-semibold text-text-primary">
-                  Answer {swatch.label}
-                </span>
+                <span className="font-semibold">Answer {swatch.label}</span>
               </div>
             ))}
           </div>
@@ -471,7 +472,7 @@ const Gallery = () => {
               </p>
             </header>
             <div className="relative flex min-h-[680px] flex-col overflow-hidden bg-canvas p-4">
-              <div className="pointer-events-none absolute inset-0 bg-brand-tint opacity-40" />
+              <Atmosphere recipe="photo" />
               <div className="relative z-10 flex min-h-0 flex-1 flex-col">
                 {currentState.render()}
               </div>

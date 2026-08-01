@@ -21,7 +21,9 @@
     "readFailed": "No se pudo leer la imagen",
     "updated": "Fondo actualizado",
     "upload": "Subir fondo",
-    "uploading": "Subiendo"
+    "uploading": "Subiendo",
+    "globalDefaultHelp": "Fondo global predeterminado para partidas sin override del cuestionario.",
+    "uploadLimits": "PNG, JPEG, WebP o GIF de hasta 5 MB."
   },
   "quizz": {
     "create": "Crear cuestionario",

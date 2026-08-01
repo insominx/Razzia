@@ -95,19 +95,17 @@ const ManagerGamePage = () => {
       ? GAME_STATE_COMPONENTS_MANAGER[status.name]
       : null
 
-  if (!status) {
-    return null
-  }
-
   return (
     <GameWrapper
-      statusName={status.name}
+      statusName={status?.name}
       backgroundUrl={visuals.backgroundUrl}
-      onNext={handleSkip}
-      onBack={status.name === STATUS.SHOW_ROOM ? handleBack : undefined}
+      onNext={status ? handleSkip : undefined}
+      onBack={status?.name === STATUS.SHOW_ROOM ? handleBack : undefined}
       manager
     >
-      {CurrentComponent && <CurrentComponent data={status.data as never} />}
+      {CurrentComponent && status && (
+        <CurrentComponent data={status.data as never} />
+      )}
     </GameWrapper>
   )
 }

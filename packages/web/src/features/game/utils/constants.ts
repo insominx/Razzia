@@ -14,19 +14,19 @@ import Wait from "@razzia/web/features/game/components/states/Wait"
 import { STATUS } from "@razzia/common/types/game/status"
 
 export const ANSWERS_COLORS = [
-  "border-answer-a-border bg-answer-a-tint text-text-primary",
-  "border-answer-b-border bg-answer-b-tint text-text-primary",
-  "border-answer-c-border bg-answer-c-tint text-text-primary",
-  "border-answer-d-border bg-answer-d-tint text-text-primary",
+  "border-answer-a-border bg-answer-a text-on-answer",
+  "border-answer-b-border bg-answer-b text-on-answer",
+  "border-answer-c-border bg-answer-c text-on-answer",
+  "border-answer-d-border bg-answer-d text-on-answer",
 ]
 
 export const ANSWERS_LABELS = ["A", "B", "C", "D"]
 
 export const ANSWER_BADGE_COLORS = [
-  "border-answer-a-border bg-answer-a-tint text-answer-a",
-  "border-answer-b-border bg-answer-b-tint text-answer-b",
-  "border-answer-c-border bg-answer-c-tint text-answer-c",
-  "border-answer-d-border bg-answer-d-tint text-answer-d",
+  "border-answer-a-border bg-answer-a text-on-answer",
+  "border-answer-b-border bg-answer-b text-on-answer",
+  "border-answer-c-border bg-answer-c text-on-answer",
+  "border-answer-d-border bg-answer-d text-on-answer",
 ]
 
 export const GAME_STATES = {

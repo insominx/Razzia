@@ -86,10 +86,12 @@ Hue alone is never sufficient.
 
 ## Scrim contract
 
-`<Atmosphere recipe="photo">` owns the layer order: canvas → host image → `--rz-scrim` → vignette
-→ content. The editor preview and live game use that same recipe. `--rz-scrim` is
-`rgba(6, 9, 15, 0.75)`: the lowest tested opacity that met WCAG AA over all four X1 fixtures
+`<Atmosphere recipe="photo">` owns the layer order: canvas → host image → `--rz-scrim`
+→ content (`z-10`). The editor preview and live game use that same recipe. `--rz-scrim` is
+`rgba(6, 9, 15, 0.75)`: the lowest tested opacity that met WCAG AA over the four X1 fixtures
 (minimum measured contrast 8.02:1) and passed the user-owned recognisability rubric at G4.
+Photo text roles assume the dark stage register; studio authoring chrome should not place
+`text-primary` directly on photo without that scrim.
 
 No component may compensate for an unbounded photo with a local neutral text shadow after its
 directory is converted. `<Atmosphere recipe="ambient">` is the separate no-photo composition for
@@ -133,7 +135,7 @@ converted and new work must use semantic roles.
 | `src/pages/dev/gallery.tsx` | `converted` | Reference and fixture surface. |
 | `src/components/Atmosphere.tsx` | `converted` | Sole owner of the ambient and photo layer recipes. |
 | `src/components/**` | `converted` | Shared form, dialog, error, loading, background, and atmosphere owners use roles. |
-| `src/features/game/components/AnswerButton.tsx`, `states/Answers.tsx`, `utils/constants.ts` | `converted` | Role-based deck cards; answer identity uses tint, border, accent, and a mono badge. |
+| `src/features/game/components/AnswerButton.tsx`, `states/Answers.tsx`, `utils/constants.ts` | `converted` | Role-based deck cards; answer identity uses accent fill, border, `text-on-answer`, and a mono badge for stage mass under the scrim. |
 | `src/features/game/**` | `converted` | Join chrome, all 11 states, and answer identity use role tokens. |
 | `src/features/manager/components/configurations/**` | `converted` | Role-token studio surface verified in both dialects. |
 | `src/features/manager/**` | `converted` | Configuration and result-modal owners use role tokens in both dialects. |

@@ -398,7 +398,7 @@ fallback. One explicit consequence: connection/loading states render in the stag
   **Allow access to file URLs** for the ChatGPT Chrome Extension.
 
 - 2026-07-31 — Resumed with full environment access. `pnpm install --frozen-lockfile` linked all 277
-  packages. The initially observed ports belonged to `D:\Projects\class\Razzia`; those exact processes
+  packages. The initially observed ports belonged to `[REDACTED-PATH]`; those exact processes
   were stopped and the correct checkout was started, clearing G1 on port 3001. Normalized the Windows
   worktree's CRLF checkout to repository LF so the configured linebreak gate could run without semantic
   churn. Fixed inherited 0001 lint findings (constructor option objects, guarded FileReader results,

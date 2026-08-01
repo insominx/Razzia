@@ -138,7 +138,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
               >
                 {top[1].username}
               </p>
-              <div className="bg-brand-tint border-brand-border text-text-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
+              <div className="bg-panel border-border text-text-primary shadow-bloom-brand flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
                 <Medal rank={2} />
                 <p className="font-mono text-3xl font-bold md:text-4xl">
                   {top[1].points}
@@ -166,7 +166,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
             >
               {top[0].username}
             </p>
-            <div className="bg-brand-tint border-brand-border text-text-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
+            <div className="bg-panel border-border text-text-primary shadow-bloom-brand flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
               <Medal rank={1} />
               <p className="font-mono text-3xl font-bold md:text-4xl">
                 {top[0].points}
@@ -193,7 +193,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
               >
                 {top[2].username}
               </p>
-              <div className="bg-brand-tint border-brand-border text-text-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
+              <div className="bg-panel border-border text-text-primary shadow-bloom-brand flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
                 <Medal rank={3} />
 
                 <p className="font-mono text-3xl font-bold md:text-4xl">

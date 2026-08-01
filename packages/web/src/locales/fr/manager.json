@@ -21,7 +21,9 @@
     "readFailed": "Impossible de lire l’image",
     "updated": "Arrière-plan mis à jour",
     "upload": "Importer un arrière-plan",
-    "uploading": "Importation en cours"
+    "uploading": "Importation en cours",
+    "globalDefaultHelp": "Arrière-plan global par défaut pour les parties sans override de quizz.",
+    "uploadLimits": "PNG, JPEG, WebP ou GIF jusqu'à 5 Mo."
   },
   "quizz": {
     "create": "Créer un quizz",

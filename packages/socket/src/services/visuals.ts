@@ -1,3 +1,7 @@
+import {
+  detectImageMimeType,
+  stripDataUrlBase64,
+} from "@razzia/common/utils/image-bytes"
 import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 import type { GameConfig } from "@razzia/common/validators/game-config"
 import type { Quizz } from "@razzia/common/types/game"
@@ -19,7 +23,8 @@ export const BACKGROUND_ASSETS_PUBLIC_PREFIX = `${CONFIG_ASSETS_PUBLIC_PREFIX}/b
 
 export const BACKGROUND_UPLOAD_MAX_BYTES = 5 * 1024 * 1024
 
-export const SOCKET_MAX_HTTP_BUFFER_SIZE = 8 * 1024 * 1024
+/** Socket traffic stays at the Socket.IO default; large backgrounds use HTTP. */
+export const SOCKET_MAX_HTTP_BUFFER_SIZE = 1 * 1024 * 1024
 
 const contentTypes: Record<string, string> = {
   ".gif": "image/gif",
@@ -79,16 +84,7 @@ export const storeBackgroundAsset = ({
   mimeType,
   dataBase64,
 }: StoreBackgroundAssetRequest): { ref: BackgroundRef; url: string } => {
-  const extension = extensionsByMimeType[mimeType]
-
-  if (!extension) {
-    throw new Error("errors:visuals.unsupportedBackgroundType")
-  }
-
-  const normalizedBase64 = dataBase64.includes(",")
-    ? dataBase64.slice(dataBase64.indexOf(",") + 1)
-    : dataBase64
-
+  const normalizedBase64 = stripDataUrlBase64(dataBase64)
   const data = Buffer.from(normalizedBase64, "base64")
 
   if (data.byteLength === 0) {
@@ -98,6 +94,18 @@ export const storeBackgroundAsset = ({
   if (data.byteLength > BACKGROUND_UPLOAD_MAX_BYTES) {
     throw new Error("errors:visuals.backgroundTooLarge")
   }
+
+  const sniffed = detectImageMimeType(data)
+
+  if (!sniffed || !(sniffed in extensionsByMimeType)) {
+    throw new Error("errors:visuals.unsupportedBackgroundType")
+  }
+
+  if (mimeType && mimeType !== sniffed) {
+    throw new Error("errors:visuals.unsupportedBackgroundType")
+  }
+
+  const extension = extensionsByMimeType[sniffed]
 
   ensureBackgroundAssetsDirectory()
 
@@ -123,6 +131,17 @@ export const storeBackgroundAsset = ({
   return { ref, url }
 }
 
+export const storeBackgroundAssetFromBytes = (
+  fileName: string,
+  data: Buffer,
+  claimedMimeType?: string,
+): { ref: BackgroundRef; url: string } =>
+  storeBackgroundAsset({
+    fileName,
+    mimeType: claimedMimeType ?? detectImageMimeType(data) ?? "",
+    dataBase64: data.toString("base64"),
+  })
+
 export const deleteBackgroundAsset = (background: BackgroundRef): void => {
   const filePath = getBackgroundAssetPath(background.path)
 
@@ -131,6 +150,23 @@ export const deleteBackgroundAsset = (background: BackgroundRef): void => {
   }
 
   fs.unlinkSync(filePath)
+}
+
+export const replaceBackgroundAsset = (
+  previous: BackgroundRef | undefined,
+  request: StoreBackgroundAssetRequest,
+): { ref: BackgroundRef; url: string } => {
+  const uploaded = storeBackgroundAsset(request)
+
+  if (previous && previous.path !== uploaded.ref.path) {
+    try {
+      deleteBackgroundAsset(previous)
+    } catch (error) {
+      console.error("Failed to delete previous background asset:", error)
+    }
+  }
+
+  return uploaded
 }
 
 export const resolveVisuals = (
@@ -195,8 +231,95 @@ export const serveConfigAsset = (
     "Content-Type":
       contentTypes[extname(filePath).toLowerCase()] ??
       "application/octet-stream",
+    "X-Content-Type-Options": "nosniff",
   })
   fs.createReadStream(filePath).pipe(response)
+
+  return true
+}
+
+const readRequestBody = (
+  request: IncomingMessage,
+  maxBytes: number,
+): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let total = 0
+
+    request.on("data", (chunk: Buffer) => {
+      total += chunk.length
+
+      if (total > maxBytes) {
+        reject(new Error("errors:visuals.backgroundTooLarge"))
+        request.destroy()
+
+        return
+      }
+
+      chunks.push(chunk)
+    })
+    request.on("end", () => resolve(Buffer.concat(chunks)))
+    request.on("error", reject)
+  })
+
+export const serveBackgroundUpload = async (
+  request: IncomingMessage,
+  response: ServerResponse,
+  isAuthorized: (_clientId: string) => boolean,
+): Promise<boolean> => {
+  if (!request.url) {
+    return false
+  }
+
+  const url = new URL(request.url, "http://localhost")
+
+  if (url.pathname !== BACKGROUND_ASSETS_PUBLIC_PREFIX) {
+    return false
+  }
+
+  if (request.method !== "POST") {
+    response.writeHead(405, { Allow: "POST" })
+    response.end()
+
+    return true
+  }
+
+  const clientId = request.headers["x-client-id"]
+
+  if (typeof clientId !== "string" || !isAuthorized(clientId)) {
+    response.writeHead(401, { "Content-Type": "application/json" })
+    response.end(JSON.stringify({ error: "errors:manager.unauthorized" }))
+
+    return true
+  }
+
+  try {
+    const fileNameHeader = request.headers["x-file-name"]
+    const fileName =
+      typeof fileNameHeader === "string" && fileNameHeader.length > 0
+        ? fileNameHeader
+        : "background.png"
+    const claimedMime =
+      typeof request.headers["content-type"] === "string"
+        ? request.headers["content-type"].split(";")[0].trim()
+        : undefined
+    const data = await readRequestBody(
+      request,
+      BACKGROUND_UPLOAD_MAX_BYTES + 1024,
+    )
+    const uploaded = storeBackgroundAssetFromBytes(fileName, data, claimedMime)
+
+    response.writeHead(201, { "Content-Type": "application/json" })
+    response.end(JSON.stringify(uploaded))
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "errors:visuals.backgroundUploadFailed"
+
+    response.writeHead(400, { "Content-Type": "application/json" })
+    response.end(JSON.stringify({ error: message }))
+  }
 
   return true
 }

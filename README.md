@@ -183,7 +183,7 @@ Quiz Options:
   - `cooldown`: Time in seconds before answers are revealed (3-15)
   - `time`: Time in seconds allowed to answer (5-120)
 
-Background precedence is **quiz override → global default → bundled fallback**. Razzia resolves that choice when a game is created and keeps it fixed for the whole live session, including player joins and reconnects. Changing a background affects newly created games, not one already in progress. On play and editor-preview surfaces, the selected image is composited beneath a measured 75% dark scrim that guarantees the documented contrast floor across Razzia's adversarial background fixture set.
+Background precedence is **quiz override → global default → bundled fallback**. Razzia resolves that choice when a game is created and keeps it fixed for the whole live session, including player joins and reconnects. Changing a background affects newly created games, not one already in progress. On play and editor-preview surfaces, the selected image is composited beneath a measured 75% dark scrim that met the documented contrast floor on Razzia's four X1 adversarial background fixtures (minimum measured 8.02:1).
 
 ## 🎮 How to Play
 

@@ -39,7 +39,12 @@ const AnswerButton = ({
         {children}
       </p>
       {correct !== undefined && (
-        <CorrectIcon className="size-4 stroke-6 md:size-6" />
+        <CorrectIcon
+          className={clsx(
+            "size-4 stroke-6 md:size-6",
+            correct ? "text-success" : "text-danger",
+          )}
+        />
       )}
     </button>
   )

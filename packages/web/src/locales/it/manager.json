@@ -21,7 +21,9 @@
     "readFailed": "Impossibile leggere l'immagine",
     "updated": "Sfondo aggiornato",
     "upload": "Carica sfondo",
-    "uploading": "Caricamento"
+    "uploading": "Caricamento",
+    "globalDefaultHelp": "Sfondo globale predefinito per le partite senza override del quiz.",
+    "uploadLimits": "PNG, JPEG, WebP o GIF fino a 5 MB."
   },
   "quizz": {
     "create": "Crea quiz",

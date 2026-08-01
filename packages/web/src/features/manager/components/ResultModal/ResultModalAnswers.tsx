@@ -1,7 +1,7 @@
 import { MEDIA_TYPES, NO_TIME_LIMIT } from "@razzia/common/constants"
 import type { QuestionMedia } from "@razzia/common/types/game"
 import {
-  ANSWERS_COLORS,
+  ANSWER_BADGE_COLORS,
   ANSWERS_LABELS,
 } from "@razzia/web/features/game/utils/constants"
 import { useResultModal } from "@razzia/web/features/manager/contexts/result-modal-context"
@@ -63,7 +63,7 @@ const ResultModalAnswers = () => {
       count: questionResult.playerAnswers.filter((pa) => pa.answerId === ai)
         .length,
       isCorrect: questionResult.solutions.includes(ai),
-      color: ANSWERS_COLORS[ai % 4],
+      color: ANSWER_BADGE_COLORS[ai % 4],
       answerLabel: ANSWERS_LABELS[ai % 4],
     })),
     {

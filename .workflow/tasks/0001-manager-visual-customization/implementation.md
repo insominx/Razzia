@@ -108,7 +108,7 @@ Last Edited: 2026-06-29
 | Fresh player join receives visuals | verified by type/build | `GAME.SUCCESS_JOIN` payload changed to `{ gameId, visuals }`; `Username` stores visuals before navigation | Manual join flow pending. |
 | Live game renders resolved background | verified by type/build | Game create resolves visuals, `Game` stores them, stores pass `visuals.backgroundUrl` to `GameWrapper` | Manual game screenshot pending. |
 | Type contracts stay aligned | verified | `pnpm -r run types` and `pnpm build` exited 0 | None for compiled contracts. |
-| Workflow verifier passes | verified | `node C:\Users\mlinh\.codex\skills\.g-skills\bin\workflow-verify.js .workflow/tasks/0001-manager-visual-customization` result: pass | No scripted checks configured. |
+| Workflow verifier passes | verified | `node [REDACTED-PATH] .workflow/tasks/0001-manager-visual-customization` result: pass | No scripted checks configured. |
 | Missing upload acknowledgement cannot write orphaned assets | verified by code/type/build | `BACKGROUND_UPLOAD` returns before `storeBackgroundAsset` unless `callback` is a function; type/build checks pass | Runtime socket probe was attempted but port 3001 was occupied. |
 | Per-quiz override can be set and persisted without clobbering global | verified by type/build | `BACKGROUND_ASSET_UPLOAD` writes no config; override ref flows through `QUIZZ.SAVE`/`UPDATE`; `pnpm -r run types` and `pnpm build` pass | Manual browser set/reload of a quiz override pending. |
 | Quiz editor preview uses resolved background | verified by type/build | `QUIZZ.DATA` returns `resolvedVisuals`; `QuestionEditor` renders `backgroundUrl ?? bundled`; unsaved upload previews from ack `url` | Manual editor matrix (override/global/fallback) pending. |
@@ -178,7 +178,7 @@ Last Edited: 2026-06-29
   - `pnpm --filter @razzia/web run types`
   - `pnpm -r run types`
   - `pnpm build`
-  - `node C:\Users\mlinh\.codex\skills\.g-skills\bin\workflow-verify.js .workflow/tasks/0001-manager-visual-customization`
+  - `node [REDACTED-PATH] .workflow/tasks/0001-manager-visual-customization`
 
 ## Continue from here
 

@@ -4,7 +4,7 @@ import {
 } from "@razzia/common/types/visuals"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useRouterState } from "@tanstack/react-router"
-import { createContext, useContext, useEffect } from "react"
+import { createContext, useContext, useLayoutEffect } from "react"
 
 export type Surface = "stage" | "studio"
 
@@ -29,13 +29,30 @@ export const useSurfaceOverride = ({
     throw new Error("useSurfaceOverride must be used inside GameLayout")
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setOverride({ dialect, surface })
 
     return () => {
       setOverride(null)
     }
   }, [dialect, setOverride, surface])
+}
+
+const applySurfaceAttributes = (
+  surface: Surface,
+  dialect: SurfaceDialect,
+) => {
+  const root = document.documentElement
+
+  root.dataset.surface = surface
+  root.dataset.dialect = dialect
+}
+
+const clearSurfaceAttributes = () => {
+  const root = document.documentElement
+
+  delete root.dataset.surface
+  delete root.dataset.dialect
 }
 
 export const useSurface = (override: SurfaceOverride | null = null) => {
@@ -52,15 +69,11 @@ export const useSurface = (override: SurfaceOverride | null = null) => {
       : "stage")
   const activeDialect = override?.dialect ?? dialect
 
-  useEffect(() => {
-    const root = document.documentElement
-
-    root.dataset.surface = surface
-    root.dataset.dialect = activeDialect
-
-    return () => {
-      delete root.dataset.surface
-      delete root.dataset.dialect
-    }
+  useLayoutEffect(() => {
+    applySurfaceAttributes(surface, activeDialect)
   }, [activeDialect, surface])
+
+  useLayoutEffect(() => () => {
+    clearSurfaceAttributes()
+  }, [])
 }

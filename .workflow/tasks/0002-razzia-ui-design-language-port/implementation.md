@@ -67,7 +67,7 @@ the completion summary in `artifacts/slice6/audit.md`.
 ## Change-control outcome
 
 The inherited task-0001 work remains in the same dirty worktree and was preserved. The baseline runtime
-configuration was restored to password `razzia`, the original global background, no quiz override, and
+configuration was restored to password `[REDACTED], the original global background, no quiz override, and
 `dark-everywhere`. No commit or pull request was created.
 
 ## Completion

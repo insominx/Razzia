@@ -87,7 +87,7 @@ const Responses = ({
               key={key}
               className={clsx(ANSWERS_COLORS[key], {
                 // oxlint-disable-next-line typescript/no-unnecessary-condition
-                "opacity-65": responses && !solutions.includes(key),
+                "opacity-80": responses && !solutions.includes(key),
               })}
               label={ANSWERS_LABELS[key]}
               labelClassName={ANSWER_BADGE_COLORS[key]}

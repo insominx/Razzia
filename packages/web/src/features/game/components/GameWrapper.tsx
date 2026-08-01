@@ -3,10 +3,7 @@ import type { Status } from "@razzia/common/types/game/status"
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import Button from "@razzia/web/components/Button"
 import Loader from "@razzia/web/components/Loader"
-import {
-  useEvent,
-  useSocket,
-} from "@razzia/web/features/game/contexts/socket-context"
+import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import { MANAGER_SKIP_BTN } from "@razzia/web/features/game/utils/constants"
@@ -31,7 +28,6 @@ const GameWrapper = ({
   onBack,
   manager,
 }: Props) => {
-  const { isConnected } = useSocket()
   const { player } = usePlayerStore()
   const { questionStates, setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
@@ -65,7 +61,7 @@ const GameWrapper = ({
       <Atmosphere recipe="photo" backgroundUrl={backgroundUrl} />
 
       <div className="z-10 flex w-full flex-1 flex-col justify-between">
-        {!isConnected && !statusName ? (
+        {!statusName ? (
           <div className="flex h-full w-full flex-1 flex-col items-center justify-center">
             <Loader className="h-30" />
             <h1 className="text-text-primary text-4xl font-bold">

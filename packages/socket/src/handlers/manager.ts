@@ -8,11 +8,15 @@ import {
   getGameConfig,
   updateGameConfig,
 } from "@razzia/socket/services/config"
+import { verifyManagerAuth } from "@razzia/socket/services/manager-auth"
 import manager, { emitConfig } from "@razzia/socket/services/manager"
 import {
   deleteBackgroundAsset,
+  getBackgroundAssetPath,
+  replaceBackgroundAsset,
   storeBackgroundAsset,
 } from "@razzia/socket/services/visuals"
+import fs from "fs"
 
 export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
@@ -38,7 +42,8 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
         undefined
 
       try {
-        uploaded = storeBackgroundAsset(request)
+        const previous = getGameConfig().visuals?.background
+        uploaded = replaceBackgroundAsset(previous, request)
         const background = uploaded.ref
 
         updateGameConfig((config) => ({
@@ -64,7 +69,6 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           }
         }
 
-        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
         callback({ error: message })
       }
     }),
@@ -92,7 +96,6 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.backgroundUploadFailed"
 
-        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
         callback({ error: message })
       }
     }),
@@ -108,13 +111,30 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           throw new Error(result.error.issues[0].message)
         }
 
-        updateGameConfig((config) => ({
-          ...config,
-          visuals: {
-            ...config.visuals,
-            background: result.data,
-          },
-        }))
+        const assetPath = getBackgroundAssetPath(result.data.path)
+
+        if (!assetPath || !fs.existsSync(assetPath)) {
+          throw new Error("errors:visuals.invalidBackgroundPath")
+        }
+
+        let previous: Parameters<typeof deleteBackgroundAsset>[0] | undefined
+
+        updateGameConfig((config) => {
+          previous = config.visuals?.background
+
+          return {
+            ...config,
+            visuals: {
+              ...config.visuals,
+              background: result.data,
+            },
+          }
+        })
+
+        if (previous && previous.path !== result.data.path) {
+          deleteBackgroundAsset(previous)
+        }
+
         emitConfig(socket)
         callback?.({ ok: true })
       } catch (error) {
@@ -124,7 +144,6 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.backgroundSetFailed"
 
-        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
         callback?.({ error: message })
       }
     }),
@@ -134,7 +153,10 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR,
     manager.withAuth(socket, (callback) => {
       try {
+        let previous: Parameters<typeof deleteBackgroundAsset>[0] | undefined
+
         updateGameConfig((config) => {
+          previous = config.visuals?.background
           const { background: _background, ...visuals } = config.visuals ?? {}
 
           return {
@@ -142,13 +164,17 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             visuals: Object.keys(visuals).length ? visuals : undefined,
           }
         })
+
+        if (previous) {
+          deleteBackgroundAsset(previous)
+        }
+
         emitConfig(socket)
         callback?.({ ok: true })
       } catch (error) {
         console.error("Failed to clear global background:", error)
         const message = "errors:visuals.backgroundClearFailed"
 
-        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
         callback?.({ error: message })
       }
     }),
@@ -180,7 +206,6 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.dialectSetFailed"
 
-        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, message)
         callback?.({ error: message })
       }
     }),
@@ -193,21 +218,10 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(EVENTS.MANAGER.AUTH, (password) => {
     try {
       const config = getGameConfig()
+      const auth = verifyManagerAuth(password, config)
 
-      if (config.managerPassword === "PASSWORD") {
-        socket.emit(
-          EVENTS.MANAGER.ERROR_MESSAGE,
-          "errors:manager.passwordNotConfigured",
-        )
-
-        return
-      }
-
-      if (password !== config.managerPassword) {
-        socket.emit(
-          EVENTS.MANAGER.ERROR_MESSAGE,
-          "errors:manager.invalidPassword",
-        )
+      if (!auth.ok) {
+        socket.emit(EVENTS.MANAGER.ERROR_MESSAGE, auth.error)
 
         return
       }

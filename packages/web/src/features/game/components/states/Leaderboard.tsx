@@ -91,7 +91,7 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
                   ease: CALM_EASE,
                 },
               }}
-              className="bg-brand-tint border-brand-border text-text-primary rounded-rz-lg flex w-full justify-between border p-3 text-3xl font-bold"
+              className="bg-panel border-border text-text-primary shadow-bloom-brand rounded-rz-lg flex w-full justify-between border p-3 text-3xl font-bold"
             >
               <span className="flex items-center gap-2">
                 {username}
