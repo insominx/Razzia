@@ -102,13 +102,22 @@ Main game settings:
 
 ```json
 {
-  "managerPassword": "PASSWORD"
+  "managerPassword": "PASSWORD",
+  "visuals": {
+    "background": {
+      "kind": "config-asset",
+      "path": "example-background.webp"
+    }
+  }
 }
 ```
 
 Options:
 
 - `managerPassword`: The master password for accessing the manager interface. **Must be changed from the default `"PASSWORD"` value**, otherwise manager access is blocked.
+- `visuals.background`: Optional instance-wide background. The manager's **Visuals** tab uploads PNG, JPEG, WebP, or GIF images up to 5 MB and writes this portable config-asset reference for you.
+
+Uploaded files are stored in `config/assets/backgrounds/`. Keep that folder together with `config/game.json` and your quizzes when copying, backing up, or mounting a configuration. The repository ignores `config/` by default, so these files travel with the Docker volume or a copied config directory unless you deliberately change your Git workflow.
 
 ### 2. Quiz Configuration (`config/quizz/*.json`)
 
@@ -124,6 +133,12 @@ Example quiz configuration (`config/quizz/example.json`):
 ```json
 {
   "subject": "Example Quiz",
+  "visuals": {
+    "background": {
+      "kind": "config-asset",
+      "path": "quiz-background.webp"
+    }
+  },
   "questions": [
     {
       "question": "What is the correct answer?",
@@ -157,6 +172,7 @@ Example quiz configuration (`config/quizz/example.json`):
 Quiz Options:
 
 - `subject`: Title/topic of the quiz
+- `visuals.background`: Optional per-quiz override uploaded from the quiz editor. When omitted, the quiz inherits the global background from `config/game.json`; when neither is configured, the bundled background is used.
 - `questions`: Array of question objects containing:
   - `question`: The question text
   - `answers`: Array of possible answers (2-4 options)
@@ -166,6 +182,8 @@ Quiz Options:
   - `solutions`: Array of correct answer indices (0-based). Use multiple indices for multi-answer questions
   - `cooldown`: Time in seconds before answers are revealed (3-15)
   - `time`: Time in seconds allowed to answer (5-120)
+
+Background precedence is **quiz override → global default → bundled fallback**. Razzia resolves that choice when a game is created and keeps it fixed for the whole live session, including player joins and reconnects. Changing a background affects newly created games, not one already in progress. On play and editor-preview surfaces, the selected image is composited beneath a measured 75% dark scrim that guarantees the documented contrast floor across Razzia's adversarial background fixture set.
 
 ## 🎮 How to Play
 

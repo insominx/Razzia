@@ -11,9 +11,9 @@ const QuestionEditorTitle = () => {
   }
 
   return (
-    <div className="z-10 rounded-xl bg-white shadow-sm">
+    <div className="bg-surface border-border rounded-rz-lg z-10 border">
       <input
-        className="w-full resize-none p-4 text-center text-xl font-semibold text-gray-800 outline-none placeholder:text-gray-400"
+        className="text-text-primary placeholder:text-text-muted w-full resize-none bg-transparent p-4 text-center text-xl font-semibold outline-none"
         placeholder={t("quizz:question.placeholder")}
         value={currentQuestion.question}
         onChange={handleChangeQuestion}

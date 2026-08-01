@@ -1,4 +1,5 @@
 import {
+  ANSWER_BADGE_COLORS,
   ANSWERS_COLORS,
   ANSWERS_LABELS,
 } from "@razzia/web/features/game/utils/constants"
@@ -56,7 +57,7 @@ const QuestionEditorAnswers = () => {
   return (
     <div className="z-10 flex flex-col gap-3">
       <div className="flex items-center justify-between px-1">
-        <div className="rounded-lg bg-white px-2 py-1 text-sm font-semibold text-gray-500">
+        <div className="bg-surface border-border text-text-muted rounded-rz-md border px-2 py-1 text-sm font-semibold">
           {currentQuestion.answers.length}
           {t("quizz:answersCountSuffix")}
         </div>
@@ -64,14 +65,14 @@ const QuestionEditorAnswers = () => {
           <button
             onClick={removeAnswer}
             disabled={currentQuestion.answers.length <= 2}
-            className="flex size-7 items-center justify-center rounded-lg bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-40"
+            className="bg-panel border-border text-text-body hover:bg-brand-tint rounded-rz-md flex size-7 items-center justify-center border transition-colors ease-calm disabled:opacity-40"
           >
             <Minus className="size-4" />
           </button>
           <button
             onClick={addAnswer}
             disabled={currentQuestion.answers.length >= 4}
-            className="flex size-7 items-center justify-center rounded-lg bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-40"
+            className="bg-panel border-border text-text-body hover:bg-brand-tint rounded-rz-md flex size-7 items-center justify-center border transition-colors ease-calm disabled:opacity-40"
           >
             <Plus className="size-4" />
           </button>
@@ -86,16 +87,21 @@ const QuestionEditorAnswers = () => {
             <div
               key={i}
               className={clsx(
-                "flex items-center gap-3 rounded-2xl px-4 py-6",
+                "flex items-center gap-3 rounded-rz-xl border-2 px-4 py-6",
                 ANSWERS_COLORS[i],
               )}
             >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-black/20 text-sm font-bold text-white md:size-8 md:text-base">
+              <span
+                className={clsx(
+                  "font-mono flex size-8 shrink-0 items-center justify-center rounded-rz-sm border-2 text-base font-bold md:size-10 md:text-lg",
+                  ANSWER_BADGE_COLORS[i],
+                )}
+              >
                 {ANSWERS_LABELS[i]}
               </span>
-              <div className="flex flex-1 items-center justify-between gap-1.5 drop-shadow-md">
+              <div className="flex flex-1 items-center justify-between gap-1.5">
                 <input
-                  className="w-full bg-transparent font-semibold text-white placeholder-white/70 outline-none"
+                  className="text-text-primary placeholder:text-text-muted w-full bg-transparent font-semibold outline-none"
                   placeholder={t("quizz:addAnswerPlaceholder")}
                   value={answer}
                   onChange={(e) => updateAnswer(i, e.target.value)}
@@ -104,10 +110,10 @@ const QuestionEditorAnswers = () => {
                   type="button"
                   onClick={() => toggleSolution(i)}
                   className={clsx(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ease-calm",
                     isSelected
-                      ? "border-white bg-white text-green-600"
-                      : "border-white/60 bg-transparent",
+                      ? "border-success-border bg-success-tint text-success"
+                      : "border-border bg-transparent text-text-muted",
                   )}
                 >
                   {isSelected && <Check className="size-4 stroke-5" />}

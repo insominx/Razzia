@@ -1,4 +1,5 @@
 import type { StatusDataMap } from "@razzia/common/types/game/status"
+import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import {
   createStatus,
   type Status,
@@ -14,8 +15,10 @@ interface PlayerStore<T> {
   gameId: string | null
   player: PlayerState | null
   status: Status<T> | null
+  visuals: ResolvedVisuals
 
   setGameId: (_gameId: string | null) => void
+  setVisuals: (_visuals: ResolvedVisuals) => void
 
   setPlayer: (_state: PlayerState) => void
   login: (_gameId: string) => void
@@ -31,12 +34,14 @@ const initialState = {
   gameId: null,
   player: null,
   status: null,
+  visuals: {},
 }
 
 export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
   ...initialState,
 
   setGameId: (gameId) => set({ gameId }),
+  setVisuals: (visuals) => set({ visuals }),
 
   setPlayer: (player: PlayerState) => set({ player }),
   login: (username) =>

@@ -20,8 +20,8 @@ const LanguageSwitcher = () => {
       value={normalizedLanguage}
       onValueChange={(lang) => i18n.changeLanguage(lang)}
     >
-      <Select.Trigger className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm font-semibold text-gray-600 hover:border-gray-300 focus:outline-none">
-        <Globe className="size-4 text-gray-500" />
+      <Select.Trigger className="border-border bg-surface text-text-body hover:border-brand rounded-rz-md flex cursor-pointer items-center gap-1.5 border px-2 py-1.5 text-sm font-semibold transition-colors ease-calm focus:outline-none">
+        <Globe className="text-text-muted size-4" />
         <Select.Value>{normalizedLanguage.toUpperCase()}</Select.Value>
       </Select.Trigger>
 
@@ -29,14 +29,14 @@ const LanguageSwitcher = () => {
         <Select.Content
           position="popper"
           sideOffset={4}
-          className="z-50 min-w-32 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md"
+          className="border-border bg-surface text-text-body rounded-rz-md z-50 min-w-32 overflow-hidden border"
         >
           <Select.Viewport className="p-1">
             {LANGUAGES.map((l) => (
               <Select.Item
                 key={l.code}
                 value={l.code}
-                className="flex cursor-pointer items-center rounded-sm px-3 py-1.5 text-sm text-gray-700 outline-none hover:bg-gray-100 focus:bg-gray-100 data-[state=checked]:font-semibold"
+                className="hover:bg-brand-tint focus:bg-brand-tint rounded-rz-sm flex cursor-pointer items-center px-3 py-1.5 text-sm outline-none transition-colors ease-calm data-[state=checked]:font-semibold"
               >
                 <Select.ItemText>{t(l.label)}</Select.ItemText>
               </Select.Item>

@@ -6,17 +6,34 @@ import { resultsSocketHandlers } from "@razzia/socket/handlers/results"
 import type { SocketHandler } from "@razzia/socket/handlers/types"
 import { initConfig } from "@razzia/socket/services/config"
 import Registry from "@razzia/socket/services/registry"
+import {
+  ensureBackgroundAssetsDirectory,
+  serveConfigAsset,
+  SOCKET_MAX_HTTP_BUFFER_SIZE,
+} from "@razzia/socket/services/visuals"
+import { createServer } from "http"
 import { Server as ServerIO } from "socket.io"
 
 const WS_PORT = 3001
 
-const io: Server = new ServerIO({
+const httpServer = createServer((request, response) => {
+  if (serveConfigAsset(request, response)) {
+    return
+  }
+
+  response.writeHead(404)
+  response.end()
+})
+
+const io: Server = new ServerIO(httpServer, {
   path: "/ws",
+  maxHttpBufferSize: SOCKET_MAX_HTTP_BUFFER_SIZE,
 })
 initConfig()
+ensureBackgroundAssetsDirectory()
 
 console.log(`Socket server running on port ${WS_PORT}`)
-io.listen(WS_PORT)
+httpServer.listen(WS_PORT)
 
 const socketHandlers: SocketHandler[] = [
   managerSocketHandlers,

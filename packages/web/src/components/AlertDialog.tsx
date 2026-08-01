@@ -25,27 +25,27 @@ const AlertDialog = ({
       <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>
 
       <RadixAlertDialog.Portal>
-        <RadixAlertDialog.Overlay className="data-[state=open]:animate-fade-in fixed inset-0 z-50 bg-black/40" />
+        <RadixAlertDialog.Overlay className="bg-overlay data-[state=open]:animate-fade-in fixed inset-0 z-50" />
 
-        <RadixAlertDialog.Content className="fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl">
-          <RadixAlertDialog.Title className="text-lg font-semibold text-gray-900">
+        <RadixAlertDialog.Content className="bg-surface border-border text-text-body rounded-rz-lg fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border p-6">
+          <RadixAlertDialog.Title className="text-text-primary text-lg font-semibold">
             {title}
           </RadixAlertDialog.Title>
 
-          <RadixAlertDialog.Description className="mt-2 text-gray-500">
+          <RadixAlertDialog.Description className="text-text-muted mt-2">
             {description}
           </RadixAlertDialog.Description>
 
           <div className="mt-6 flex justify-end gap-2">
             <RadixAlertDialog.Cancel asChild>
-              <Button className="bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-600">
+              <Button className="bg-panel border-border text-text-body border px-4 py-2 text-sm font-semibold">
                 {t("common:cancel")}
               </Button>
             </RadixAlertDialog.Cancel>
 
             <RadixAlertDialog.Action asChild>
               <Button
-                className="bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:brightness-95 active:brightness-90"
+                className="bg-danger text-on-accent px-4 py-2 text-sm font-semibold hover:brightness-95 active:brightness-90"
                 onClick={onConfirm}
               >
                 {confirmLabel ?? t("common:confirm")}

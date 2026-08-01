@@ -4,12 +4,12 @@ interface Props {
 
 const CricleCheck = ({ className }: Props) => (
   <svg
-    fill="#22c55e"
+    fill="var(--rz-success)"
     width="800px"
     height="800px"
     viewBox="0 0 56.00 56.00"
     xmlns="http://www.w3.org/2000/svg"
-    stroke="#22c55e"
+    stroke="var(--rz-success)"
     strokeWidth="0.00056"
     className={className}
   >
@@ -20,7 +20,7 @@ const CricleCheck = ({ className }: Props) => (
         width="56.00"
         height="56.00"
         rx="28"
-        fill="#ffffff"
+        fill="var(--rz-on-accent)"
         strokeWidth="0"
       />
     </g>
@@ -28,7 +28,7 @@ const CricleCheck = ({ className }: Props) => (
     <g
       strokeLinecap="round"
       strokeLinejoin="round"
-      stroke="#CCCCCC"
+      stroke="var(--rz-success-border)"
       strokeWidth="0.6719999999999999"
     />
 

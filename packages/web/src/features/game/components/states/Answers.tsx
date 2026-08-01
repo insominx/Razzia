@@ -9,6 +9,7 @@ import {
 } from "@razzia/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import {
+  ANSWER_BADGE_COLORS,
   ANSWERS_COLORS,
   ANSWERS_LABELS,
   SFX,
@@ -86,7 +87,7 @@ const Answers = ({
   return (
     <div className="flex h-full flex-1 flex-col justify-between">
       <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
+        <h2 className="text-text-primary text-center text-2xl font-bold md:text-4xl lg:text-5xl">
           {question}
         </h2>
 
@@ -94,31 +95,32 @@ const Answers = ({
       </div>
 
       <div>
-        <div className="mx-auto mb-4 flex w-full max-w-7xl justify-between gap-1 px-2 text-lg font-bold text-white md:text-xl">
+        <div className="text-text-primary mx-auto mb-4 flex w-full max-w-7xl justify-between gap-2 px-2 text-lg font-bold md:text-xl">
           {time !== NO_TIME_LIMIT && (
-            <div className="flex flex-col items-center rounded-lg bg-black/40 px-4 text-lg font-bold">
-              <span className="translate-y-1 text-sm">
+            <div className="border-border bg-panel/90 flex flex-col items-center rounded-rz-md border px-4 py-1 text-lg font-bold">
+              <span className="text-text-muted text-sm">
                 {t("game:hud.time")}
               </span>
-              <span>{cooldown}</span>
+              <span className="font-mono">{cooldown}</span>
             </div>
           )}
-          <div className="flex flex-col items-center rounded-lg bg-black/40 px-4 text-lg font-bold">
-            <span className="translate-y-1 text-sm">
+          <div className="border-border bg-panel/90 flex flex-col items-center rounded-rz-md border px-4 py-1 text-lg font-bold">
+            <span className="text-text-muted text-sm">
               {t("game:hud.answers")}
             </span>
-            <span>
+            <span className="font-mono">
               {totalAnswer}/{totalPlayer}
             </span>
           </div>
         </div>
 
-        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 px-2 text-lg font-bold text-white md:text-xl">
+        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-2 px-2 text-lg font-bold md:text-xl">
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
               className={clsx(ANSWERS_COLORS[key])}
               label={ANSWERS_LABELS[key]}
+              labelClassName={ANSWER_BADGE_COLORS[key]}
               onClick={handleAnswer(key)}
             >
               {answer}

@@ -15,11 +15,11 @@ const SlideMedia = ({ media }: { media?: QuestionMedia }) => {
   }
 
   if (media?.type === MEDIA_TYPES.VIDEO) {
-    return <Video className="mx-auto size-10 text-gray-400" />
+    return <Video className="text-text-faint mx-auto size-10" />
   }
 
   if (media?.type === MEDIA_TYPES.AUDIO) {
-    return <Music className="mx-auto size-10 text-gray-400" />
+    return <Music className="text-text-faint mx-auto size-10" />
   }
 
   return null
@@ -49,17 +49,17 @@ const QuizzEditorCard = ({
       onClick={onClick}
       className={twMerge(
         clsx(
-          "group relative flex h-36 cursor-pointer flex-col justify-between gap-1 rounded-lg border-2 border-gray-200 bg-white px-6 py-2",
+          "bg-surface border-border rounded-rz-md group relative flex h-36 cursor-pointer flex-col justify-between gap-1 border-2 px-6 py-2 transition-colors ease-calm",
           {
-            "border-primary": isActive,
+            "border-brand bg-brand-tint": isActive,
           },
         ),
       )}
     >
-      <span className="absolute top-2 left-2 text-xs font-semibold text-gray-400">
+      <span className="text-text-faint absolute top-2 left-2 text-xs font-semibold">
         {index + 1}
       </span>
-      <p className="truncate text-center text-xs font-semibold text-gray-700">
+      <p className="text-text-body truncate text-center text-xs font-semibold">
         {question.question || t("quizz:noQuestionYet")}
       </p>
 
@@ -69,10 +69,10 @@ const QuizzEditorCard = ({
         {question.answers.map((_, i) => (
           <div
             key={i}
-            className="flex h-4 flex-1 items-center rounded-md border border-gray-300 px-0.5"
+            className="border-border rounded-rz-sm flex h-4 flex-1 items-center border px-0.5"
           >
             {question.solutions.includes(i) && (
-              <div className="ml-auto size-1.5 rounded-full bg-green-400" />
+              <div className="bg-success ml-auto size-1.5 rounded-full" />
             )}
           </div>
         ))}
@@ -83,7 +83,7 @@ const QuizzEditorCard = ({
           trigger={
             <button
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-1.5 right-1.5 hidden rounded-sm bg-white p-1 text-gray-400 group-hover:block hover:bg-red-50 hover:text-red-500"
+              className="bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm absolute top-1.5 right-1.5 hidden p-1 transition-colors ease-calm group-hover:block"
             >
               <Trash2 className="size-3.5" />
             </button>

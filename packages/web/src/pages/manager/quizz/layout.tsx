@@ -5,12 +5,23 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { useSurfaceOverride } from "@razzia/web/hooks/use-surface"
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 
 export const Route = createFileRoute("/manager/quizz")({
   component: RouteComponent,
 })
+
+const StageLoader = () => {
+  useSurfaceOverride({ surface: "stage" })
+
+  return (
+    <div className="bg-canvas flex h-svh items-center justify-center">
+      <Loader className="text-brand max-h-23" />
+    </div>
+  )
+}
 
 function RouteComponent() {
   const { socket, isConnected } = useSocket()
@@ -32,11 +43,7 @@ function RouteComponent() {
   })
 
   if (!isConnected || !config) {
-    return (
-      <div className="flex h-svh items-center justify-center bg-gray-50">
-        <Loader className="text-background max-h-23" />
-      </div>
-    )
+    return <StageLoader />
   }
 
   return <Outlet />

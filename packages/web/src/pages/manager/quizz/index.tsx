@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 const QuizzEditorPage = () => (
   <QuizzEditorProvider>
-    <div className="relative flex h-svh flex-col bg-gray-50">
+    <div className="bg-canvas text-text-body relative flex h-svh flex-col">
       <QuizzEditorHeader />
       <div className="flex flex-1 overflow-hidden">
         <QuizzEditorSidebar />

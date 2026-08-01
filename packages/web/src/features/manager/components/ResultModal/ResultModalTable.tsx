@@ -13,8 +13,8 @@ const ResultModalTable = () => {
 
   return (
     <table className="w-full text-sm">
-      <thead className="sticky top-0 shadow-sm">
-        <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase">
+      <thead className="bg-panel sticky top-0">
+        <tr className="border-border text-text-muted border-b text-left text-xs font-semibold tracking-wide uppercase">
           <th className="px-5 py-2.5">{t("manager:result.table.player")}</th>
           <th className="px-4 py-2.5">{t("manager:result.table.answered")}</th>
           <th className="px-4 py-2.5">
@@ -25,7 +25,7 @@ const ResultModalTable = () => {
           </th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-100">
+      <tbody className="divide-border divide-y">
         {questionResult.playerAnswers.map((pa, i) => {
           const isCorrect =
             pa.answerId !== null &&
@@ -34,13 +34,13 @@ const ResultModalTable = () => {
             pa.answerId !== null ? ANSWERS_LABELS[pa.answerId % 4] : null
 
           return (
-            <tr key={i} className="hover:bg-gray-50">
+            <tr key={i} className="hover:bg-panel transition-colors ease-calm">
               <td className="px-5 py-2.5 font-medium">{pa.playerName}</td>
               <td className="px-4 py-2.5">
                 {pa.answerId !== null && answerLabel ? (
                   <span
                     className={clsx(
-                      "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-white",
+                      "rounded-rz-sm inline-flex items-center gap-1.5 border px-2 py-1 text-xs",
                       ANSWERS_COLORS[pa.answerId % 4],
                     )}
                   >
@@ -50,23 +50,23 @@ const ResultModalTable = () => {
                     </span>
                   </span>
                 ) : (
-                  <span className="text-xs text-gray-400">—</span>
+                  <span className="text-text-faint text-xs">—</span>
                 )}
               </td>
               <td className="px-4 py-2.5">
                 {isCorrect ? (
-                  <span className="flex items-center gap-1 text-green-600">
+                  <span className="text-success flex items-center gap-1">
                     <Check className="size-3.5" />{" "}
                     {t("manager:result.table.correct")}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-red-500">
+                  <span className="text-danger flex items-center gap-1">
                     <X className="size-3.5" />{" "}
                     {t("manager:result.table.incorrect")}
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2.5 text-right font-semibold text-gray-700">
+              <td className="text-text-body px-4 py-2.5 text-right font-semibold">
                 {getPlayerPoints(pa.playerName)}
               </td>
             </tr>

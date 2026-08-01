@@ -9,8 +9,8 @@ const ConfigTabButton = ({
   PropsWithChildren & { active?: boolean }) => (
   <button
     className={clsx(
-      "flex-1 rounded-lg px-4 py-2 font-semibold text-gray-600 hover:bg-gray-200",
-      active && "bg-primary hover:bg-primary/90 text-white",
+      "text-text-muted hover:bg-surface hover:text-text-body flex-1 px-4 py-2 font-semibold transition-colors duration-[var(--rz-dur-fast)] ease-calm",
+      active && "bg-brand-tint text-brand hover:bg-brand-tint hover:text-brand",
     )}
     {...otherProps}
   >

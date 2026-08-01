@@ -54,13 +54,13 @@ const ConfigManageQuizz = () => {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-4 flex shrink-0 gap-2">
         <Button
-          className="flex-1"
+          className="border-brand-border bg-brand-tint text-brand flex-1 border"
           onClick={() => navigate({ to: "/manager/quizz" })}
         >
           {t("manager:quizz.create")}
         </Button>
         <Button
-          className="aspect-square bg-gray-200 px-3 text-gray-600"
+          className="border-border bg-panel text-text-body aspect-square border px-3"
           onClick={() => fileInputRef.current?.click()}
           title={t("manager:quizz.import")}
         >
@@ -78,12 +78,12 @@ const ConfigManageQuizz = () => {
         {quizz.map((q) => (
           <div
             key={q.id}
-            className="flex h-12 w-full items-center justify-between rounded-md pr-1.5 pl-3 outline outline-gray-300"
+            className="border-border bg-surface flex h-12 w-full items-center justify-between rounded-rz-md border pr-1.5 pl-3"
           >
             <p className="truncate">{q.subject}</p>
             <div className="flex gap-0.5">
               <button
-                className="rounded-sm p-2 text-gray-600 hover:bg-gray-600/10"
+                className="text-text-muted hover:bg-panel hover:text-text-body rounded-rz-sm p-2"
                 onClick={() =>
                   navigate({
                     to: "/manager/quizz/$quizzId",
@@ -96,8 +96,8 @@ const ConfigManageQuizz = () => {
 
               <AlertDialog
                 trigger={
-                  <button className="rounded-sm p-2 hover:bg-red-600/10">
-                    <Trash2 className="size-4 stroke-red-500" />
+                  <button className="hover:bg-danger-tint rounded-rz-sm p-2">
+                    <Trash2 className="text-danger size-4" />
                   </button>
                 }
                 title={t("manager:quizz.delete")}
@@ -111,7 +111,7 @@ const ConfigManageQuizz = () => {
           </div>
         ))}
         {quizz.length === 0 && (
-          <p className="my-8 text-center text-gray-500">
+          <p className="text-text-muted my-8 text-center">
             {t("manager:quizz.none")}
           </p>
         )}

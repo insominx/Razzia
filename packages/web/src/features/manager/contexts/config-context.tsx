@@ -4,6 +4,9 @@ import { createContext, useContext, type ReactNode } from "react"
 const ConfigContext = createContext<ManagerConfig>({
   quizz: [],
   results: [],
+  game: {
+    resolvedVisuals: {},
+  },
 })
 
 interface Props {

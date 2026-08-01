@@ -26,7 +26,7 @@ const Button = ({
   <button
     className={twMerge(
       clsx(
-        "bg-primary rounded-lg font-semibold text-white hover:brightness-[1.05] active:brightness-[0.95]",
+        "bg-brand text-on-accent rounded-rz-md font-semibold transition-colors ease-calm hover:brightness-[1.05] active:brightness-[0.95] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
         sizeClasses[size],
         className,
       ),

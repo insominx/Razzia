@@ -2,6 +2,27 @@
   "configurationsTitle": "設定",
   "logout": "ログアウト",
   "passwordPlaceholder": "パスワード",
+  "visuals": {
+    "clear": "背景を削除",
+    "cleared": "背景を削除しました",
+    "dialect": {
+      "darkEverywhere": {
+        "description": "ゲーム画面と管理画面の両方をダーク表示にします。",
+        "title": "すべてダーク"
+      },
+      "label": "デザインモード",
+      "stageStudio": {
+        "description": "ゲーム画面はダーク、管理スタジオはライト表示にします。",
+        "title": "ステージ＆スタジオ"
+      }
+    },
+    "invalidType": "画像ファイルを選択してください",
+    "preview": "背景のプレビュー",
+    "readFailed": "画像を読み込めませんでした",
+    "updated": "背景を更新しました",
+    "upload": "背景をアップロード",
+    "uploading": "アップロード中"
+  },
   "quizz": {
     "create": "クイズを作成",
     "delete": "クイズを削除",
@@ -39,6 +60,7 @@
   "tabs": {
     "play": "プレイ",
     "quizz": "クイズ",
-    "results": "結果"
+    "results": "結果",
+    "visuals": "表示"
   }
 }

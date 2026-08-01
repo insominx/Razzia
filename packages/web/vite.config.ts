@@ -38,6 +38,9 @@ export default defineConfig({
         target: "http://localhost:3001",
         ws: true,
       },
+      "/config-assets": {
+        target: "http://localhost:3001",
+      },
     },
   },
   preview: {

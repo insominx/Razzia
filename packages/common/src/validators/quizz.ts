@@ -1,4 +1,5 @@
 import { MEDIA_TYPES } from "@razzia/common/constants"
+import { visualsConfigValidator } from "@razzia/common/validators/visuals"
 import { z } from "zod"
 
 export const questionMediaValidator = z.object({
@@ -24,6 +25,7 @@ const questionValidator = z.object({
 
 export const quizzValidator = z.object({
   subject: z.string().min(1, "errors:quizz.subjectEmpty"),
+  visuals: visualsConfigValidator.optional(),
   questions: z.array(questionValidator).min(1, "errors:quizz.noQuestions"),
 })
 

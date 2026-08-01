@@ -91,7 +91,7 @@ const PinInput = ({ value, onChange, length = 6, className }: Props) => {
           onChange={handleChange(i)}
           onKeyDown={handleKeyDown(i)}
           onPaste={handlePaste}
-          className="focus:border-primary w-10 flex-1 rounded-lg border-2 border-gray-300 p-2 text-center text-lg font-semibold outline-none"
+          className="border-border bg-surface text-text-primary focus:border-brand rounded-rz-md font-mono w-10 flex-1 border-2 p-2 text-center text-lg font-semibold outline-none"
         />
       ))}
     </div>

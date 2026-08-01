@@ -4,11 +4,20 @@ import {
   SocketProvider,
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
+import {
+  SurfaceOverrideContext,
+  type SurfaceOverride,
+  useSurface,
+} from "@razzia/web/hooks/use-surface"
 import { createRootRoute, Outlet } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 const GameLayout = () => {
   const { isConnected, connect } = useSocket()
+  const [surfaceOverride, setSurfaceOverride] =
+    useState<SurfaceOverride | null>(null)
+
+  useSurface(surfaceOverride)
 
   useEffect(() => {
     if (!isConnected) {
@@ -16,18 +25,12 @@ const GameLayout = () => {
     }
   }, [connect, isConnected])
 
-  useEffect(() => {
-    document.body.classList.add("bg-secondary")
-
-    return () => {
-      document.body.classList.remove("bg-secondary")
-    }
-  }, [])
-
   return (
-    <div className="bg-secondary antialiased">
-      <Outlet />
-    </div>
+    <SurfaceOverrideContext.Provider value={setSurfaceOverride}>
+      <div className="bg-canvas text-text-body antialiased">
+        <Outlet />
+      </div>
+    </SurfaceOverrideContext.Provider>
   )
 }
 
@@ -38,12 +41,12 @@ export const Route = createRootRoute({
     </SocketProvider>
   ),
   errorComponent: ({ error }) => (
-    <div className="bg-secondary antialiased">
+    <div className="bg-canvas text-text-body antialiased">
       <ErrorPage error={error} />
     </div>
   ),
   notFoundComponent: () => (
-    <div className="bg-secondary antialiased">
+    <div className="bg-canvas text-text-body antialiased">
       <NotFound />
     </div>
   ),

@@ -1,0 +1,105 @@
+
+> razzia@3.0.0 dev:web D:\Projects\class\ai-research\4. Razzia
+> dotenv -e .env -- pnpm --filter web dev
+
+
+> @razzia/web@ dev D:\Projects\class\ai-research\4. Razzia\packages\web
+> vite
+
+[2m7:37:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+
+  [32m[1mVITE[22m v8.0.16[39m  [2mready in [0m[1m669[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.89:[1m3000[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/quizz/components/QuestionEditor/QuestionEditorMedia.tsx[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/locales/en/errors.json[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/locales/es/errors.json[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/locales/it/errors.json[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/locales/de/errors.json[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/locales/fr/errors.json[22m
+[2m7:41:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/locales/ja/errors.json[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/main.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/party/manager/$gameId.tsx, /src/pages/party/$gameId.tsx, /src/features/game/components/states/Start.tsx, /src/features/game/components/states/Podium.tsx, /src/features/game/components/states/Answers.tsx, /src/features/game/components/states/Prepared.tsx, /src/features/game/components/states/Result.tsx, /src/features/game/components/states/Responses.tsx, /src/features/game/components/states/Question.tsx, /src/features/game/components/GameWrapper.tsx and 3 more[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/AnswerButton.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Answers.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorAnswers.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Responses.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/PinInput.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/GameWrapper.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Leaderboard.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Podium.tsx[22m
+[2m7:51:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Room.tsx[22m
+[2m7:53:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/dev/gallery.tsx, /src/index.css[22m
+[2m7:56:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Background.tsx[22m
+[2m7:56:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/GameWrapper.tsx[22m
+[2m7:56:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/index.tsx[22m
+[2m7:56:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:15:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:15:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/AnswerButton.tsx[22m
+[2m8:15:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Answers.tsx[22m
+[2m8:15:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorAnswers.tsx[22m
+[2m8:15:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Question.tsx[22m
+[2m8:23:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/party/manager/$gameId.tsx, /src/pages/party/$gameId.tsx, /src/features/game/components/states/Start.tsx, /src/features/game/components/states/Podium.tsx, /src/features/game/components/states/Answers.tsx, /src/features/game/components/states/Prepared.tsx, /src/features/game/components/states/Result.tsx, /src/features/game/components/states/Responses.tsx, /src/features/game/components/states/Question.tsx, /src/features/game/components/GameWrapper.tsx and 3 more[22m
+[2m8:23:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/AnswerButton.tsx[22m
+[2m8:23:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Answers.tsx[22m
+[2m8:23:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorAnswers.tsx[22m
+[2m8:24:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/configurations/index.tsx[22m
+[2m8:24:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/configurations/ConfigTabButton.tsx[22m
+[2m8:24:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/configurations/ConfigManageQuizz.tsx[22m
+[2m8:24:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/configurations/ConfigResults.tsx[22m
+[2m8:24:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/configurations/ConfigSelectQuizz.tsx[22m
+[2m8:24:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/configurations/ConfigVisuals.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/Atmosphere.tsx, /src/index.css[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Background.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Button.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Card.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Input.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/PinInput.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/LanguageSwitcher.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/AlertDialog.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/ErrorPage.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/NotFound.tsx[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/__root.tsx, /src/index.css[22m
+[2m8:31:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/(auth)/layout.tsx, /src/index.css[22m
+[2m8:31:28 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/GameWrapper.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Wait.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Prepared.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Question.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Start.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/PlayerFinished.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Room.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Responses.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Result.tsx[22m
+[2m8:32:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Leaderboard.tsx[22m
+[2m8:33:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Podium.tsx[22m
+[2m8:33:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:34:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/ResultModal/index.tsx[22m
+[2m8:34:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/ResultModal/ResultModalHeader.tsx[22m
+[2m8:34:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/ResultModal/ResultModalStats.tsx[22m
+[2m8:34:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/ResultModal/ResultModalTable.tsx[22m
+[2m8:34:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/manager/components/ResultModal/ResultModalAnswers.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuizzEditorSidebar.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuizzEditorHeader.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuizzEditorCard.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuizzBackgroundControl.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorAnswers.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorConfig/index.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorTitle.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorMedia.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigField.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigSection.tsx[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/manager/quizz/index.tsx, /src/index.css[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/manager/quizz/$quizzId.tsx, /src/index.css[22m
+[2m8:35:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/manager/quizz/layout.tsx, /src/index.css[22m
+[2m8:37:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:37:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Loader.tsx[22m
+[2m8:37:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/icons/CricleCheck.tsx[22m
+[2m8:37:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/icons/CricleXmark.tsx[22m
+[2m8:37:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/icons/Fire.tsx[22m
+[2m8:37:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/dev/gallery.tsx, /src/index.css[22m
+[2m8:37:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:54:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/game/components/states/Room.tsx[22m

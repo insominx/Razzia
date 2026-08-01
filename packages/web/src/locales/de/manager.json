@@ -2,6 +2,27 @@
   "configurationsTitle": "Konfigurationen",
   "logout": "Abmelden",
   "passwordPlaceholder": "Passwort",
+  "visuals": {
+    "clear": "Hintergrund entfernen",
+    "cleared": "Hintergrund entfernt",
+    "dialect": {
+      "darkEverywhere": {
+        "description": "Spiel- und Verwaltungsoberflächen bleiben dunkel.",
+        "title": "Überall dunkel"
+      },
+      "label": "Designmodus",
+      "stageStudio": {
+        "description": "Dunkle Spieloberflächen mit einem hellen Verwaltungsstudio.",
+        "title": "Bühne und Studio"
+      }
+    },
+    "invalidType": "Wähle eine Bilddatei aus",
+    "preview": "Hintergrundvorschau",
+    "readFailed": "Bild konnte nicht gelesen werden",
+    "updated": "Hintergrund aktualisiert",
+    "upload": "Hintergrund hochladen",
+    "uploading": "Wird hochgeladen"
+  },
   "quizz": {
     "create": "Quiz erstellen",
     "delete": "Quiz löschen",
@@ -39,6 +60,7 @@
   "tabs": {
     "play": "Spielen",
     "quizz": "Quiz",
-    "results": "Ergebnisse"
+    "results": "Ergebnisse",
+    "visuals": "Darstellung"
   }
 }

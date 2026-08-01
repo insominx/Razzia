@@ -1,4 +1,5 @@
 import type { MEDIA_TYPES } from "@razzia/common/constants"
+import type { VisualsConfig } from "@razzia/common/types/visuals"
 
 export interface Player {
   id: string
@@ -35,6 +36,7 @@ export interface Question {
 
 export interface Quizz {
   subject: string
+  visuals?: VisualsConfig
   questions: Question[]
 }
 

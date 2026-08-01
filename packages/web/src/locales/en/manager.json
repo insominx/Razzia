@@ -2,6 +2,27 @@
   "configurationsTitle": "Configurations",
   "logout": "Logout",
   "passwordPlaceholder": "Password",
+  "visuals": {
+    "clear": "Clear background",
+    "cleared": "Background cleared",
+    "dialect": {
+      "darkEverywhere": {
+        "description": "Keep play and management surfaces dark.",
+        "title": "Dark everywhere"
+      },
+      "label": "Design mode",
+      "stageStudio": {
+        "description": "Use dark play surfaces and a light management studio.",
+        "title": "Stage & studio"
+      }
+    },
+    "invalidType": "Choose an image file",
+    "preview": "Background preview",
+    "readFailed": "Could not read image",
+    "updated": "Background updated",
+    "upload": "Upload background",
+    "uploading": "Uploading"
+  },
   "quizz": {
     "create": "Create Quizz",
     "delete": "Delete quizz",
@@ -39,6 +60,7 @@
   "tabs": {
     "play": "Play",
     "quizz": "Quizz",
-    "results": "Results"
+    "results": "Results",
+    "visuals": "Visuals"
   }
 }

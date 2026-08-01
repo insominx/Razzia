@@ -36,6 +36,19 @@
     "tooFewAnswers": "Una domanda deve avere almeno 2 risposte",
     "tooManyAnswers": "Una domanda non può avere più di 4 risposte"
   },
+  "visuals": {
+    "backgroundClearFailed": "Impossibile cancellare lo sfondo",
+    "backgroundPathEmpty": "Il percorso dello sfondo non può essere vuoto",
+    "backgroundPathTooLong": "Il percorso dello sfondo è troppo lungo",
+    "backgroundSetFailed": "Impossibile impostare lo sfondo",
+    "backgroundTooLarge": "L'immagine di sfondo deve essere di 5 MB o meno",
+    "backgroundUploadFailed": "Impossibile caricare lo sfondo",
+    "dialectSetFailed": "Impossibile aggiornare la modalità grafica",
+    "emptyBackground": "L'immagine di sfondo è vuota",
+    "invalidBackgroundPath": "Il riferimento dello sfondo non è valido",
+    "invalidDialect": "La modalità grafica non è valida",
+    "unsupportedBackgroundType": "Usa un'immagine PNG, JPEG, WebP o GIF"
+  },
   "route": {
     "back": "Torna alla home",
     "description": "Si è verificato un errore imprevisto. Riprova.",

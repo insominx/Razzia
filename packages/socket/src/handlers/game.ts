@@ -1,9 +1,10 @@
 import { EVENTS } from "@razzia/common/constants"
 import { inviteCodeValidator } from "@razzia/common/validators/auth"
 import type { SocketContext } from "@razzia/socket/handlers/types"
-import { getQuizz } from "@razzia/socket/services/config"
+import { getGameConfig, getQuizz } from "@razzia/socket/services/config"
 import Game from "@razzia/socket/services/game"
 import Registry from "@razzia/socket/services/registry"
+import { resolveVisuals } from "@razzia/socket/services/visuals"
 import { withGame } from "@razzia/socket/utils/game"
 
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
@@ -72,7 +73,8 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const game = new Game(io, socket, quizz)
+    const visuals = resolveVisuals(quizz, getGameConfig())
+    const game = new Game({ io, socket, quizz, visuals })
     registry.addGame(game)
   })
 

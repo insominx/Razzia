@@ -19,7 +19,8 @@ const PlayerGamePage = () => {
   const navigate = useNavigate()
   const { socket } = useSocket()
   const { gameId: gameIdParam } = useParams({ from: "/party/$gameId" })
-  const { status, setPlayer, setGameId, setStatus, reset } = usePlayerStore()
+  const { status, visuals, setPlayer, setGameId, setStatus, setVisuals, reset } =
+    usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
 
@@ -36,8 +37,10 @@ const PlayerGamePage = () => {
       status: reconnectStatus,
       player,
       currentQuestion,
+      visuals: reconnectVisuals,
     }) => {
       setGameId(reconnectGameId)
+      setVisuals(reconnectVisuals)
       setStatus(reconnectStatus.name, reconnectStatus.data)
       setPlayer(player)
       setQuestionStates(currentQuestion)
@@ -71,7 +74,10 @@ const PlayerGamePage = () => {
   }
 
   return (
-    <GameWrapper statusName={status.name}>
+    <GameWrapper
+      statusName={status.name}
+      backgroundUrl={visuals.backgroundUrl}
+    >
       {CurrentComponent && <CurrentComponent data={status.data as never} />}
     </GameWrapper>
   )

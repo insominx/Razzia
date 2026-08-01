@@ -30,23 +30,23 @@ const MediaPreview = ({ media }: { media?: QuestionMedia }) => {
 
   if (media?.type === MEDIA_TYPES.VIDEO) {
     return (
-      <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-gray-200 md:h-38 md:w-full">
-        <Video className="size-6 text-gray-400 md:size-10" />
+      <div className="bg-panel border-border rounded-rz-md flex h-16 w-24 items-center justify-center border md:h-38 md:w-full">
+        <Video className="text-text-faint size-6 md:size-10" />
       </div>
     )
   }
 
   if (media?.type === MEDIA_TYPES.AUDIO) {
     return (
-      <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-gray-200 md:h-38 md:w-full">
-        <Music className="size-6 text-gray-400 md:size-10" />
+      <div className="bg-panel border-border rounded-rz-md flex h-16 w-24 items-center justify-center border md:h-38 md:w-full">
+        <Music className="text-text-faint size-6 md:size-10" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-gray-200 md:h-38 md:w-full">
-      <ImageOff className="size-6 text-gray-400 md:size-10" />
+    <div className="bg-panel border-border rounded-rz-md flex h-16 w-24 items-center justify-center border md:h-38 md:w-full">
+      <ImageOff className="text-text-faint size-6 md:size-10" />
     </div>
   )
 }
@@ -76,10 +76,10 @@ const ResultModalAnswers = () => {
   ]
 
   return (
-    <div className="flex flex-col border-b border-gray-100 md:flex-row">
-      <div className="flex shrink-0 flex-row items-center gap-4 border-b border-gray-100 bg-gray-50 p-4 md:w-66 md:flex-col md:justify-center md:border-r md:border-b-0">
+    <div className="border-border flex flex-col border-b md:flex-row">
+      <div className="border-border bg-panel flex shrink-0 flex-row items-center gap-4 border-b p-4 md:w-66 md:flex-col md:justify-center md:border-r md:border-b-0">
         <MediaPreview media={questionResult.media} />
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+        <div className="text-text-muted flex items-center gap-1.5 text-xs">
           <Clock className="size-3.5" />
           <span>
             {questionResult.time === NO_TIME_LIMIT
@@ -90,7 +90,7 @@ const ResultModalAnswers = () => {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 overflow-hidden px-4 py-3 md:gap-2 md:px-5 md:py-4">
-        <p className="text-md mb-1 font-semibold text-gray-800">
+        <p className="text-text-primary text-md mb-1 font-semibold">
           {questionResult.question}
         </p>
 
@@ -99,21 +99,21 @@ const ResultModalAnswers = () => {
             {row.color && row.answerLabel ? (
               <div
                 className={clsx(
-                  "flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white",
+                  "rounded-rz-sm flex size-6 shrink-0 items-center justify-center border text-xs font-bold",
                   row.color,
                 )}
               >
                 {row.answerLabel}
               </div>
             ) : (
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white">
-                <X className="size-3 text-gray-400" />
+              <div className="border-border bg-surface rounded-rz-sm flex size-6 shrink-0 items-center justify-center border">
+                <X className="text-text-faint size-3" />
               </div>
             )}
 
             <span
               className={clsx("min-w-0 flex-1 truncate text-sm font-medium", {
-                "text-gray-400": !row.color,
+                "text-text-faint": !row.color,
               })}
             >
               {row.label}
@@ -121,19 +121,19 @@ const ResultModalAnswers = () => {
 
             <div className="shrink-0">
               {row.isCorrect ? (
-                <Check className="size-5 text-green-500" />
+                <Check className="text-success size-5" />
               ) : (
                 <X
                   className={clsx(
                     "size-5",
-                    row.color ? "text-red-500" : "text-red-400",
+                    "text-danger",
                   )}
                 />
               )}
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <span className="text-center text-sm font-semibold text-gray-600">
+              <span className="text-text-body text-center text-sm font-semibold">
                 {row.count}
               </span>
             </div>

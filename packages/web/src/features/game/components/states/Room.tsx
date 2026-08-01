@@ -63,7 +63,7 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
     <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-2">
       <div className="mb-10 flex flex-col-reverse items-center gap-3 md:flex-row md:items-stretch">
         <div className="flex flex-col gap-3 md:flex-row">
-          <div className="flex flex-col items-center justify-center rounded-xl bg-white px-6 py-4 md:flex-row">
+          <div className="bg-surface border-border text-text-body rounded-rz-lg flex flex-col items-center justify-center border px-6 py-4 md:flex-row">
             <div>
               <p className="text-2xl font-bold">{t("game:joinInstruction")}</p>
               <p className="max-w-64 text-lg font-extrabold break-all">
@@ -71,44 +71,54 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
               </p>
             </div>
 
-            <div className="my-4 h-0.5 w-full bg-gray-300 md:mx-4 md:h-full md:w-0.5" />
+            <div className="bg-border my-4 h-0.5 w-full md:mx-4 md:h-full md:w-0.5" />
 
             <div>
               <p className="text-2xl font-bold">{t("game:gamePinLabel")}</p>
-              <p className="text-6xl font-extrabold">{inviteCode}</p>
+              <p className="font-mono text-6xl font-extrabold">{inviteCode}</p>
             </div>
           </div>
         </div>
 
         <AlertDialog.Root open={qrOpen} onOpenChange={setQrOpen}>
           <AlertDialog.Trigger asChild>
-            <div className="group relative flex h-40 shrink-0 cursor-pointer rounded-xl bg-white p-2">
+            <div className="bg-surface border-border rounded-rz-lg group relative flex h-40 shrink-0 cursor-pointer border p-2">
               <QRCodeSVG
                 className="h-auto w-auto"
+                bgColor="#ffffff"
+                fgColor="#000000"
                 value={`${webUrl}?pin=${inviteCode}`}
               />
               <div className="absolute inset-0 flex items-center justify-center rounded-xl opacity-0 transition-opacity group-hover:opacity-100">
-                <div className="rounded-md bg-black/80 p-2">
-                  <Maximize2 className="size-6 text-white" />
+                <div className="bg-overlay rounded-rz-md p-2">
+                  <Maximize2 className="text-on-accent size-6" />
                 </div>
               </div>
             </div>
           </AlertDialog.Trigger>
 
           <AlertDialog.Portal>
-            <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/70" />
+            <AlertDialog.Overlay className="bg-overlay fixed inset-0 z-50" />
             <AlertDialog.Content
               ref={qrContentRef}
-              className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6"
+              className="bg-surface border-border rounded-rz-xl fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border p-6"
             >
+              <AlertDialog.Title className="sr-only">
+                {t("game:gamePinLabel")}
+              </AlertDialog.Title>
+              <AlertDialog.Description className="sr-only">
+                {t("game:joinInstruction")}
+              </AlertDialog.Description>
               <button
                 onClick={handleCloseQrCode}
-                className="absolute -top-3 -right-3 rounded-full bg-white p-1.5 shadow-md hover:bg-gray-100"
+                className="bg-surface border-border text-text-body hover:bg-panel absolute -top-3 -right-3 rounded-full border p-1.5 transition-colors ease-calm"
               >
-                <X className="size-6 text-gray-700" />
+                <X className="size-6" />
               </button>
               <QRCodeSVG
                 className="size-56 md:size-70 lg:size-95"
+                bgColor="#ffffff"
+                fgColor="#000000"
                 value={`${webUrl}?pin=${inviteCode}`}
               />
             </AlertDialog.Content>
@@ -116,12 +126,12 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
         </AlertDialog.Root>
       </div>
 
-      <h2 className="mb-4 text-4xl font-bold text-white drop-shadow-lg">
+      <h2 className="text-text-primary mb-4 text-4xl font-bold">
         {t(text)}
       </h2>
 
-      <div className="mb-6 flex items-center justify-center rounded-lg bg-black/40 px-6 py-3">
-        <span className="text-2xl font-bold text-white drop-shadow-md">
+      <div className="bg-panel border-border rounded-rz-md mb-6 flex items-center justify-center border px-6 py-3">
+        <span className="text-text-primary text-2xl font-bold">
           {t("game:playersJoined")}
           {totalPlayers}
         </span>
@@ -131,10 +141,10 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
         {playerList.map((player) => (
           <div
             key={player.id}
-            className="bg-primary rounded-xl px-4 py-3 font-bold text-white"
+            className="bg-brand text-on-accent rounded-rz-lg px-4 py-3 font-bold"
             onClick={handleKick(player.id)}
           >
-            <span className="cursor-pointer text-3xl drop-shadow-sm hover:line-through hover:decoration-3">
+            <span className="cursor-pointer text-3xl hover:line-through hover:decoration-3">
               {player.username}
             </span>
           </div>

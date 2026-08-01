@@ -36,6 +36,19 @@
     "tooFewAnswers": "Una pregunta debe tener al menos 2 respuestas",
     "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas"
   },
+  "visuals": {
+    "backgroundClearFailed": "Error al borrar el fondo",
+    "backgroundPathEmpty": "La ruta del fondo no puede estar vacía",
+    "backgroundPathTooLong": "La ruta del fondo es demasiado larga",
+    "backgroundSetFailed": "Error al establecer el fondo",
+    "backgroundTooLarge": "La imagen de fondo debe tener 5 MB o menos",
+    "backgroundUploadFailed": "Error al subir el fondo",
+    "dialectSetFailed": "Error al actualizar el modo de diseño",
+    "emptyBackground": "La imagen de fondo está vacía",
+    "invalidBackgroundPath": "La referencia del fondo no es válida",
+    "invalidDialect": "El modo de diseño no es válido",
+    "unsupportedBackgroundType": "Usa una imagen PNG, JPEG, WebP o GIF"
+  },
   "route": {
     "back": "Volver al inicio",
     "description": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",

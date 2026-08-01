@@ -36,6 +36,19 @@
     "tooFewAnswers": "A question must have at least 2 answers",
     "tooManyAnswers": "A question cannot have more than 4 answers"
   },
+  "visuals": {
+    "backgroundClearFailed": "Failed to clear background",
+    "backgroundPathEmpty": "Background path cannot be empty",
+    "backgroundPathTooLong": "Background path is too long",
+    "backgroundSetFailed": "Failed to set background",
+    "backgroundTooLarge": "Background image must be 5 MB or less",
+    "backgroundUploadFailed": "Failed to upload background",
+    "dialectSetFailed": "Failed to update design mode",
+    "emptyBackground": "Background image is empty",
+    "invalidBackgroundPath": "Background reference is invalid",
+    "invalidDialect": "Design mode is invalid",
+    "unsupportedBackgroundType": "Use a PNG, JPEG, WebP, or GIF image"
+  },
   "route": {
     "back": "Go back home",
     "description": "An unexpected error occurred. Please try again.",

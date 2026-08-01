@@ -15,20 +15,20 @@ const Prepared = ({ data: { totalAnswers, questionNumber } }: Props) => {
 
   return (
     <section className="anim-show relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center">
-      <h2 className="anim-show mb-20 text-center text-3xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
+      <h2 className="anim-show text-text-primary mb-20 text-center text-3xl font-bold md:text-4xl lg:text-5xl">
         {t("game:questionPrefix")}
         {questionNumber}
       </h2>
-      <div className="anim-quizz grid aspect-square w-60 grid-cols-2 gap-4 rounded-2xl bg-gray-700 p-5 md:w-60">
+      <div className="anim-quizz bg-panel border-border rounded-rz-xl grid aspect-square w-60 grid-cols-2 gap-4 border p-5 md:w-60">
         {Array.from({ length: totalAnswers }).map((_, key) => (
           <div
             key={key}
             className={clsx(
-              "button shadow-inset flex aspect-square h-full w-full items-center justify-center rounded-2xl",
+              "button rounded-rz-lg flex aspect-square h-full w-full items-center justify-center",
               ANSWERS_COLORS[key],
             )}
           >
-            <span className="text-2xl font-bold text-white md:text-3xl">
+            <span className="font-mono text-2xl font-bold md:text-3xl">
               {ANSWERS_LABELS[key]}
             </span>
           </div>

@@ -2,6 +2,27 @@
   "configurationsTitle": "Configurazioni",
   "logout": "Disconnetti",
   "passwordPlaceholder": "Password",
+  "visuals": {
+    "clear": "Cancella sfondo",
+    "cleared": "Sfondo cancellato",
+    "dialect": {
+      "darkEverywhere": {
+        "description": "Mantiene scure le schermate di gioco e di gestione.",
+        "title": "Scuro ovunque"
+      },
+      "label": "Modalità grafica",
+      "stageStudio": {
+        "description": "Usa schermate di gioco scure e uno studio di gestione chiaro.",
+        "title": "Palco e studio"
+      }
+    },
+    "invalidType": "Scegli un file immagine",
+    "preview": "Anteprima sfondo",
+    "readFailed": "Impossibile leggere l'immagine",
+    "updated": "Sfondo aggiornato",
+    "upload": "Carica sfondo",
+    "uploading": "Caricamento"
+  },
   "quizz": {
     "create": "Crea quiz",
     "delete": "Elimina quiz",
@@ -39,6 +60,7 @@
   "tabs": {
     "play": "Gioca",
     "quizz": "Quiz",
-    "results": "Risultati"
+    "results": "Risultati",
+    "visuals": "Aspetto"
   }
 }

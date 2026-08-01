@@ -57,16 +57,16 @@ const usePodiumAnimation = (topLength: number) => {
 
 const medalColor = [
   {
-    background: "bg-yellow-500",
-    border: "border-yellow-600",
+    background: "bg-warning",
+    border: "border-warning-border",
   },
   {
-    background: "bg-gray-400",
-    border: "border-gray-200",
+    background: "bg-text-muted",
+    border: "border-border",
   },
   {
-    background: "bg-amber-700",
-    border: "border-amber-800",
+    background: "bg-sequence",
+    border: "border-sequence-border",
   },
 ]
 
@@ -76,19 +76,16 @@ const Medal = ({ rank }: { rank: number }) => {
   return (
     <div
       className={clsx(
-        "relative flex aspect-square size-20 items-center justify-center overflow-hidden rounded-full border-8 text-5xl font-extrabold text-white drop-shadow-sm md:size-26 md:border-10 md:text-6xl",
+        "text-on-accent relative flex aspect-square size-20 items-center justify-center overflow-hidden rounded-full border-8 text-5xl font-extrabold md:size-26 md:border-10 md:text-6xl",
         color.background,
         color.border,
       )}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
-        <div className="absolute top-[30%] left-1/2 h-6 w-[160%] -translate-x-1/2 -rotate-40 bg-white/25" />
-        <div className="absolute top-[70%] left-1/2 h-3 w-[160%] -translate-x-1/2 -rotate-40 bg-white/25" />
+        <div className="bg-text-primary/25 absolute top-[30%] left-1/2 h-6 w-[160%] -translate-x-1/2 -rotate-40" />
+        <div className="bg-text-primary/25 absolute top-[70%] left-1/2 h-3 w-[160%] -translate-x-1/2 -rotate-40" />
       </div>
-      <p
-        className="relative z-10"
-        style={{ textShadow: "2px 2px rgba(0,0,0, 0.25)" }}
-      >
+      <p className="font-mono relative z-10">
         {rank}
       </p>
     </div>
@@ -116,7 +113,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
         </div>
       )}
       <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-between">
-        <h2 className="anim-show text-center text-3xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
+        <h2 className="anim-show text-text-primary text-center text-3xl font-bold md:text-4xl lg:text-5xl">
           {subject}
         </h2>
 
@@ -133,7 +130,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
             >
               <p
                 className={clsx(
-                  "overflow-visible text-center text-2xl font-bold whitespace-nowrap text-white drop-shadow-lg md:text-4xl",
+                  "text-text-primary overflow-visible text-center text-2xl font-bold whitespace-nowrap md:text-4xl",
                   {
                     "anim-balanced": apparition >= 4,
                   },
@@ -141,9 +138,9 @@ const Podium = ({ data: { subject, top } }: Props) => {
               >
                 {top[1].username}
               </p>
-              <div className="bg-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl pt-6 text-center shadow-2xl">
+              <div className="bg-brand-tint border-brand-border text-text-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
                 <Medal rank={2} />
-                <p className="text-3xl font-bold text-white drop-shadow-sm md:text-4xl">
+                <p className="font-mono text-3xl font-bold md:text-4xl">
                   {top[1].points}
                 </p>
               </div>
@@ -163,15 +160,15 @@ const Podium = ({ data: { subject, top } }: Props) => {
           >
             <p
               className={clsx(
-                "overflow-visible text-center text-2xl font-bold whitespace-nowrap text-white opacity-0 drop-shadow-lg md:text-4xl",
+                "text-text-primary overflow-visible text-center text-2xl font-bold whitespace-nowrap opacity-0 md:text-4xl",
                 { "anim-balanced opacity-100": apparition >= 4 },
               )}
             >
               {top[0].username}
             </p>
-            <div className="bg-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl pt-6 text-center shadow-2xl">
+            <div className="bg-brand-tint border-brand-border text-text-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
               <Medal rank={1} />
-              <p className="text-3xl font-bold text-white drop-shadow-sm md:text-4xl">
+              <p className="font-mono text-3xl font-bold md:text-4xl">
                 {top[0].points}
               </p>
             </div>
@@ -188,7 +185,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
             >
               <p
                 className={clsx(
-                  "overflow-visible text-center text-2xl font-bold whitespace-nowrap text-white drop-shadow-lg md:text-4xl",
+                  "text-text-primary overflow-visible text-center text-2xl font-bold whitespace-nowrap md:text-4xl",
                   {
                     "anim-balanced": apparition >= 4,
                   },
@@ -196,10 +193,10 @@ const Podium = ({ data: { subject, top } }: Props) => {
               >
                 {top[2].username}
               </p>
-              <div className="bg-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl pt-6 text-center shadow-2xl">
+              <div className="bg-brand-tint border-brand-border text-text-primary flex h-full w-full flex-col items-center gap-4 rounded-t-xl border-x border-t pt-6 text-center">
                 <Medal rank={3} />
 
-                <p className="text-3xl font-bold text-white drop-shadow-sm md:text-4xl">
+                <p className="font-mono text-3xl font-bold md:text-4xl">
                   {top[2].points}
                 </p>
               </div>

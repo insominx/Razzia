@@ -6,7 +6,17 @@ import type {
   QuizzWithId,
 } from "@razzia/common/types/game"
 import type { Status, StatusDataMap } from "@razzia/common/types/game/status"
-import type { ManagerConfig } from "@razzia/common/types/manager"
+import type {
+  BackgroundUploadRequest,
+  BackgroundUploadResponse,
+  ManagerConfig,
+  ManagerMutationResponse,
+} from "@razzia/common/types/manager"
+import type {
+  BackgroundRef,
+  Dialect,
+  ResolvedVisuals,
+} from "@razzia/common/types/visuals"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
 export type Server = ServerIO<ClientToServerEvents, ServerToClientEvents>
@@ -37,7 +47,10 @@ export interface ServerToClientEvents {
     data: StatusDataMap[Status]
   }) => void
   [EVENTS.GAME.SUCCESS_ROOM]: (_data: string) => void
-  [EVENTS.GAME.SUCCESS_JOIN]: (_gameId: string) => void
+  [EVENTS.GAME.SUCCESS_JOIN]: (_data: {
+    gameId: string
+    visuals: ResolvedVisuals
+  }) => void
   [EVENTS.GAME.TOTAL_PLAYERS]: (_count: number) => void
   [EVENTS.GAME.ERROR_MESSAGE]: (_message: string) => void
   [EVENTS.GAME.START_COOLDOWN]: () => void
@@ -55,6 +68,7 @@ export interface ServerToClientEvents {
     status: { name: Status; data: StatusDataMap[Status] }
     player: { username: string; points: number }
     currentQuestion: GameUpdateQuestion
+    visuals: ResolvedVisuals
   }) => void
   [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
 
@@ -64,12 +78,17 @@ export interface ServerToClientEvents {
     status: { name: Status; data: StatusDataMap[Status] }
     players: Player[]
     currentQuestion: GameUpdateQuestion
+    visuals: ResolvedVisuals
   }) => void
   [EVENTS.MANAGER.CONFIG]: (_config: ManagerConfig) => void
-  [EVENTS.QUIZZ.DATA]: (_quizz: QuizzWithId) => void
+  [EVENTS.QUIZZ.DATA]: (_data: {
+    quizz: QuizzWithId
+    resolvedVisuals: ResolvedVisuals
+  }) => void
   [EVENTS.MANAGER.GAME_CREATED]: (_data: {
     gameId: string
     inviteCode: string
+    visuals: ResolvedVisuals
   }) => void
   [EVENTS.MANAGER.STATUS_UPDATE]: (_data: {
     status: Status
@@ -105,6 +124,28 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
+  [EVENTS.MANAGER.BACKGROUND_UPLOAD]: (
+    _request: BackgroundUploadRequest,
+    _callback?: (
+      _response: BackgroundUploadResponse | { error: string },
+    ) => void,
+  ) => void
+  [EVENTS.MANAGER.BACKGROUND_ASSET_UPLOAD]: (
+    _request: BackgroundUploadRequest,
+    _callback?: (
+      _response: BackgroundUploadResponse | { error: string },
+    ) => void,
+  ) => void
+  [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET]: (_request: {
+    background: BackgroundRef
+  }, _callback?: (_response: ManagerMutationResponse) => void) => void
+  [EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR]: (
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
+  [EVENTS.MANAGER.DIALECT_SET]: (
+    _request: { dialect: Dialect },
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
   [EVENTS.MANAGER.LOGOUT]: () => void
 
   // Quizz actions

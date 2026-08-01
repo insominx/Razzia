@@ -41,16 +41,16 @@ const Result = ({
       ) : (
         <CricleXmark className="aspect-square max-h-60 w-full" />
       )}
-      <h2 className="mt-1 text-4xl font-bold text-white drop-shadow-lg">
+      <h2 className="text-text-primary mt-1 text-4xl font-bold">
         {t(message)}
       </h2>
-      <p className="mt-1 text-xl font-bold text-white drop-shadow-lg">
+      <p className="text-text-primary mt-1 text-xl font-bold">
         {t("game:resultTop")}
         {t(rankKey, { rank })}
         {aheadOfMe ? `${t("game:resultBehind")}${aheadOfMe}` : ""}
       </p>
       {correct && (
-        <span className="mt-2 rounded-lg bg-black/40 px-4 py-2 text-2xl font-bold text-white drop-shadow-lg">
+        <span className="bg-success-tint border-success-border text-success rounded-rz-md mt-2 border px-4 py-2 text-2xl font-bold">
           +{points}
         </span>
       )}

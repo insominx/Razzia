@@ -1,18 +1,33 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { Player } from "@razzia/common/types/game"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
+import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import { usernameValidator } from "@razzia/common/validators/auth"
+
+interface PlayerManagerOptions {
+  io: Server
+  gameId: string
+  getManagerId: () => string
+  getVisuals: () => ResolvedVisuals
+}
 
 export class PlayerManager {
   private readonly io: Server
   private readonly gameId: string
   private readonly getManagerId: () => string
+  private readonly getVisuals: () => ResolvedVisuals
   private players: Player[] = []
 
-  constructor(io: Server, gameId: string, getManagerId: () => string) {
+  constructor({
+    io,
+    gameId,
+    getManagerId,
+    getVisuals,
+  }: PlayerManagerOptions) {
     this.io = io
     this.gameId = gameId
     this.getManagerId = getManagerId
+    this.getVisuals = getVisuals
   }
 
   join(socket: Socket, username: string): void {
@@ -49,7 +64,10 @@ export class PlayerManager {
     this.players.push(player)
     this.io.to(this.getManagerId()).emit(EVENTS.MANAGER.NEW_PLAYER, player)
     this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
-    socket.emit(EVENTS.GAME.SUCCESS_JOIN, this.gameId)
+    socket.emit(EVENTS.GAME.SUCCESS_JOIN, {
+      gameId: this.gameId,
+      visuals: this.getVisuals(),
+    })
   }
 
   kick(socket: Socket, playerId: string): boolean {

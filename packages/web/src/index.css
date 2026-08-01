@@ -1,14 +1,195 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #ff9900;
-  --color-secondary: #1a140b;
-  --font-display: "Rubik Variable", sans-serif;
+  --font-display: "Space Grotesk Variable", sans-serif;
+  --font-mono: "JetBrains Mono Variable", monospace;
+
+  --color-brand: var(--rz-brand);
+  --color-brand-border: var(--rz-brand-border);
+  --color-brand-tint: var(--rz-brand-tint);
+  --color-success: var(--rz-success);
+  --color-success-border: var(--rz-success-border);
+  --color-success-tint: var(--rz-success-tint);
+  --color-danger: var(--rz-danger);
+  --color-danger-border: var(--rz-danger-border);
+  --color-danger-tint: var(--rz-danger-tint);
+  --color-info: var(--rz-info);
+  --color-info-border: var(--rz-info-border);
+  --color-info-tint: var(--rz-info-tint);
+  --color-warning: var(--rz-warning);
+  --color-warning-border: var(--rz-warning-border);
+  --color-warning-tint: var(--rz-warning-tint);
+  --color-sequence: var(--rz-sequence);
+  --color-sequence-border: var(--rz-sequence-border);
+  --color-sequence-tint: var(--rz-sequence-tint);
+
+  --color-canvas: var(--rz-canvas);
+  --color-surface: var(--rz-surface);
+  --color-panel: var(--rz-panel);
+  --color-border: var(--rz-border);
+  --color-text-primary: var(--rz-text-primary);
+  --color-text-body: var(--rz-text-body);
+  --color-text-muted: var(--rz-text-muted);
+  --color-text-faint: var(--rz-text-faint);
+  --color-on-accent: var(--rz-on-accent);
+  --color-on-answer: var(--rz-on-answer);
+  --color-overlay: var(--rz-overlay);
+
+  --color-answer-a: var(--rz-answer-a);
+  --color-answer-a-border: var(--rz-answer-a-border);
+  --color-answer-a-tint: var(--rz-answer-a-tint);
+  --color-answer-b: var(--rz-answer-b);
+  --color-answer-b-border: var(--rz-answer-b-border);
+  --color-answer-b-tint: var(--rz-answer-b-tint);
+  --color-answer-c: var(--rz-answer-c);
+  --color-answer-c-border: var(--rz-answer-c-border);
+  --color-answer-c-tint: var(--rz-answer-c-tint);
+  --color-answer-d: var(--rz-answer-d);
+  --color-answer-d-border: var(--rz-answer-d-border);
+  --color-answer-d-tint: var(--rz-answer-d-tint);
+
+  --radius-rz-sm: var(--rz-radius-sm);
+  --radius-rz-md: var(--rz-radius-md);
+  --radius-rz-lg: var(--rz-radius-lg);
+  --radius-rz-xl: var(--rz-radius-xl);
+  --shadow-bloom-brand: var(--rz-bloom-brand);
+  --shadow-bloom-success: var(--rz-bloom-success);
+  --shadow-bloom-danger: var(--rz-bloom-danger);
+  --shadow-bloom-info: var(--rz-bloom-info);
+  --shadow-bloom-warning: var(--rz-bloom-warning);
+  --shadow-bloom-sequence: var(--rz-bloom-sequence);
+  --ease-calm: var(--rz-ease-calm);
+  --animate-rz-enter: rz-enter var(--rz-dur-base) var(--rz-ease-calm) both;
+}
+
+:root {
+  color-scheme: dark;
+
+  --rz-brand: #46d5c0;
+  --rz-brand-border: #2c7a52;
+  --rz-brand-tint: rgba(70, 213, 192, 0.08);
+  --rz-success: #3ecf8e;
+  --rz-success-border: #2c7a52;
+  --rz-success-tint: rgba(62, 207, 142, 0.12);
+  --rz-danger: #f5604d;
+  --rz-danger-border: #6e2a22;
+  --rz-danger-tint: rgba(245, 96, 77, 0.1);
+  --rz-info: #5b9dff;
+  --rz-info-border: #2f5fb0;
+  --rz-info-tint: rgba(91, 157, 255, 0.12);
+  --rz-warning: #f08a3c;
+  --rz-warning-border: #b5641f;
+  --rz-warning-tint: rgba(240, 138, 60, 0.06);
+  --rz-sequence: #b58af5;
+  --rz-sequence-border: #4a3a6e;
+  --rz-sequence-tint: rgba(181, 138, 245, 0.06);
+
+  --rz-canvas: #0a0e16;
+  --rz-surface: #111827;
+  --rz-panel: #0c1322;
+  --rz-border: #1f2942;
+  --rz-text-primary: #f4f8fc;
+  --rz-text-body: #e7edf5;
+  --rz-text-muted: #9aa6bd;
+  --rz-text-faint: #8995ad;
+  --rz-on-accent: #06100e;
+  --rz-on-answer: #06100e;
+  --rz-overlay: rgba(6, 9, 15, 0.72);
+
+  --rz-answer-a: #e69f00;
+  --rz-answer-a-border: #8a5f00;
+  --rz-answer-a-tint: rgba(230, 159, 0, 0.14);
+  --rz-answer-b: #56b4e9;
+  --rz-answer-b-border: #2f6d8a;
+  --rz-answer-b-tint: rgba(86, 180, 233, 0.14);
+  --rz-answer-c: #3dbfa0;
+  --rz-answer-c-border: #237565;
+  --rz-answer-c-tint: rgba(61, 191, 160, 0.14);
+  --rz-answer-d: #cc79a7;
+  --rz-answer-d-border: #7a4864;
+  --rz-answer-d-tint: rgba(204, 121, 167, 0.14);
+
+  --rz-radius-sm: 0.375rem;
+  --rz-radius-md: 0.625rem;
+  --rz-radius-lg: 1rem;
+  --rz-radius-xl: 1.25rem;
+  --rz-ease-calm: cubic-bezier(0.16, 1, 0.3, 1);
+  --rz-dur-fast: 0.25s;
+  --rz-dur-base: 0.5s;
+  --rz-bloom-brand: inset 0 0 20px rgba(70, 213, 192, 0.15);
+  --rz-bloom-success: inset 0 0 20px rgba(62, 207, 142, 0.1);
+  --rz-bloom-danger: inset 0 0 20px rgba(245, 96, 77, 0.12);
+  --rz-bloom-info: inset 0 0 20px rgba(91, 157, 255, 0.15);
+  --rz-bloom-warning: inset 0 0 12px rgba(240, 138, 60, 0.04);
+  --rz-bloom-sequence: inset 0 0 12px rgba(181, 138, 245, 0.04);
+  --rz-scrim: rgba(6, 9, 15, 0.75);
+  --rz-vignette: transparent;
+}
+
+:root[data-dialect="stage-studio"][data-surface="studio"] {
+  color-scheme: light;
+
+  --rz-brand: #0d9488;
+  --rz-brand-border: #99f6e4;
+  --rz-brand-tint: #f0fdfa;
+  --rz-success: #15803d;
+  --rz-success-border: #86efac;
+  --rz-success-tint: #f0fdf4;
+  --rz-danger: #b91c1c;
+  --rz-danger-border: #fca5a5;
+  --rz-danger-tint: #fef2f2;
+  --rz-info: #2563eb;
+  --rz-info-border: #93c5fd;
+  --rz-info-tint: #eff6ff;
+  --rz-warning: #c2410c;
+  --rz-warning-border: #fdba74;
+  --rz-warning-tint: #fff7ed;
+  --rz-sequence: #7c3aed;
+  --rz-sequence-border: #ddd6fe;
+  --rz-sequence-tint: #faf5ff;
+
+  --rz-canvas: #ffffff;
+  --rz-surface: #ffffff;
+  --rz-panel: #f8fafc;
+  --rz-border: #e2e8f0;
+  --rz-text-primary: #0f172a;
+  --rz-text-body: #334155;
+  --rz-text-muted: #475569;
+  --rz-text-faint: #64748b;
+  --rz-on-accent: #ffffff;
+  --rz-on-answer: #06100e;
+
+  --rz-answer-a-border: #f3cf73;
+  --rz-answer-a-tint: #fffbeb;
+  --rz-answer-b-border: #bae6fd;
+  --rz-answer-b-tint: #f0f9ff;
+  --rz-answer-c-border: #99f6e4;
+  --rz-answer-c-tint: #f0fdfa;
+  --rz-answer-d-border: #f5d0e2;
+  --rz-answer-d-tint: #fdf2f8;
+
+  --rz-bloom-brand: inset 0 0 20px rgba(13, 148, 136, 0.1);
+  --rz-bloom-success: inset 0 0 20px rgba(21, 128, 61, 0.08);
+  --rz-bloom-danger: inset 0 0 20px rgba(185, 28, 28, 0.08);
+  --rz-bloom-info: inset 0 0 20px rgba(37, 99, 235, 0.08);
+  --rz-bloom-warning: inset 0 0 12px rgba(194, 65, 12, 0.06);
+  --rz-bloom-sequence: inset 0 0 12px rgba(124, 58, 237, 0.06);
 }
 
 button:not(:disabled),
 [role="button"]:not(:disabled) {
   cursor: pointer;
+}
+
+@keyframes rz-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .spotlight {
@@ -66,11 +247,9 @@ button:not(:disabled),
   animation: quizz 0.8s linear;
   transform: perspective(1200px) rotateY(-15deg) rotateX(15deg)
     translateZ(100px);
-  box-shadow: 10px 10px 0 rgba(20, 24, 29, 1);
 }
 
 .anim-quizz .button {
-  box-shadow: rgba(0, 0, 0, 0.25) -4px -4px inset;
   animation: quizzButton 0.8s ease-out;
 }
 

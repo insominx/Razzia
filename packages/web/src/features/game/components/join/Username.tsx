@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next"
 
 const Username = () => {
   const { socket } = useSocket()
-  const { gameId, login, setStatus } = usePlayerStore()
+  const { gameId, login, setStatus, setVisuals } = usePlayerStore()
   const navigate = useNavigate()
   const [username, setUsername] = useState("")
   const { t } = useTranslation()
@@ -34,7 +34,8 @@ const Username = () => {
     }
   }
 
-  useEvent(EVENTS.GAME.SUCCESS_JOIN, (joinedGameId) => {
+  useEvent(EVENTS.GAME.SUCCESS_JOIN, ({ gameId: joinedGameId, visuals }) => {
+    setVisuals(visuals)
     setStatus(STATUS.WAIT, { text: "game:waitingForPlayers" })
     login(username)
 

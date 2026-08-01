@@ -21,7 +21,7 @@ const ManagerGamePage = () => {
   const navigate = useNavigate()
   const { gameId: gameIdParam } = useParams({ from: "/party/manager/$gameId" })
   const { socket } = useSocket()
-  const { gameId, status, setGameId, setStatus, setPlayers, reset } =
+  const { gameId, status, visuals, setGameId, setStatus, setVisuals, setPlayers, reset } =
     useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
@@ -45,8 +45,10 @@ const ManagerGamePage = () => {
       status: reconnectStatus,
       players,
       currentQuestion,
+      visuals: reconnectVisuals,
     }) => {
       setGameId(reconnectGameId)
+      setVisuals(reconnectVisuals)
       setStatus(reconnectStatus.name, reconnectStatus.data)
       setPlayers(players)
       setQuestionStates(currentQuestion)
@@ -100,6 +102,7 @@ const ManagerGamePage = () => {
   return (
     <GameWrapper
       statusName={status.name}
+      backgroundUrl={visuals.backgroundUrl}
       onNext={handleSkip}
       onBack={status.name === STATUS.SHOW_ROOM ? handleBack : undefined}
       manager

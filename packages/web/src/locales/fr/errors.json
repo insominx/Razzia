@@ -36,6 +36,19 @@
     "tooFewAnswers": "Une question doit avoir au moins 2 réponses",
     "tooManyAnswers": "Une question ne peut pas avoir plus de 4 réponses"
   },
+  "visuals": {
+    "backgroundClearFailed": "Impossible de supprimer l’arrière-plan",
+    "backgroundPathEmpty": "Le chemin de l’arrière-plan ne peut pas être vide",
+    "backgroundPathTooLong": "Le chemin de l’arrière-plan est trop long",
+    "backgroundSetFailed": "Impossible de définir l’arrière-plan",
+    "backgroundTooLarge": "L’image d’arrière-plan doit faire 5 Mo maximum",
+    "backgroundUploadFailed": "Impossible d’importer l’arrière-plan",
+    "dialectSetFailed": "Impossible de mettre à jour le mode graphique",
+    "emptyBackground": "L’image d’arrière-plan est vide",
+    "invalidBackgroundPath": "La référence de l’arrière-plan est invalide",
+    "invalidDialect": "Le mode graphique n’est pas valide",
+    "unsupportedBackgroundType": "Utilisez une image PNG, JPEG, WebP ou GIF"
+  },
   "route": {
     "back": "Retour à l'accueil",
     "description": "Une erreur inattendue s'est produite. Veuillez réessayer.",

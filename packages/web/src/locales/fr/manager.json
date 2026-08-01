@@ -2,6 +2,27 @@
   "configurationsTitle": "Configurations",
   "logout": "Déconnexion",
   "passwordPlaceholder": "Mot de passe",
+  "visuals": {
+    "clear": "Supprimer l’arrière-plan",
+    "cleared": "Arrière-plan supprimé",
+    "dialect": {
+      "darkEverywhere": {
+        "description": "Conserve les écrans de jeu et de gestion en mode sombre.",
+        "title": "Sombre partout"
+      },
+      "label": "Mode graphique",
+      "stageStudio": {
+        "description": "Utilise des écrans de jeu sombres et un studio de gestion clair.",
+        "title": "Scène et studio"
+      }
+    },
+    "invalidType": "Choisissez un fichier image",
+    "preview": "Aperçu de l’arrière-plan",
+    "readFailed": "Impossible de lire l’image",
+    "updated": "Arrière-plan mis à jour",
+    "upload": "Importer un arrière-plan",
+    "uploading": "Importation en cours"
+  },
   "quizz": {
     "create": "Créer un quizz",
     "delete": "Supprimer le quizz",
@@ -39,6 +60,7 @@
   "tabs": {
     "play": "Jouer",
     "quizz": "Quizz",
-    "results": "Résultats"
+    "results": "Résultats",
+    "visuals": "Apparence"
   }
 }

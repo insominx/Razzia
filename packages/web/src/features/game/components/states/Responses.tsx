@@ -1,6 +1,7 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
 import {
+  ANSWER_BADGE_COLORS,
   ANSWERS_COLORS,
   ANSWERS_LABELS,
   SFX,
@@ -54,7 +55,7 @@ const Responses = ({
   return (
     <div className="flex h-full flex-1 flex-col justify-between">
       <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <h2 className="text-center text-2xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
+        <h2 className="text-text-primary text-center text-2xl font-bold md:text-4xl lg:text-5xl">
           {question}
         </h2>
 
@@ -66,12 +67,12 @@ const Responses = ({
             <div
               key={key}
               className={clsx(
-                "flex flex-col justify-end self-end overflow-hidden rounded-md",
+                "rounded-rz-md flex flex-col justify-end self-end overflow-hidden border-2",
                 ANSWERS_COLORS[key],
               )}
               style={{ height: percentages[key] }}
             >
-              <span className="w-full bg-black/10 text-center text-lg font-bold text-white drop-shadow-md">
+              <span className="bg-canvas/60 text-text-primary w-full text-center text-lg font-bold">
                 {responses[key] || 0}
               </span>
             </div>
@@ -80,7 +81,7 @@ const Responses = ({
       </div>
 
       <div>
-        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 rounded-full px-2 text-lg font-bold text-white md:text-xl">
+        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 rounded-full px-2 text-lg font-bold md:text-xl">
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
@@ -89,6 +90,7 @@ const Responses = ({
                 "opacity-65": responses && !solutions.includes(key),
               })}
               label={ANSWERS_LABELS[key]}
+              labelClassName={ANSWER_BADGE_COLORS[key]}
               correct={solutions.includes(key)}
             >
               {answer}

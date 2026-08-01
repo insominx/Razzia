@@ -48,22 +48,22 @@ const ConfigResults = () => {
         {results.map((r) => (
           <div
             key={r.id}
-            className="flex w-full items-center justify-between rounded-md px-3 py-2.5 outline outline-gray-300"
+            className="border-border bg-surface flex w-full items-center justify-between rounded-rz-md border px-3 py-2.5"
           >
             <button
               className="min-w-0 flex-1 text-left"
               onClick={handleOpen(r.id)}
             >
               <p className="truncate font-medium">{r.subject}</p>
-              <p className="text-xs text-gray-400">
+              <p className="text-text-faint text-xs">
                 {formatDate(r.date)} -{" "}
                 {t("manager:result.playerCount", { count: r.playerCount })}
               </p>
             </button>
             <AlertDialog
               trigger={
-                <button className="ml-2 shrink-0 rounded-sm p-2 hover:bg-red-600/10">
-                  <Trash2 className="size-4 stroke-red-500" />
+                <button className="hover:bg-danger-tint ml-2 shrink-0 rounded-rz-sm p-2">
+                  <Trash2 className="text-danger size-4" />
                 </button>
               }
               title={t("manager:result.delete")}
@@ -77,7 +77,7 @@ const ConfigResults = () => {
         ))}
 
         {results.length === 0 && (
-          <p className="my-8 text-center text-gray-500">
+          <p className="text-text-muted my-8 text-center">
             {t("manager:result.none")}
           </p>
         )}

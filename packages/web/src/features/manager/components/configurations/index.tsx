@@ -8,6 +8,7 @@ import ConfigManageQuizz from "@razzia/web/features/manager/components/configura
 import ConfigResults from "@razzia/web/features/manager/components/configurations/ConfigResults"
 import ConfigSelectQuizz from "@razzia/web/features/manager/components/configurations/ConfigSelectQuizz"
 import ConfigTabButton from "@razzia/web/features/manager/components/configurations/ConfigTabButton"
+import ConfigVisuals from "@razzia/web/features/manager/components/configurations/ConfigVisuals"
 import { ConfigProvider } from "@razzia/web/features/manager/contexts/config-context"
 import { LogOut } from "lucide-react"
 import { useState } from "react"
@@ -25,6 +26,10 @@ const tabs = [
   {
     nameKey: "manager:tabs.results",
     component: ConfigResults,
+  },
+  {
+    nameKey: "manager:tabs.visuals",
+    component: ConfigVisuals,
   },
 ]
 
@@ -50,15 +55,15 @@ const Configurations = ({ data }: Props) => {
 
   return (
     <ConfigProvider data={data}>
-      <Card className="max-h-[80svh] w-full max-w-md">
+      <Card className="border-border bg-surface text-text-body max-h-[80svh] w-full max-w-md rounded-rz-xl border shadow-none">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-semibold">
+          <p className="text-text-primary text-lg font-semibold">
             {t("manager:configurationsTitle")}
           </p>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <button
-              className="rounded-sm p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+              className="text-text-muted hover:bg-panel hover:text-text-body rounded-rz-sm p-1.5"
               onClick={handleLogout}
               title={t("manager:logout")}
             >
@@ -66,7 +71,7 @@ const Configurations = ({ data }: Props) => {
             </button>
           </div>
         </div>
-        <div className="flex shrink-0 overflow-hidden rounded-md border border-gray-200 bg-gray-100">
+        <div className="border-border bg-panel flex shrink-0 overflow-hidden rounded-rz-md border">
           {tabs.map((tab, index) => (
             <ConfigTabButton
               key={tab.nameKey}
@@ -77,7 +82,7 @@ const Configurations = ({ data }: Props) => {
             </ConfigTabButton>
           ))}
         </div>
-        <hr className="my-4 text-gray-100" />
+        <hr className="border-border my-4" />
         <div className="flex min-h-0 flex-1 flex-col">
           <TabComponent />
         </div>

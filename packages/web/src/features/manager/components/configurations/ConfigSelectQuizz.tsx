@@ -35,33 +35,46 @@ const ConfigSelectQuizz = () => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {quizzList.length > 0 && (
-        <Button className="mb-4 shrink-0" onClick={handleSubmit}>
-          {t("manager:quizz.startGame")}
-        </Button>
+        <div
+          className="mb-4 shrink-0"
+          title={selected ? undefined : t("manager:quizz.pleaseSelect")}
+        >
+          <Button
+            className={clsx(
+              "border-brand-border bg-brand-tint text-brand w-full border",
+              !selected && "pointer-events-none",
+            )}
+            disabled={!selected}
+            onClick={handleSubmit}
+          >
+            {t("manager:quizz.startGame")}
+          </Button>
+        </div>
       )}
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-0.5">
         {quizzList.map((quizz) => (
           <button
             key={quizz.id}
-            className="flex w-full items-center justify-between rounded-md p-3 outline outline-gray-300"
+            className="border-border bg-surface hover:bg-panel flex w-full items-center justify-between rounded-rz-md border p-3 transition-colors duration-[var(--rz-dur-fast)] ease-calm"
             onClick={handleSelect(quizz.id)}
           >
             {quizz.subject}
 
             <div
               className={clsx(
-                "size-5 rounded p-0.5 outline outline-offset-3 outline-gray-300",
-                selected === quizz.id && "bg-primary border-primary/80",
+                "border-border text-text-muted size-5 rounded-rz-sm border p-0.5",
+                selected === quizz.id &&
+                  "border-brand-border bg-brand-tint text-brand",
               )}
             >
               {selected === quizz.id && (
-                <Check className="size-full stroke-4 text-white" />
+                <Check className="size-full stroke-4" />
               )}
             </div>
           </button>
         ))}
         {!quizzList.length && (
-          <div className="my-8 text-center text-gray-500">
+          <div className="text-text-muted my-8 text-center">
             <p>{t("manager:quizz.notFound")}</p>
             <p className="text-sm">{t("manager:quizz.pleaseCreate")}</p>
           </div>

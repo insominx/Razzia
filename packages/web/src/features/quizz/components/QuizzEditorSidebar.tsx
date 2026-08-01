@@ -59,7 +59,7 @@ const SortableItem = ({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       {...attributes}
       {...listeners}
-      className={clsx(isDragging && "shadow-lg")}
+      className={clsx(isDragging && "ring-brand rounded-rz-md ring-2")}
     >
       <QuizzEditorCard
         question={q}
@@ -114,7 +114,7 @@ const QuizzEditorSidebar = () => {
   }
 
   return (
-    <aside className="z-10 m-3 flex w-72 shrink-0 flex-col gap-2 overflow-auto rounded-xl bg-white p-3 shadow-sm">
+    <aside className="bg-surface border-border rounded-rz-lg z-10 m-3 flex w-72 shrink-0 flex-col gap-2 overflow-auto border p-3">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -146,7 +146,7 @@ const QuizzEditorSidebar = () => {
 
       <Button
         onClick={addQuestion}
-        className="bg text-md mt-1 mb-8 flex items-center justify-center gap-1 bg-gray-200 text-gray-600"
+        className="bg-panel border-border text-text-body text-md mt-1 mb-8 flex items-center justify-center gap-1 border"
       >
         <Plus className="size-6" />
         {t("quizz:addQuestion")}

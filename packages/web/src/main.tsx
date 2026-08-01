@@ -1,4 +1,5 @@
-import "@fontsource-variable/rubik/wght.css"
+import "@fontsource-variable/jetbrains-mono/wght.css"
+import "@fontsource-variable/space-grotesk/wght.css"
 import Toaster from "@razzia/web/components/Toaster"
 import { socketClient } from "@razzia/web/features/game/contexts/socket-context"
 import "@razzia/web/i18n"

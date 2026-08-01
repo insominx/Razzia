@@ -36,6 +36,19 @@
     "tooFewAnswers": "Eine Frage muss mindestens 2 Antworten haben",
     "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben"
   },
+  "visuals": {
+    "backgroundClearFailed": "Hintergrund konnte nicht entfernt werden",
+    "backgroundPathEmpty": "Der Hintergrundpfad darf nicht leer sein",
+    "backgroundPathTooLong": "Der Hintergrundpfad ist zu lang",
+    "backgroundSetFailed": "Hintergrund konnte nicht festgelegt werden",
+    "backgroundTooLarge": "Das Hintergrundbild darf höchstens 5 MB groß sein",
+    "backgroundUploadFailed": "Hintergrund konnte nicht hochgeladen werden",
+    "dialectSetFailed": "Designmodus konnte nicht aktualisiert werden",
+    "emptyBackground": "Das Hintergrundbild ist leer",
+    "invalidBackgroundPath": "Der Hintergrundverweis ist ungültig",
+    "invalidDialect": "Der Designmodus ist ungültig",
+    "unsupportedBackgroundType": "Verwende ein PNG-, JPEG-, WebP- oder GIF-Bild"
+  },
   "route": {
     "back": "Zurück zur Startseite",
     "description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",

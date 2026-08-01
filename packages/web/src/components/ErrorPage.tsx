@@ -12,17 +12,17 @@ const ErrorPage = ({ error }: { error: Error }) => {
   return (
     <Background>
       <Card className="max-w-md gap-4 text-center">
-        <CircleX className="mx-auto size-12 text-red-500" />
+        <CircleX className="text-danger mx-auto size-12" />
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-bold text-gray-800">
+          <h1 className="text-text-primary text-xl font-bold">
             {t("errors:route.title")}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-text-muted text-sm">
             {t("errors:route.description")}
           </p>
         </div>
         {error.message && (
-          <pre className="max-h-60 overflow-auto rounded-md bg-gray-200 px-3 py-2 text-left font-mono text-sm wrap-break-word">
+          <pre className="bg-panel border-border rounded-rz-md max-h-60 overflow-auto border px-3 py-2 text-left font-mono text-sm wrap-break-word">
             {error.message}
           </pre>
         )}

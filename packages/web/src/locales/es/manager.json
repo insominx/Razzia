@@ -2,6 +2,27 @@
   "configurationsTitle": "Configuraciones",
   "logout": "Cerrar sesión",
   "passwordPlaceholder": "Contraseña",
+  "visuals": {
+    "clear": "Borrar fondo",
+    "cleared": "Fondo borrado",
+    "dialect": {
+      "darkEverywhere": {
+        "description": "Mantiene oscuras las pantallas de juego y de gestión.",
+        "title": "Oscuro en todas partes"
+      },
+      "label": "Modo de diseño",
+      "stageStudio": {
+        "description": "Usa pantallas de juego oscuras y un estudio de gestión claro.",
+        "title": "Escenario y estudio"
+      }
+    },
+    "invalidType": "Elige un archivo de imagen",
+    "preview": "Vista previa del fondo",
+    "readFailed": "No se pudo leer la imagen",
+    "updated": "Fondo actualizado",
+    "upload": "Subir fondo",
+    "uploading": "Subiendo"
+  },
   "quizz": {
     "create": "Crear cuestionario",
     "delete": "Eliminar cuestionario",
@@ -39,6 +60,7 @@
   "tabs": {
     "play": "Jugar",
     "quizz": "Cuestionario",
-    "results": "Resultados"
+    "results": "Resultados",
+    "visuals": "Visuales"
   }
 }

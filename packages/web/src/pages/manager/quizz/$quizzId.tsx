@@ -16,28 +16,32 @@ const QuizzEditPage = () => {
   const { quizzId } = Route.useParams()
   const { socket } = useSocket()
   const [quizz, setQuizz] = useState<QuizzWithId | null>(null)
+  const [backgroundUrl, setBackgroundUrl] = useState<string | undefined>(
+    undefined,
+  )
 
   useEffect(() => {
     socket.emit(EVENTS.QUIZZ.GET, quizzId)
   }, [socket, quizzId])
 
-  useEvent(EVENTS.QUIZZ.DATA, (data) => {
+  useEvent(EVENTS.QUIZZ.DATA, ({ quizz: data, resolvedVisuals }) => {
     if (data.id === quizzId) {
       setQuizz(data)
+      setBackgroundUrl(resolvedVisuals.backgroundUrl)
     }
   })
 
   if (!quizz) {
     return (
-      <div className="flex h-svh items-center justify-center bg-gray-50">
-        <Loader className="text-background max-h-23" />
+      <div className="bg-canvas flex h-svh items-center justify-center">
+        <Loader className="text-brand max-h-23" />
       </div>
     )
   }
 
   return (
-    <QuizzEditorProvider initialData={quizz}>
-      <div className="relative flex h-svh flex-col bg-gray-50">
+    <QuizzEditorProvider initialData={quizz} initialBackgroundUrl={backgroundUrl}>
+      <div className="bg-canvas text-text-body relative flex h-svh flex-col">
         <QuizzEditorHeader />
         <div className="flex flex-1 overflow-hidden">
           <QuizzEditorSidebar />

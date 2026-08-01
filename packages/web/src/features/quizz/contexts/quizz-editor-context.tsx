@@ -1,4 +1,5 @@
 import type { Question, QuizzWithId } from "@razzia/common/types/game"
+import type { BackgroundRef } from "@razzia/common/types/visuals"
 import {
   createContext,
   useContext,
@@ -23,6 +24,12 @@ interface QuizzEditorContextType {
   removeQuestion: (_index: number) => void
   reorderQuestions: (_from: number, _to: number) => void
   updateQuestion: (_index: number, _updates: Partial<QuestionWithId>) => void
+  background: BackgroundRef | undefined
+  backgroundUrl: string | undefined
+  setBackground: (
+    _ref: BackgroundRef | undefined,
+    _url: string | undefined,
+  ) => void
 }
 
 const QuizzEditorContext = createContext<QuizzEditorContextType | null>(null)
@@ -43,11 +50,13 @@ const toQuestionWithId = (q: Question): QuestionWithId => ({
 
 type QuizzEditorProviderProps = PropsWithChildren<{
   initialData?: QuizzWithId
+  initialBackgroundUrl?: string
 }>
 
 export const QuizzEditorProvider = ({
   children,
   initialData,
+  initialBackgroundUrl,
 }: QuizzEditorProviderProps) => {
   const [subject, setSubject] = useState(
     initialData?.subject ?? "Untitled Quizz",
@@ -59,6 +68,20 @@ export const QuizzEditorProvider = ({
   )
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentQuestion = questions[currentIndex]
+  const [background, setBackgroundRef] = useState<BackgroundRef | undefined>(
+    initialData?.visuals?.background,
+  )
+  const [backgroundUrl, setBackgroundUrl] = useState<string | undefined>(
+    initialBackgroundUrl,
+  )
+
+  const setBackground = (
+    ref: BackgroundRef | undefined,
+    url: string | undefined,
+  ) => {
+    setBackgroundRef(ref)
+    setBackgroundUrl(url)
+  }
 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, defaultQuestion()])
@@ -107,6 +130,9 @@ export const QuizzEditorProvider = ({
         removeQuestion,
         reorderQuestions,
         updateQuestion,
+        background,
+        backgroundUrl,
+        setBackground,
       }}
     >
       {children}

@@ -4,12 +4,12 @@ interface Props {
 
 const CricleXmark = ({ className }: Props) => (
   <svg
-    fill="#ef4444"
+    fill="var(--rz-danger)"
     width="800px"
     height="800px"
     viewBox="0 0 56.00 56.00"
     xmlns="http://www.w3.org/2000/svg"
-    stroke="#ef4444"
+    stroke="var(--rz-danger)"
     className={className}
   >
     <g strokeWidth="0" transform="translate(12.4,12.4), scale(0.6)">
@@ -19,7 +19,7 @@ const CricleXmark = ({ className }: Props) => (
         width="56.00"
         height="56.00"
         rx="28"
-        fill="#ffffff"
+        fill="var(--rz-on-accent)"
         strokeWidth="0"
       />
     </g>

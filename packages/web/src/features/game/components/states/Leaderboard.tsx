@@ -4,6 +4,8 @@ import { AnimatePresence, motion, useSpring, useTransform } from "motion/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+const CALM_EASE = [0.16, 1, 0.3, 1] as const
+
 interface Props {
   data: ManagerStatusDataMap["SHOW_LEADERBOARD"]
 }
@@ -22,7 +24,7 @@ const AnimatedPoints = ({ from, to }: { from: number; to: number }) => {
     return unsubscribe
   }, [to, spring, display])
 
-  return <span className="drop-shadow-md">{displayValue}</span>
+  return <span className="font-mono">{displayValue}</span>
 }
 
 const StreakBadge = ({ streak }: { streak: number }) => (
@@ -33,8 +35,8 @@ const StreakBadge = ({ streak }: { streak: number }) => (
         initial={{ opacity: 0, scale: 0.5, x: -10 }}
         animate={{ opacity: 1, scale: 1, x: 0 }}
         exit={{ opacity: 0, scale: 0.5, x: -10 }}
-        transition={{ type: "spring", stiffness: 400, damping: 20 }}
-        className="ml-2 flex items-center gap-1 rounded-full bg-amber-700 p-1"
+        transition={{ duration: 0.5, ease: CALM_EASE }}
+        className="bg-warning-tint border-warning-border text-warning ml-2 flex items-center gap-1 rounded-full border p-1"
       >
         <Fire className="size-7" />
       </motion.div>
@@ -64,7 +66,7 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
 
   return (
     <section className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-2">
-      <h2 className="mb-6 text-5xl font-bold text-white drop-shadow-md">
+      <h2 className="text-text-primary mb-6 text-5xl font-bold">
         {t("game:leaderboard")}
       </h2>
       <div className="flex w-full flex-col gap-2">
@@ -85,14 +87,13 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
               }}
               transition={{
                 layout: {
-                  type: "spring",
-                  stiffness: 350,
-                  damping: 25,
+                  duration: 0.5,
+                  ease: CALM_EASE,
                 },
               }}
-              className="bg-primary flex w-full justify-between rounded-xl p-3 text-3xl font-bold text-white"
+              className="bg-brand-tint border-brand-border text-text-primary rounded-rz-lg flex w-full justify-between border p-3 text-3xl font-bold"
             >
-              <span className="flex items-center gap-2 drop-shadow-md">
+              <span className="flex items-center gap-2">
                 {username}
                 <StreakBadge streak={streak} />
               </span>
@@ -102,7 +103,7 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
                   to={leaderboard.find((u) => u.id === id)?.points ?? 0}
                 />
               ) : (
-                <span className="drop-shadow-md">{points}</span>
+                <span className="font-mono">{points}</span>
               )}
             </motion.div>
           ))}

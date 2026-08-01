@@ -1,6 +1,6 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { Status } from "@razzia/common/types/game/status"
-import background from "@razzia/web/assets/background.png"
+import Atmosphere from "@razzia/web/components/Atmosphere"
 import Button from "@razzia/web/components/Button"
 import Loader from "@razzia/web/components/Loader"
 import {
@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next"
 
 type Props = PropsWithChildren & {
   statusName: Status | undefined
+  backgroundUrl?: string
   onNext?: () => void
   onBack?: () => void
   manager?: boolean
@@ -25,6 +26,7 @@ type Props = PropsWithChildren & {
 const GameWrapper = ({
   children,
   statusName,
+  backgroundUrl,
   onNext,
   onBack,
   manager,
@@ -60,19 +62,13 @@ const GameWrapper = ({
 
   return (
     <section className="relative flex min-h-dvh">
-      <div className="fixed top-0 left-0 h-full w-full">
-        <img
-          className="pointer-events-none h-full w-full object-cover select-none"
-          src={background}
-          alt="background"
-        />
-      </div>
+      <Atmosphere recipe="photo" backgroundUrl={backgroundUrl} />
 
       <div className="z-10 flex w-full flex-1 flex-col justify-between">
         {!isConnected && !statusName ? (
           <div className="flex h-full w-full flex-1 flex-col items-center justify-center">
             <Loader className="h-30" />
-            <h1 className="text-4xl font-bold text-white">
+            <h1 className="text-text-primary text-4xl font-bold">
               {t("common:connecting")}
             </h1>
           </div>
@@ -80,7 +76,7 @@ const GameWrapper = ({
           <>
             <div className="flex w-full justify-between p-4">
               {questionStates && (
-                <div className="flex items-center rounded-md bg-white p-2 px-4 text-lg font-bold text-black">
+                <div className="bg-surface border-border text-text-primary rounded-rz-md font-mono flex items-center border p-2 px-4 text-lg font-bold">
                   {`${questionStates.current} / ${questionStates.total}`}
                 </div>
               )}
@@ -88,7 +84,7 @@ const GameWrapper = ({
               {manager && next && (
                 <Button
                   className={clsx(
-                    "bg-white px-4 text-black hover:bg-gray-200",
+                    "bg-surface border-border text-text-primary hover:bg-panel border px-4",
                     {
                       "pointer-events-none": isDisabled,
                     },
@@ -102,7 +98,7 @@ const GameWrapper = ({
               {manager && onBack && (
                 <Button
                   onClick={onBack}
-                  className="bg-white px-4 text-black hover:bg-gray-200"
+                  className="bg-surface border-border text-text-primary hover:bg-panel border px-4"
                 >
                   {t("common:exit")}
                 </Button>
@@ -112,9 +108,9 @@ const GameWrapper = ({
             {children}
 
             {!manager && (
-              <div className="z-50 flex items-center justify-between bg-white px-4 py-2 text-lg font-bold text-white">
-                <p className="text-gray-800">{player?.username}</p>
-                <div className="rounded-lg bg-gray-800 px-3 py-1 text-lg">
+              <div className="bg-surface border-border text-text-body z-50 flex items-center justify-between border-t px-4 py-2 text-lg font-bold">
+                <p className="text-text-primary">{player?.username}</p>
+                <div className="bg-panel border-border text-text-primary rounded-rz-md font-mono border px-3 py-1 text-lg">
                   {player?.points}
                 </div>
               </div>

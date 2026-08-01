@@ -36,6 +36,19 @@
     "tooFewAnswers": "質問には少なくとも2つの回答が必要です",
     "tooManyAnswers": "質問に設定できる回答は4つまでです"
   },
+  "visuals": {
+    "backgroundClearFailed": "背景を削除できませんでした",
+    "backgroundPathEmpty": "背景のパスは空にできません",
+    "backgroundPathTooLong": "背景のパスが長すぎます",
+    "backgroundSetFailed": "背景を設定できませんでした",
+    "backgroundTooLarge": "背景画像は5 MB以下にしてください",
+    "backgroundUploadFailed": "背景をアップロードできませんでした",
+    "dialectSetFailed": "デザインモードを更新できませんでした",
+    "emptyBackground": "背景画像が空です",
+    "invalidBackgroundPath": "背景の参照が無効です",
+    "invalidDialect": "デザインモードが無効です",
+    "unsupportedBackgroundType": "PNG、JPEG、WebP、またはGIF画像を使用してください"
+  },
   "route": {
     "back": "ホームに戻る",
     "description": "予期しないエラーが発生しました。もう一度お試しください。",
