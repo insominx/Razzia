@@ -119,6 +119,13 @@ Options:
 
 Uploaded files are stored in `config/assets/backgrounds/`. Keep that folder together with `config/game.json` and your quizzes when copying, backing up, or mounting a configuration. The repository ignores `config/` by default, so these files travel with the Docker volume or a copied config directory unless you deliberately change your Git workflow.
 
+This is managed storage: references in `config/game.json` and
+`config/quizz/*.json` determine which uploaded backgrounds remain reachable.
+Replacing or clearing a reference reclaims the old file after the configuration
+commit when no other config still uses it. Runtime cleanup gives uncommitted
+uploads a one-hour grace and protects uploads from the current server process;
+startup cleanup removes abandoned unreferenced files left by an earlier process.
+
 ### 2. Quiz Configuration (`config/quizz/*.json`)
 
 Quizzes can be created in two ways:

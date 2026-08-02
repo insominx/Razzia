@@ -1,4 +1,6 @@
-export const detectImageMimeType = (data: Buffer | Uint8Array): string | null => {
+export const detectImageMimeType = (
+  data: Buffer | Uint8Array,
+): string | null => {
   if (data.length >= 8) {
     if (
       data[0] === 0x89 &&
@@ -14,7 +16,12 @@ export const detectImageMimeType = (data: Buffer | Uint8Array): string | null =>
     }
   }
 
-  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+  if (
+    data.length >= 3 &&
+    data[0] === 0xff &&
+    data[1] === 0xd8 &&
+    data[2] === 0xff
+  ) {
     return "image/jpeg"
   }
 

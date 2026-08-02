@@ -111,7 +111,7 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
               </AlertDialog.Description>
               <button
                 onClick={handleCloseQrCode}
-                className="bg-surface border-border text-text-body hover:bg-panel absolute -top-3 -right-3 rounded-full border p-1.5 transition-colors ease-calm"
+                className="bg-surface border-border text-text-body hover:bg-panel ease-calm absolute -top-3 -right-3 rounded-full border p-1.5 transition-colors"
               >
                 <X className="size-6" />
               </button>
@@ -126,9 +126,7 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
         </AlertDialog.Root>
       </div>
 
-      <h2 className="text-text-primary mb-4 text-4xl font-bold">
-        {t(text)}
-      </h2>
+      <h2 className="text-text-primary mb-4 text-4xl font-bold">{t(text)}</h2>
 
       <div className="bg-panel border-border rounded-rz-md mb-6 flex items-center justify-center border px-6 py-3">
         <span className="text-text-primary text-2xl font-bold">

@@ -19,8 +19,15 @@ const PlayerGamePage = () => {
   const navigate = useNavigate()
   const { socket } = useSocket()
   const { gameId: gameIdParam } = useParams({ from: "/party/$gameId" })
-  const { status, visuals, setPlayer, setGameId, setStatus, setVisuals, reset } =
-    usePlayerStore()
+  const {
+    status,
+    visuals,
+    setPlayer,
+    setGameId,
+    setStatus,
+    setVisuals,
+    reset,
+  } = usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
 

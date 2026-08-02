@@ -64,14 +64,14 @@ const QuestionEditorAnswers = () => {
           <button
             onClick={removeAnswer}
             disabled={currentQuestion.answers.length <= 2}
-            className="bg-panel border-border text-text-body hover:bg-brand-tint rounded-rz-md flex size-7 items-center justify-center border transition-colors ease-calm disabled:opacity-40"
+            className="bg-panel border-border text-text-body hover:bg-brand-tint rounded-rz-md ease-calm flex size-7 items-center justify-center border transition-colors disabled:opacity-40"
           >
             <Minus className="size-4" />
           </button>
           <button
             onClick={addAnswer}
             disabled={currentQuestion.answers.length >= 4}
-            className="bg-panel border-border text-text-body hover:bg-brand-tint rounded-rz-md flex size-7 items-center justify-center border transition-colors ease-calm disabled:opacity-40"
+            className="bg-panel border-border text-text-body hover:bg-brand-tint rounded-rz-md ease-calm flex size-7 items-center justify-center border transition-colors disabled:opacity-40"
           >
             <Plus className="size-4" />
           </button>
@@ -86,11 +86,11 @@ const QuestionEditorAnswers = () => {
             <div
               key={i}
               className={clsx(
-                "flex items-center gap-3 rounded-rz-xl border-2 px-4 py-6",
+                "rounded-rz-xl flex items-center gap-3 border-2 px-4 py-6",
                 ANSWER_IDENTITY[i],
               )}
             >
-              <span className="font-mono flex size-8 shrink-0 items-center justify-center rounded-rz-sm border-2 border-current bg-canvas/25 text-base font-bold md:size-10 md:text-lg">
+              <span className="rounded-rz-sm bg-canvas/25 flex size-8 shrink-0 items-center justify-center border-2 border-current font-mono text-base font-bold md:size-10 md:text-lg">
                 {ANSWERS_LABELS[i]}
               </span>
               <div className="flex flex-1 items-center justify-between gap-1.5">
@@ -104,10 +104,10 @@ const QuestionEditorAnswers = () => {
                   type="button"
                   onClick={() => toggleSolution(i)}
                   className={clsx(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ease-calm",
+                    "ease-calm flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     isSelected
                       ? "border-success-border bg-success-tint text-success"
-                      : "border-border bg-transparent text-text-muted",
+                      : "border-border text-text-muted bg-transparent",
                   )}
                 >
                   {isSelected && <Check className="size-4 stroke-5" />}

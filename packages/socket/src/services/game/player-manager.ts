@@ -18,12 +18,7 @@ export class PlayerManager {
   private readonly getVisuals: () => ResolvedVisuals
   private players: Player[] = []
 
-  constructor({
-    io,
-    gameId,
-    getManagerId,
-    getVisuals,
-  }: PlayerManagerOptions) {
+  constructor({ io, gameId, getManagerId, getVisuals }: PlayerManagerOptions) {
     this.io = io
     this.gameId = gameId
     this.getManagerId = getManagerId

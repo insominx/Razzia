@@ -5,16 +5,20 @@ import path from "path"
 
 const tempRoots: string[] = []
 
+let configRoot = ""
+
 const makeTempConfig = () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "razzia-config-"))
   tempRoots.push(root)
   process.env.CONFIG_PATH = root
+
   return root
 }
 
 beforeEach(() => {
   vi.resetModules()
-  makeTempConfig()
+  configRoot = makeTempConfig()
+  fs.mkdirSync(path.join(configRoot, "quizz"))
 })
 
 afterEach(() => {
@@ -26,7 +30,7 @@ afterEach(() => {
 
 describe("getGameConfig fail-closed", () => {
   it("throws when visuals contain an invalid background path instead of returning empty config", async () => {
-    const root = process.env.CONFIG_PATH!
+    const root = configRoot
     fs.writeFileSync(
       path.join(root, "game.json"),
       JSON.stringify({
@@ -43,7 +47,7 @@ describe("getGameConfig fail-closed", () => {
   })
 
   it("throws when managerPassword is missing", async () => {
-    const root = process.env.CONFIG_PATH!
+    const root = configRoot
     fs.writeFileSync(path.join(root, "game.json"), JSON.stringify({}))
 
     const { getGameConfig } = await import("@razzia/socket/services/config")
@@ -52,7 +56,7 @@ describe("getGameConfig fail-closed", () => {
   })
 
   it("returns parsed config when valid", async () => {
-    const root = process.env.CONFIG_PATH!
+    const root = configRoot
     fs.writeFileSync(
       path.join(root, "game.json"),
       JSON.stringify({ managerPassword: "secret" }),
@@ -66,8 +70,8 @@ describe("getGameConfig fail-closed", () => {
 
 describe("getQuizz soft-strips invalid visuals", () => {
   it("keeps a quiz when only visuals.background is invalid", async () => {
-    const root = process.env.CONFIG_PATH!
-    fs.mkdirSync(path.join(root, "quizz"))
+    const root = configRoot
+    fs.mkdirSync(path.join(root, "quizz"), { recursive: true })
     fs.writeFileSync(
       path.join(root, "quizz/broken-bg.json"),
       JSON.stringify({
@@ -98,7 +102,7 @@ describe("getQuizz soft-strips invalid visuals", () => {
 
 describe("updateGameConfig", () => {
   it("preserves prior fields across sequential updates", async () => {
-    const root = process.env.CONFIG_PATH!
+    const root = configRoot
     fs.writeFileSync(
       path.join(root, "game.json"),
       JSON.stringify({ managerPassword: "secret" }),
@@ -106,9 +110,8 @@ describe("updateGameConfig", () => {
     fs.mkdirSync(path.join(root, "assets/backgrounds"), { recursive: true })
     fs.writeFileSync(path.join(root, "assets/backgrounds/room.png"), "x")
 
-    const { getGameConfig, updateGameConfig } = await import(
-      "@razzia/socket/services/config"
-    )
+    const { getGameConfig, updateGameConfig } =
+      await import("@razzia/socket/services/config")
 
     updateGameConfig((config) => ({
       ...config,
@@ -124,5 +127,58 @@ describe("updateGameConfig", () => {
 
     expect(getGameConfig().visuals?.dialect).toBe("stage-studio")
     expect(getGameConfig().visuals?.background?.path).toBe("room.png")
+  })
+})
+
+describe("getReferencedBackgroundAssetPaths", () => {
+  it("collects valid global and quiz background references", async () => {
+    fs.writeFileSync(
+      path.join(configRoot, "game.json"),
+      JSON.stringify({
+        managerPassword: "secret",
+        visuals: {
+          background: { kind: "config-asset", path: "global.png" },
+        },
+      }),
+    )
+    fs.writeFileSync(
+      path.join(configRoot, "quizz/quiz.json"),
+      JSON.stringify({
+        subject: "Quiz",
+        visuals: {
+          background: { kind: "config-asset", path: "quiz.webp" },
+        },
+        questions: [
+          {
+            question: "Q1",
+            answers: ["A", "B"],
+            solutions: [0],
+            cooldown: 5,
+            time: 20,
+          },
+        ],
+      }),
+    )
+
+    const { getReferencedBackgroundAssetPaths } =
+      await import("@razzia/socket/services/config")
+
+    expect([...getReferencedBackgroundAssetPaths()].sort()).toEqual([
+      "global.png",
+      "quiz.webp",
+    ])
+  })
+
+  it("throws instead of treating malformed quiz config as no references", async () => {
+    fs.writeFileSync(
+      path.join(configRoot, "game.json"),
+      JSON.stringify({ managerPassword: "secret" }),
+    )
+    fs.writeFileSync(path.join(configRoot, "quizz/broken.json"), "{")
+
+    const { getReferencedBackgroundAssetPaths } =
+      await import("@razzia/socket/services/config")
+
+    expect(() => getReferencedBackgroundAssetPaths()).toThrow()
   })
 })

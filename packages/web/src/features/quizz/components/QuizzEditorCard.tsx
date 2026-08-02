@@ -49,7 +49,7 @@ const QuizzEditorCard = ({
       onClick={onClick}
       className={twMerge(
         clsx(
-          "bg-surface border-border rounded-rz-md group relative flex h-36 cursor-pointer flex-col justify-between gap-1 border-2 px-6 py-2 transition-colors ease-calm",
+          "bg-surface border-border rounded-rz-md group ease-calm relative flex h-36 cursor-pointer flex-col justify-between gap-1 border-2 px-6 py-2 transition-colors",
           {
             "border-brand bg-brand-tint": isActive,
           },
@@ -83,7 +83,7 @@ const QuizzEditorCard = ({
           trigger={
             <button
               onClick={(e) => e.stopPropagation()}
-              className="bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm absolute top-1.5 right-1.5 hidden p-1 transition-colors ease-calm group-hover:block"
+              className="bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 hidden p-1 transition-colors group-hover:block"
             >
               <Trash2 className="size-3.5" />
             </button>

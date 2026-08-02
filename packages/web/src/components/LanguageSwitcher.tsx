@@ -20,7 +20,7 @@ const LanguageSwitcher = () => {
       value={normalizedLanguage}
       onValueChange={(lang) => i18n.changeLanguage(lang)}
     >
-      <Select.Trigger className="border-border bg-surface text-text-body hover:border-brand rounded-rz-md flex cursor-pointer items-center gap-1.5 border px-2 py-1.5 text-sm font-semibold transition-colors ease-calm focus:outline-none">
+      <Select.Trigger className="border-border bg-surface text-text-body hover:border-brand rounded-rz-md ease-calm flex cursor-pointer items-center gap-1.5 border px-2 py-1.5 text-sm font-semibold transition-colors focus:outline-none">
         <Globe className="text-text-muted size-4" />
         <Select.Value>{normalizedLanguage.toUpperCase()}</Select.Value>
       </Select.Trigger>
@@ -36,7 +36,7 @@ const LanguageSwitcher = () => {
               <Select.Item
                 key={l.code}
                 value={l.code}
-                className="hover:bg-brand-tint focus:bg-brand-tint rounded-rz-sm flex cursor-pointer items-center px-3 py-1.5 text-sm outline-none transition-colors ease-calm data-[state=checked]:font-semibold"
+                className="hover:bg-brand-tint focus:bg-brand-tint rounded-rz-sm ease-calm flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors outline-none data-[state=checked]:font-semibold"
               >
                 <Select.ItemText>{t(l.label)}</Select.ItemText>
               </Select.Item>

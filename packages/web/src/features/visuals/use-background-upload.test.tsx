@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const uploadBackgroundViaHttp = vi.fn()
-const toastError = vi.fn()
-const toastSuccess = vi.fn()
+const uploadBackgroundViaHttp = vi.fn<(..._args: unknown[]) => unknown>()
+const toastError = vi.fn<(..._args: unknown[]) => void>()
+const toastSuccess = vi.fn<(..._args: unknown[]) => void>()
 
 vi.mock("@razzia/web/features/game/contexts/socket-context", () => ({
   useSocket: () => ({ clientId: "client-1" }),
@@ -40,7 +40,7 @@ describe("useBackgroundUpload", () => {
   })
 
   it("uploads once while uploading and ignores a second concurrent pick", async () => {
-    let resolveUpload!: (value: unknown) => void
+    let resolveUpload: (_value: unknown) => void = () => undefined
     uploadBackgroundViaHttp.mockImplementation(
       () =>
         new Promise((resolve) => {
@@ -49,22 +49,21 @@ describe("useBackgroundUpload", () => {
     )
 
     const onSuccess = vi.fn()
-    const { useBackgroundUpload } = await import(
-      "@razzia/web/features/visuals/use-background-upload"
-    )
+    const { useBackgroundUpload } =
+      await import("@razzia/web/features/visuals/use-background-upload")
     const { result } = renderHook(() =>
       useBackgroundUpload({ setGlobal: true, onSuccess }),
     )
 
     const file = new File(["ok"], "a.png", { type: "image/png" })
 
-    await act(async () => {
+    act(() => {
       void result.current.uploadFile(file)
     })
 
     expect(result.current.uploading).toBe(true)
 
-    await act(async () => {
+    act(() => {
       void result.current.uploadFile(file)
     })
 
@@ -75,6 +74,7 @@ describe("useBackgroundUpload", () => {
         ref: { kind: "config-asset", path: "a.png" },
         url: "/config-assets/backgrounds/a.png",
       })
+      await Promise.resolve()
     })
 
     expect(onSuccess).toHaveBeenCalledTimes(1)

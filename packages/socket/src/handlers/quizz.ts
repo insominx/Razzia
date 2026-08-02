@@ -8,7 +8,10 @@ import {
   updateQuizz,
 } from "@razzia/socket/services/config"
 import manager, { emitConfig } from "@razzia/socket/services/manager"
-import { resolveVisuals } from "@razzia/socket/services/visuals"
+import {
+  finalizeBackgroundMutation,
+  resolveVisuals,
+} from "@razzia/socket/services/visuals"
 
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
@@ -30,9 +33,13 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.QUIZZ.SAVE,
     manager.withAuth(socket, (data) => {
       try {
-        const { id } = saveQuizz(data)
+        const mutation = saveQuizz(data)
+        finalizeBackgroundMutation(
+          mutation.previousBackground,
+          mutation.background,
+        )
 
-        socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id })
+        socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id: mutation.id })
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to save quizz:", error)
@@ -47,7 +54,8 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.QUIZZ.DELETE,
     manager.withAuth(socket, (id) => {
       try {
-        deleteQuizz(id)
+        const mutation = deleteQuizz(id)
+        finalizeBackgroundMutation(mutation.previousBackground)
 
         emitConfig(socket)
       } catch (error) {
@@ -61,9 +69,13 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
     EVENTS.QUIZZ.UPDATE,
     manager.withAuth(socket, ({ id, ...data }) => {
       try {
-        const { id: newId } = updateQuizz(id, data)
+        const mutation = updateQuizz(id, data)
+        finalizeBackgroundMutation(
+          mutation.previousBackground,
+          mutation.background,
+        )
 
-        socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: newId })
+        socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: mutation.id })
         emitConfig(socket)
       } catch (error) {
         console.error("Failed to update quizz:", error)

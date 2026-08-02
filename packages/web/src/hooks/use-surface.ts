@@ -1,7 +1,4 @@
-import {
-  DEFAULT_DIALECT,
-  type Dialect,
-} from "@razzia/common/types/visuals"
+import { DEFAULT_DIALECT, type Dialect } from "@razzia/common/types/visuals"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useRouterState } from "@tanstack/react-router"
 import { createContext, useContext, useLayoutEffect } from "react"
@@ -31,10 +28,7 @@ export const resolveRegister = (
   surface: Surface,
 ): Register => (isLightRegister(dialect, surface) ? "light" : "dark")
 
-export const useSurfaceOverride = ({
-  dialect,
-  surface,
-}: SurfaceOverride) => {
+export const useSurfaceOverride = ({ dialect, surface }: SurfaceOverride) => {
   const setOverride = useContext(SurfaceOverrideContext)
 
   if (!setOverride) {
@@ -77,7 +71,10 @@ export const useSurface = (override: SurfaceOverride | null = null) => {
     applyRegister(register)
   }, [register])
 
-  useLayoutEffect(() => () => {
-    clearRegister()
-  }, [])
+  useLayoutEffect(
+    () => () => {
+      clearRegister()
+    },
+    [],
+  )
 }

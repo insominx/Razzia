@@ -51,9 +51,9 @@ const QuestionEditorConfig = () => {
               <Switch.Root
                 checked={isTimeLimitEnabled}
                 onCheckedChange={handleToggleTimeLimit}
-                className="bg-panel focus-visible:outline-brand data-[state=checked]:bg-brand relative h-5 w-9 cursor-pointer rounded-full transition-colors ease-calm focus-visible:outline-2"
+                className="bg-panel focus-visible:outline-brand data-[state=checked]:bg-brand ease-calm relative h-5 w-9 cursor-pointer rounded-full transition-colors focus-visible:outline-2"
               >
-                <Switch.Thumb className="bg-surface border-border block size-4 translate-x-0.5 rounded-full border transition-transform ease-calm data-[state=checked]:translate-x-4.5" />
+                <Switch.Thumb className="bg-surface border-border ease-calm block size-4 translate-x-0.5 rounded-full border transition-transform data-[state=checked]:translate-x-4.5" />
               </Switch.Root>
             }
           />

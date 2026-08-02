@@ -38,7 +38,7 @@ const Start = ({ data: { time, subject } }: Props) => {
         <>
           <div
             className={clsx(
-              `anim-show bg-brand rounded-rz-xl aspect-square h-32 transition-transform ease-calm md:h-60`,
+              `anim-show bg-brand rounded-rz-xl ease-calm aspect-square h-32 transition-transform md:h-60`,
             )}
             style={{
               transform: `rotate(${45 * (time - cooldown)}deg)`,

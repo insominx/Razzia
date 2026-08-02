@@ -186,7 +186,7 @@ const Toggle = <T extends string>({
   onChange: (value: T) => void
 }) => (
   <fieldset className="flex flex-wrap items-center gap-2">
-    <legend className="mr-2 text-xs font-bold tracking-widest text-text-muted uppercase">
+    <legend className="text-text-muted mr-2 text-xs font-bold tracking-widest uppercase">
       {label}
     </legend>
     {options.map((option) => (
@@ -209,8 +209,7 @@ const Toggle = <T extends string>({
 )
 
 const Gallery = () => {
-  const [dialect, setDialect] =
-    useState<SurfaceDialect>("dark-everywhere")
+  const [dialect, setDialect] = useState<SurfaceDialect>("dark-everywhere")
   const [surface, setSurface] = useState<Surface>("stage")
   const [selectedIndex, setSelectedIndex] = useState(1)
   const setPlayers = useManagerStore((state) => state.setPlayers)
@@ -232,14 +231,14 @@ const Gallery = () => {
   }, [resetManager, resetPlayer, setPlayer, setPlayers])
 
   return (
-    <main className="min-h-dvh bg-canvas text-text-body transition-colors duration-300">
+    <main className="bg-canvas text-text-body min-h-dvh transition-colors duration-300">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 md:px-8">
-        <header className="flex flex-col gap-4 border-b border-border pb-6">
+        <header className="border-border flex flex-col gap-4 border-b pb-6">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-text-primary md:text-4xl">
+            <h1 className="text-text-primary text-3xl font-semibold tracking-tight md:text-4xl">
               State gallery
             </h1>
-            <p className="mt-2 text-sm text-text-muted">
+            <p className="text-text-muted mt-2 text-sm">
               Deterministic fixtures for live game states. Role tables live in{" "}
               <code className="font-mono">STYLE.md</code>.
             </p>
@@ -285,16 +284,16 @@ const Gallery = () => {
           ))}
         </nav>
 
-        <article className="overflow-hidden rounded-rz-xl border border-border bg-canvas">
-          <header className="flex items-center justify-between border-b border-border bg-panel px-4 py-3">
-            <p className="text-sm font-semibold text-text-primary">
+        <article className="rounded-rz-xl border-border bg-canvas overflow-hidden border">
+          <header className="border-border bg-panel flex items-center justify-between border-b px-4 py-3">
+            <p className="text-text-primary text-sm font-semibold">
               {currentState.label}
             </p>
-            <p className="text-xs tracking-wider text-text-muted uppercase">
+            <p className="text-text-muted text-xs tracking-wider uppercase">
               fixture
             </p>
           </header>
-          <div className="relative flex min-h-[680px] flex-col overflow-hidden bg-canvas p-4">
+          <div className="bg-canvas relative flex min-h-[680px] flex-col overflow-hidden p-4">
             <Atmosphere recipe="photo" />
             <div className="relative z-10 flex min-h-0 flex-1 flex-col">
               {currentState.render()}

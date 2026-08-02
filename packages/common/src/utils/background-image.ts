@@ -24,23 +24,22 @@ export const BACKGROUND_IMAGE_TYPES = [
   },
 ] as const
 
-export type BackgroundImageMime = (typeof BACKGROUND_IMAGE_TYPES)[number]["mime"]
+export type BackgroundImageMime =
+  (typeof BACKGROUND_IMAGE_TYPES)[number]["mime"]
 
 export const BACKGROUND_UPLOAD_MIME_TYPES = BACKGROUND_IMAGE_TYPES.map(
   (entry) => entry.mime,
-) as unknown as [
-  BackgroundImageMime,
-  ...BackgroundImageMime[],
-]
+) as unknown as [BackgroundImageMime, ...BackgroundImageMime[]]
 
-export const BACKGROUND_IMAGE_EXTENSION_PATTERN =
-  /\.(gif|jpe?g|png|webp)$/i
+export const BACKGROUND_IMAGE_EXTENSION_PATTERN = /\.(gif|jpe?g|png|webp)$/i
 
 export const extensionForMime = (mime: string): string | undefined =>
   BACKGROUND_IMAGE_TYPES.find((entry) => entry.mime === mime)?.extension
 
 export const contentTypeForExtension = (ext: string): string | undefined => {
-  const normalized = ext.startsWith(".") ? ext.slice(1).toLowerCase() : ext.toLowerCase()
+  const normalized = ext.startsWith(".")
+    ? ext.slice(1).toLowerCase()
+    : ext.toLowerCase()
   const jpeg = normalized === "jpeg" ? "jpg" : normalized
 
   return BACKGROUND_IMAGE_TYPES.find(

@@ -85,9 +85,7 @@ const Medal = ({ rank }: { rank: number }) => {
         <div className="bg-text-primary/25 absolute top-[30%] left-1/2 h-6 w-[160%] -translate-x-1/2 -rotate-40" />
         <div className="bg-text-primary/25 absolute top-[70%] left-1/2 h-3 w-[160%] -translate-x-1/2 -rotate-40" />
       </div>
-      <p className="font-mono relative z-10">
-        {rank}
-      </p>
+      <p className="relative z-10 font-mono">{rank}</p>
     </div>
   )
 }

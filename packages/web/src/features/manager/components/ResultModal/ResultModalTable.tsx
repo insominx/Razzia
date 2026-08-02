@@ -34,7 +34,7 @@ const ResultModalTable = () => {
             pa.answerId !== null ? ANSWERS_LABELS[pa.answerId % 4] : null
 
           return (
-            <tr key={i} className="hover:bg-panel transition-colors ease-calm">
+            <tr key={i} className="hover:bg-panel ease-calm transition-colors">
               <td className="px-5 py-2.5 font-medium">{pa.playerName}</td>
               <td className="px-4 py-2.5">
                 {pa.answerId !== null && answerLabel ? (

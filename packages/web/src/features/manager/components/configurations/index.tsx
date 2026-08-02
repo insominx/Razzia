@@ -55,7 +55,7 @@ const Configurations = ({ data }: Props) => {
 
   return (
     <ConfigProvider data={data}>
-      <Card className="border-border bg-surface text-text-body max-h-[80svh] w-full max-w-md rounded-rz-xl border shadow-none">
+      <Card className="border-border bg-surface text-text-body rounded-rz-xl max-h-[80svh] w-full max-w-md border shadow-none">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-text-primary text-lg font-semibold">
             {t("manager:configurationsTitle")}
@@ -71,7 +71,7 @@ const Configurations = ({ data }: Props) => {
             </button>
           </div>
         </div>
-        <div className="border-border bg-panel flex shrink-0 overflow-hidden rounded-rz-md border">
+        <div className="border-border bg-panel rounded-rz-md flex shrink-0 overflow-hidden border">
           {tabs.map((tab, index) => (
             <ConfigTabButton
               key={tab.nameKey}

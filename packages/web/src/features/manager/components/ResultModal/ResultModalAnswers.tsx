@@ -123,12 +123,7 @@ const ResultModalAnswers = () => {
               {row.isCorrect ? (
                 <Check className="text-success size-5" />
               ) : (
-                <X
-                  className={clsx(
-                    "size-5",
-                    "text-danger",
-                  )}
-                />
+                <X className={clsx("size-5", "text-danger")} />
               )}
             </div>
 

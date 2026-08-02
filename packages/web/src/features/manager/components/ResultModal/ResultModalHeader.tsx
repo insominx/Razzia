@@ -21,20 +21,20 @@ const ResultModalHeader = () => {
         <button
           disabled={questionIndex === 0}
           onClick={goPrev}
-          className="text-text-muted hover:bg-panel rounded-rz-sm p-1 transition-colors ease-calm disabled:opacity-30"
+          className="text-text-muted hover:bg-panel rounded-rz-sm ease-calm p-1 transition-colors disabled:opacity-30"
         >
           <ChevronLeft className="size-5" />
         </button>
         <button
           disabled={questionIndex === total - 1}
           onClick={goNext}
-          className="text-text-muted hover:bg-panel rounded-rz-sm p-1 transition-colors ease-calm disabled:opacity-30"
+          className="text-text-muted hover:bg-panel rounded-rz-sm ease-calm p-1 transition-colors disabled:opacity-30"
         >
           <ChevronRight className="size-5" />
         </button>
         <button
           onClick={onClose}
-          className="text-text-faint hover:bg-panel hover:text-text-body rounded-rz-sm ml-1 p-1 transition-colors ease-calm"
+          className="text-text-faint hover:bg-panel hover:text-text-body rounded-rz-sm ease-calm ml-1 p-1 transition-colors"
         >
           <X className="size-5" />
         </button>

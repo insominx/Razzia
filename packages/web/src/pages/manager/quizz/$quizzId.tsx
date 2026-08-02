@@ -40,7 +40,10 @@ const QuizzEditPage = () => {
   }
 
   return (
-    <QuizzEditorProvider initialData={quizz} initialBackgroundUrl={backgroundUrl}>
+    <QuizzEditorProvider
+      initialData={quizz}
+      initialBackgroundUrl={backgroundUrl}
+    >
       <div className="bg-canvas text-text-body relative flex h-svh flex-col">
         <QuizzEditorHeader />
         <div className="flex flex-1 overflow-hidden">

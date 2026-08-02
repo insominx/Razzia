@@ -1,9 +1,6 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { ManagerMutationResponse } from "@razzia/common/types/manager"
-import {
-  DEFAULT_DIALECT,
-  type Dialect,
-} from "@razzia/common/types/visuals"
+import { DEFAULT_DIALECT, type Dialect } from "@razzia/common/types/visuals"
 import Button from "@razzia/web/components/Button"
 import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
@@ -48,7 +45,7 @@ const ConfigVisuals = () => {
   const activeDialect = game.visuals?.dialect ?? DEFAULT_DIALECT
   const { uploading, uploadFile } = useBackgroundUpload({
     setGlobal: true,
-    onSuccess: async () => {
+    onSuccess: () => {
       socket.emit(EVENTS.MANAGER.GET_CONFIG)
       toast.success(t("manager:visuals.updated"))
     },
@@ -153,7 +150,7 @@ const ConfigVisuals = () => {
                 role="radio"
                 aria-checked={active}
                 className={clsx(
-                  "rounded-rz-md border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait disabled:opacity-60",
+                  "rounded-rz-md focus-visible:outline-brand border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60",
                   active
                     ? "border-brand-border bg-brand-tint text-brand"
                     : "border-border bg-surface text-text-body hover:bg-panel",
@@ -180,7 +177,7 @@ const ConfigVisuals = () => {
 
       <div
         className={clsx(
-          "border-border bg-panel focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand relative aspect-video overflow-hidden rounded-rz-md border-2 transition-colors duration-[var(--rz-dur-fast)] ease-calm",
+          "border-border bg-panel focus-visible:outline-brand rounded-rz-md ease-calm relative aspect-video overflow-hidden border-2 transition-colors duration-[var(--rz-dur-fast)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           isDragging && "border-brand-border bg-brand-tint",
           uploading && "pointer-events-none opacity-60",
         )}
@@ -212,7 +209,9 @@ const ConfigVisuals = () => {
         )}
       </div>
 
-      <p className="text-text-muted text-xs">{t("manager:visuals.uploadLimits")}</p>
+      <p className="text-text-muted text-xs">
+        {t("manager:visuals.uploadLimits")}
+      </p>
 
       <div className="flex gap-2">
         <Button

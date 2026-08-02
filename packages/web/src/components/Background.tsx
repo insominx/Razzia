@@ -14,7 +14,7 @@ const Background = ({ children }: PropsWithChildren) => (
       href="https://github.com/Ralex91/Razzia"
       target="_blank"
       rel="noopener noreferrer"
-      className="text-text-faint hover:text-text-muted absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-sm font-semibold transition-colors ease-calm"
+      className="text-text-faint hover:text-text-muted ease-calm absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-sm font-semibold transition-colors"
     >
       <GithubIcon size={14} />
       {/* oxlint-disable-next-line no-undef */}

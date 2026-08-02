@@ -1,14 +1,11 @@
 import { renderHook } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import {
-  isLightRegister,
-  resolveRegister,
-} from "@razzia/web/hooks/use-surface"
+import { isLightRegister, resolveRegister } from "@razzia/web/hooks/use-surface"
 
 vi.mock("@tanstack/react-router", () => ({
-  useRouterState: (
-    opts: { select: (state: { location: { pathname: string } }) => unknown },
-  ) => opts.select({ location: { pathname: "/manager/config" } }),
+  useRouterState: (opts: {
+    select: (state: { location: { pathname: string } }) => unknown
+  }) => opts.select({ location: { pathname: "/manager/config" } }),
 }))
 
 vi.mock("@razzia/web/features/game/stores/manager", () => ({
@@ -41,7 +38,7 @@ describe("useSurface", () => {
   it("writes a single data-register attr and keeps it across updates", async () => {
     const { useSurface } = await import("@razzia/web/hooks/use-surface")
 
-    type Props = {
+    interface Props {
       dialect: "dark-everywhere" | "stage-studio"
       surface: "stage" | "studio"
     }

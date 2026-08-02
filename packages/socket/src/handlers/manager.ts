@@ -4,10 +4,7 @@ import {
   dialectValidator,
 } from "@razzia/common/validators/visuals"
 import type { SocketContext } from "@razzia/socket/handlers/types"
-import {
-  getGameConfig,
-  updateGameConfig,
-} from "@razzia/socket/services/config"
+import { getGameConfig, updateGameConfig } from "@razzia/socket/services/config"
 import { verifyManagerAuth } from "@razzia/socket/services/manager-auth"
 import manager, { emitConfig } from "@razzia/socket/services/manager"
 import {

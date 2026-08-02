@@ -8,7 +8,11 @@ import type {
   GameResultMeta,
   QuizzWithId,
 } from "@razzia/common/types/game"
-import { quizzValidator } from "@razzia/common/validators/quizz"
+import type { BackgroundRef } from "@razzia/common/types/visuals"
+import {
+  type QuizzValidated,
+  quizzValidator,
+} from "@razzia/common/validators/quizz"
 import { normalizeFilename } from "@razzia/socket/utils/game"
 import fs from "fs"
 import { resolve } from "path"
@@ -129,6 +133,53 @@ const parseQuizzData = (data: unknown, label: string) => {
   return null
 }
 
+const readStrictQuizzFile = (
+  filePath: string,
+  label: string,
+): QuizzValidated => {
+  const data: unknown = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+  const result = quizzValidator.safeParse(data)
+
+  if (!result.success) {
+    throw new Error(`Invalid quizz config "${label}"`)
+  }
+
+  return result.data
+}
+
+export const getReferencedBackgroundAssetPaths = (): Set<string> => {
+  const references = new Set<string>()
+  const gameBackground = getGameConfig().visuals?.background
+
+  if (gameBackground) {
+    references.add(gameBackground.path)
+  }
+
+  const quizzDirectory = getConfigPath("quizz")
+  const files = fs
+    .readdirSync(quizzDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => entry.name)
+    .sort()
+
+  for (const file of files) {
+    const quizz = readStrictQuizzFile(getConfigPath(`quizz/${file}`), file)
+    const background = quizz.visuals?.background
+
+    if (background) {
+      references.add(background.path)
+    }
+  }
+
+  return references
+}
+
+export interface QuizzBackgroundMutation {
+  id: string
+  previousBackground?: BackgroundRef
+  background?: BackgroundRef
+}
+
 export const getQuizzById = (id: string) => {
   const filePath = getConfigPath(`quizz/${id}.json`)
 
@@ -136,7 +187,7 @@ export const getQuizzById = (id: string) => {
     throw new Error(`Quizz "${id}" not found`)
   }
 
-  const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+  const data: unknown = JSON.parse(fs.readFileSync(filePath, "utf-8"))
   const parsed = parseQuizzData(data, id)
 
   if (!parsed) {
@@ -159,7 +210,7 @@ export const getQuizz = () => {
       .filter((file) => file.endsWith(".json"))
 
     const quizz: QuizzWithId[] = files.flatMap((file) => {
-      const data = JSON.parse(
+      const data: unknown = JSON.parse(
         fs.readFileSync(getConfigPath(`quizz/${file}`), "utf-8"),
       )
       const id = file.replace(".json", "")
@@ -182,7 +233,10 @@ export const getQuizz = () => {
   }
 }
 
-export const updateQuizz = (id: string, data: unknown): { id: string } => {
+export const updateQuizz = (
+  id: string,
+  data: unknown,
+): QuizzBackgroundMutation => {
   const result = quizzValidator.safeParse(data)
 
   if (!result.success) {
@@ -195,19 +249,29 @@ export const updateQuizz = (id: string, data: unknown): { id: string } => {
     throw new Error(`Quizz "${id}" not found`)
   }
 
+  const previous = readStrictQuizzFile(oldPath, `${id}.json`)
+
   fs.writeFileSync(oldPath, JSON.stringify(result.data, null, 2))
 
-  return { id }
+  return {
+    id,
+    previousBackground: previous.visuals?.background,
+    background: result.data.visuals?.background,
+  }
 }
 
-export const deleteQuizz = (id: string): void => {
+export const deleteQuizz = (id: string): QuizzBackgroundMutation => {
   const filePath = getConfigPath(`quizz/${id}.json`)
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Quizz "${id}" not found`)
   }
 
+  const previous = readStrictQuizzFile(filePath, `${id}.json`)
+
   fs.unlinkSync(filePath)
+
+  return { id, previousBackground: previous.visuals?.background }
 }
 
 export const saveResult = (data: GameResult): void => {
@@ -284,7 +348,7 @@ export const deleteResult = (id: string): void => {
   fs.unlinkSync(filePath)
 }
 
-export const saveQuizz = (data: unknown): { id: string } => {
+export const saveQuizz = (data: unknown): QuizzBackgroundMutation => {
   const result = quizzValidator.safeParse(data)
 
   if (!result.success) {
@@ -293,8 +357,15 @@ export const saveQuizz = (data: unknown): { id: string } => {
 
   const id = normalizeFilename(result.data.subject)
   const filePath = getConfigPath(`quizz/${id}.json`)
+  const previous = fs.existsSync(filePath)
+    ? readStrictQuizzFile(filePath, `${id}.json`)
+    : undefined
 
   fs.writeFileSync(filePath, JSON.stringify(result.data, null, 2))
 
-  return { id }
+  return {
+    id,
+    previousBackground: previous?.visuals?.background,
+    background: result.data.visuals?.background,
+  }
 }

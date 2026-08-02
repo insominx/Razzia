@@ -13,6 +13,8 @@ import type {
 } from "@razzia/common/types/visuals"
 import {
   getConfigPath,
+  getGameConfig,
+  getReferencedBackgroundAssetPaths,
   updateGameConfig,
 } from "@razzia/socket/services/config"
 import fs from "fs"
@@ -23,6 +25,10 @@ import { extname } from "path"
 export const BACKGROUND_ASSETS_CONFIG_PATH = "assets/backgrounds"
 
 export const BACKGROUND_ASSETS_PUBLIC_PREFIX = "/config-assets/backgrounds"
+
+export const BACKGROUND_ORPHAN_GRACE_MS = 60 * 60 * 1000
+
+const pendingBackgroundAssetPaths = new Set<string>()
 
 export { BACKGROUND_UPLOAD_MAX_BYTES }
 
@@ -83,7 +89,9 @@ export const storeBackgroundAsset = (
   ensureBackgroundAssetsDirectory()
 
   const id = nanoid(16)
-  const safeBase = fileName.replace(/\.[^.]*$/, "").replace(/[^a-z0-9_-]/gi, "-")
+  const safeBase = fileName
+    .replace(/\.[^.]*$/, "")
+    .replace(/[^a-z0-9_-]/gi, "-")
   const path = `${safeBase ? `${safeBase.slice(0, 40)}-` : ""}${id}.${extension}`
   const filePath = getBackgroundAssetPath(path)
 
@@ -92,6 +100,7 @@ export const storeBackgroundAsset = (
   }
 
   fs.writeFileSync(filePath, data)
+  pendingBackgroundAssetPaths.add(path)
 
   return {
     ref: { kind: "config-asset", path },
@@ -102,48 +111,184 @@ export const storeBackgroundAsset = (
 export const deleteBackgroundAsset = (background: BackgroundRef): void => {
   const filePath = getBackgroundAssetPath(background.path)
 
-  if (!filePath || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return
+  }
+
+  const stat = fs.lstatSync(filePath)
+
+  if (stat.isSymbolicLink() || !stat.isFile()) {
     return
   }
 
   fs.unlinkSync(filePath)
+  pendingBackgroundAssetPaths.delete(background.path)
 }
 
-export const setGlobalBackground = (
-  background: BackgroundRef,
-): GameConfig => {
+export interface BackgroundReclaimResult {
+  examined: number
+  deleted: number
+  retained: number
+}
+
+export interface BackgroundReclaimOptions {
+  candidates?: Iterable<string>
+  minimumAgeMs: number
+  preserve?: ReadonlySet<string>
+}
+
+export const reclaimBackgroundAssets = ({
+  candidates,
+  minimumAgeMs,
+  preserve = new Set<string>(),
+}: BackgroundReclaimOptions): BackgroundReclaimResult => {
+  const referenced = getReferencedBackgroundAssetPaths()
+  const assetsDirectory = getConfigPath(BACKGROUND_ASSETS_CONFIG_PATH)
+
+  if (!fs.existsSync(assetsDirectory)) {
+    return { examined: 0, deleted: 0, retained: 0 }
+  }
+
+  const candidatePaths = [
+    ...new Set(candidates ?? fs.readdirSync(assetsDirectory)),
+  ].sort()
+  const result: BackgroundReclaimResult = {
+    examined: candidatePaths.length,
+    deleted: 0,
+    retained: 0,
+  }
+
+  for (const candidate of candidatePaths) {
+    const validated = backgroundAssetPathValidator.safeParse(candidate)
+
+    if (!validated.success) {
+      result.retained += 1
+
+      continue
+    }
+
+    const assetPath = getBackgroundAssetPath(validated.data)
+
+    if (
+      !assetPath ||
+      referenced.has(validated.data) ||
+      preserve.has(validated.data)
+    ) {
+      result.retained += 1
+
+      continue
+    }
+
+    const stat = (() => {
+      try {
+        return fs.lstatSync(assetPath)
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          console.warn(
+            `Failed to inspect background asset "${candidate}":`,
+            error,
+          )
+        }
+
+        return null
+      }
+    })()
+
+    if (!stat) {
+      result.retained += 1
+
+      continue
+    }
+
+    if (
+      stat.isSymbolicLink() ||
+      !stat.isFile() ||
+      (minimumAgeMs > 0 && Date.now() - stat.mtimeMs < minimumAgeMs)
+    ) {
+      result.retained += 1
+
+      continue
+    }
+
+    try {
+      fs.unlinkSync(assetPath)
+      pendingBackgroundAssetPaths.delete(validated.data)
+
+      result.deleted += 1
+    } catch (error) {
+      console.warn(`Failed to reclaim background asset "${candidate}":`, error)
+      result.retained += 1
+    }
+  }
+
+  return result
+}
+
+const reclaimWithoutFailingMutation = (
+  options: BackgroundReclaimOptions,
+): BackgroundReclaimResult => {
+  try {
+    return reclaimBackgroundAssets(options)
+  } catch (error) {
+    console.warn("Failed to reclaim background assets:", error)
+
+    return { examined: 0, deleted: 0, retained: 0 }
+  }
+}
+
+export const finalizeBackgroundMutation = (
+  previous: BackgroundRef | undefined,
+  adopted?: BackgroundRef,
+): BackgroundReclaimResult => {
+  if (adopted?.kind === "config-asset") {
+    pendingBackgroundAssetPaths.delete(adopted.path)
+  }
+
+  if (!previous || previous.path === adopted?.path) {
+    return { examined: 0, deleted: 0, retained: 0 }
+  }
+
+  return reclaimWithoutFailingMutation({
+    candidates: [previous.path],
+    minimumAgeMs: 0,
+  })
+}
+
+export const sweepBackgroundAssets = (): BackgroundReclaimResult =>
+  reclaimWithoutFailingMutation({
+    minimumAgeMs: BACKGROUND_ORPHAN_GRACE_MS,
+    preserve: pendingBackgroundAssetPaths,
+  })
+
+export const cleanupBackgroundAssetsOnStartup = (): BackgroundReclaimResult =>
+  reclaimWithoutFailingMutation({ minimumAgeMs: 0 })
+
+export const setGlobalBackground = (background: BackgroundRef): GameConfig => {
   const assetPath = getBackgroundAssetPath(background.path)
 
   if (!assetPath || !fs.existsSync(assetPath)) {
     throw new Error("errors:visuals.invalidBackgroundPath")
   }
 
-  let previous: BackgroundRef | undefined
+  const previous = getGameConfig().visuals?.background
 
-  const next = updateGameConfig((config) => {
-    previous = config.visuals?.background
+  const next = updateGameConfig((config) => ({
+    ...config,
+    visuals: {
+      ...config.visuals,
+      background,
+    },
+  }))
 
-    return {
-      ...config,
-      visuals: {
-        ...config.visuals,
-        background,
-      },
-    }
-  })
-
-  if (previous && previous.path !== background.path) {
-    deleteBackgroundAsset(previous)
-  }
+  finalizeBackgroundMutation(previous, background)
 
   return next
 }
 
 export const clearGlobalBackground = (): GameConfig => {
-  let previous: BackgroundRef | undefined
+  const previous = getGameConfig().visuals?.background
 
   const next = updateGameConfig((config) => {
-    previous = config.visuals?.background
     const { background: _background, ...visuals } = config.visuals ?? {}
 
     return {
@@ -152,9 +297,7 @@ export const clearGlobalBackground = (): GameConfig => {
     }
   })
 
-  if (previous) {
-    deleteBackgroundAsset(previous)
-  }
+  finalizeBackgroundMutation(previous)
 
   return next
 }
@@ -163,7 +306,8 @@ export const resolveVisuals = (
   quizz: Pick<Quizz, "visuals"> | undefined,
   gameConfig: GameConfig,
 ): ResolvedVisuals => {
-  const background = quizz?.visuals?.background ?? gameConfig.visuals?.background
+  const background =
+    quizz?.visuals?.background ?? gameConfig.visuals?.background
   const backgroundUrl = getBackgroundAssetUrl(background)
 
   return backgroundUrl ? { backgroundUrl } : {}
@@ -282,7 +426,7 @@ export const serveBackgroundUpload = async (
     return true
   }
 
-  let uploaded: ReturnType<typeof storeBackgroundAsset> | undefined
+  let uploaded: ReturnType<typeof storeBackgroundAsset> | undefined = undefined
 
   try {
     const fileNameHeader = request.headers["x-file-name"]
@@ -299,6 +443,8 @@ export const serveBackgroundUpload = async (
     if (url.searchParams.get("setGlobal") === "1") {
       setGlobalBackground(uploaded.ref)
     }
+
+    sweepBackgroundAssets()
 
     response.writeHead(201, { "Content-Type": "application/json" })
     response.end(JSON.stringify(uploaded))

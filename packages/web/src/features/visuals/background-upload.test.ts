@@ -43,21 +43,26 @@ describe("uploadBackgroundViaHttp", () => {
   it("posts to setGlobal query when requested", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        ref: { kind: "config-asset", path: "a.png" },
-        url: "/config-assets/backgrounds/a.png",
-      }),
+      json: () =>
+        Promise.resolve({
+          ref: { kind: "config-asset", path: "a.png" },
+          url: "/config-assets/backgrounds/a.png",
+        }),
     })
     vi.stubGlobal("fetch", fetchMock)
 
     const file = new File(["ok"], "a.png", { type: "image/png" })
     await uploadBackgroundViaHttp(file, "client-1", { setGlobal: true })
 
+    const headersMatcher: unknown = expect.objectContaining({
+      "X-Client-Id": "client-1",
+    })
+
     expect(fetchMock).toHaveBeenCalledWith(
       "/config-assets/backgrounds?setGlobal=1",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({ "X-Client-Id": "client-1" }),
+        headers: headersMatcher,
       }),
     )
   })

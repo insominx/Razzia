@@ -8,6 +8,7 @@ import { initConfig } from "@razzia/socket/services/config"
 import Registry from "@razzia/socket/services/registry"
 import manager from "@razzia/socket/services/manager"
 import {
+  cleanupBackgroundAssetsOnStartup,
   ensureBackgroundAssetsDirectory,
   serveBackgroundUpload,
   serveConfigAsset,
@@ -42,6 +43,7 @@ const io: Server = new ServerIO(httpServer, {
 })
 initConfig()
 ensureBackgroundAssetsDirectory()
+cleanupBackgroundAssetsOnStartup()
 
 console.log(`Socket server running on port ${WS_PORT}`)
 httpServer.listen(WS_PORT)

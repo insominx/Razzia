@@ -72,7 +72,7 @@ const GameWrapper = ({
           <>
             <div className="flex w-full justify-between p-4">
               {questionStates && (
-                <div className="bg-surface border-border text-text-primary rounded-rz-md font-mono flex items-center border p-2 px-4 text-lg font-bold">
+                <div className="bg-surface border-border text-text-primary rounded-rz-md flex items-center border p-2 px-4 font-mono text-lg font-bold">
                   {`${questionStates.current} / ${questionStates.total}`}
                 </div>
               )}
@@ -106,7 +106,7 @@ const GameWrapper = ({
             {!manager && (
               <div className="bg-surface border-border text-text-body z-50 flex items-center justify-between border-t px-4 py-2 text-lg font-bold">
                 <p className="text-text-primary">{player?.username}</p>
-                <div className="bg-panel border-border text-text-primary rounded-rz-md font-mono border px-3 py-1 text-lg">
+                <div className="bg-panel border-border text-text-primary rounded-rz-md border px-3 py-1 font-mono text-lg">
                   {player?.points}
                 </div>
               </div>

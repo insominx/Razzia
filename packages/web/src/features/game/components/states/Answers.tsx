@@ -96,14 +96,14 @@ const Answers = ({
       <div>
         <div className="text-text-primary mx-auto mb-4 flex w-full max-w-7xl justify-between gap-2 px-2 text-lg font-bold md:text-xl">
           {time !== NO_TIME_LIMIT && (
-            <div className="border-border bg-panel/90 flex flex-col items-center rounded-rz-md border px-4 py-1 text-lg font-bold">
+            <div className="border-border bg-panel/90 rounded-rz-md flex flex-col items-center border px-4 py-1 text-lg font-bold">
               <span className="text-text-muted text-sm">
                 {t("game:hud.time")}
               </span>
               <span className="font-mono">{cooldown}</span>
             </div>
           )}
-          <div className="border-border bg-panel/90 flex flex-col items-center rounded-rz-md border px-4 py-1 text-lg font-bold">
+          <div className="border-border bg-panel/90 rounded-rz-md flex flex-col items-center border px-4 py-1 text-lg font-bold">
             <span className="text-text-muted text-sm">
               {t("game:hud.answers")}
             </span>

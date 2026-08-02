@@ -55,20 +55,19 @@ describe("Manager.withAuth", () => {
 
 describe("verifyManagerAuth", () => {
   it("rejects missing or placeholder passwords", async () => {
-    const { verifyManagerAuth } = await import(
-      "@razzia/socket/services/manager-auth"
-    )
+    const { verifyManagerAuth } =
+      await import("@razzia/socket/services/manager-auth")
 
     expect(verifyManagerAuth("any", { managerPassword: undefined })).toEqual({
       ok: false,
       error: "errors:failedToReadConfig",
     })
-    expect(verifyManagerAuth("PASSWORD", { managerPassword: "PASSWORD" })).toEqual(
-      {
-        ok: false,
-        error: "errors:manager.passwordNotConfigured",
-      },
-    )
+    expect(
+      verifyManagerAuth("PASSWORD", { managerPassword: "PASSWORD" }),
+    ).toEqual({
+      ok: false,
+      error: "errors:manager.passwordNotConfigured",
+    })
     expect(verifyManagerAuth(undefined, { managerPassword: "secret" })).toEqual(
       {
         ok: false,

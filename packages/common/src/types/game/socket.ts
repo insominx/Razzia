@@ -122,9 +122,12 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
-  [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET]: (_request: {
-    background: BackgroundRef
-  }, _callback?: (_response: ManagerMutationResponse) => void) => void
+  [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET]: (
+    _request: {
+      background: BackgroundRef
+    },
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
   [EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR]: (
     _callback?: (_response: ManagerMutationResponse) => void,
   ) => void

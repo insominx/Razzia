@@ -78,7 +78,7 @@ const ConfigManageQuizz = () => {
         {quizz.map((q) => (
           <div
             key={q.id}
-            className="border-border bg-surface flex h-12 w-full items-center justify-between rounded-rz-md border pr-1.5 pl-3"
+            className="border-border bg-surface rounded-rz-md flex h-12 w-full items-center justify-between border pr-1.5 pl-3"
           >
             <p className="truncate">{q.subject}</p>
             <div className="flex gap-0.5">

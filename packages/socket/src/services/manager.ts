@@ -11,6 +11,11 @@ import { resolveVisuals } from "@razzia/socket/services/visuals"
 const getClientId = (socket: SocketContext["socket"]) =>
   socket.handshake.auth.clientId as string
 
+type ErrorAck = (_response: { error: string }) => void
+
+const isErrorAck = (value: unknown): value is ErrorAck =>
+  typeof value === "function"
+
 export const emitConfig = (socket: SocketContext["socket"]) => {
   const gameConfig = getGameConfig()
 
@@ -50,9 +55,9 @@ class Manager {
     return (...args: T) => {
       if (!this.isLogged(socket)) {
         socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
-        const maybeCallback = args[args.length - 1]
+        const maybeCallback: unknown = args[args.length - 1]
 
-        if (typeof maybeCallback === "function") {
+        if (isErrorAck(maybeCallback)) {
           maybeCallback({ error: "errors:manager.unauthorized" })
         }
 

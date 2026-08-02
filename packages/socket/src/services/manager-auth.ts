@@ -1,6 +1,4 @@
-export type ManagerAuthResult =
-  | { ok: true }
-  | { ok: false; error: string }
+export type ManagerAuthResult = { ok: true } | { ok: false; error: string }
 
 export const verifyManagerAuth = (
   password: string | undefined,
