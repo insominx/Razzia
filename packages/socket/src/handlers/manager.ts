@@ -2,6 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import {
   backgroundRefValidator,
   dialectValidator,
+  soundThemeValidator,
 } from "@razzia/common/validators/visuals"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { getGameConfig, updateGameConfig } from "@razzia/socket/services/config"
@@ -84,6 +85,37 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           error instanceof Error
             ? error.message
             : "errors:visuals.dialectSetFailed"
+
+        callback?.({ error: message })
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.MANAGER.SOUND_THEME_SET,
+    manager.withAuth(socket, ({ soundTheme }, callback) => {
+      try {
+        const result = soundThemeValidator.safeParse(soundTheme)
+
+        if (!result.success) {
+          throw new Error(result.error.issues[0].message)
+        }
+
+        updateGameConfig((config) => ({
+          ...config,
+          visuals: {
+            ...config.visuals,
+            soundTheme: result.data,
+          },
+        }))
+        emitConfig(socket)
+        callback?.({ ok: true })
+      } catch (error) {
+        console.error("Failed to set sound theme:", error)
+        const message =
+          error instanceof Error
+            ? error.message
+            : "errors:visuals.soundThemeSetFailed"
 
         callback?.({ error: message })
       }

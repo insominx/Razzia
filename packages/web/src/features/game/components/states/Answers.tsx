@@ -7,6 +7,7 @@ import {
   useEvent,
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
+import { useAnswersMusicUrl } from "@razzia/web/features/game/hooks/use-answers-music-url"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import {
   ANSWER_IDENTITY,
@@ -36,7 +37,7 @@ const Answers = ({
     volume: 0.1,
   })
 
-  const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, {
+  const [playMusic, { stop: stopMusic }] = useSound(useAnswersMusicUrl(), {
     volume: 0.2,
     interrupt: true,
     loop: true,

@@ -16,6 +16,17 @@
         "title": "Stage & studio"
       }
     },
+    "soundTheme": {
+      "classic": {
+        "description": "The original quiz loops during answers.",
+        "title": "Classic"
+      },
+      "label": "Sound theme",
+      "techno": {
+        "description": "Deep techno ambience during answers. Other cues stay classic for now.",
+        "title": "Techno"
+      }
+    },
     "invalidType": "Choose an image file",
     "preview": "Background preview",
     "readFailed": "Could not read image",

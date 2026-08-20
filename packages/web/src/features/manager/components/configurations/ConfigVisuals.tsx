@@ -1,6 +1,11 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { ManagerMutationResponse } from "@razzia/common/types/manager"
-import { DEFAULT_DIALECT, type Dialect } from "@razzia/common/types/visuals"
+import {
+  DEFAULT_DIALECT,
+  DEFAULT_SOUND_THEME,
+  type Dialect,
+  type SoundTheme,
+} from "@razzia/common/types/visuals"
 import Button from "@razzia/web/components/Button"
 import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
@@ -34,6 +39,83 @@ const DIALECT_OPTIONS = [
   descriptionKey: string
 }>
 
+const SOUND_THEME_OPTIONS = [
+  {
+    value: "classic",
+    titleKey: "manager:visuals.soundTheme.classic.title",
+    descriptionKey: "manager:visuals.soundTheme.classic.description",
+  },
+  {
+    value: "techno",
+    titleKey: "manager:visuals.soundTheme.techno.title",
+    descriptionKey: "manager:visuals.soundTheme.techno.description",
+  },
+] as const satisfies ReadonlyArray<{
+  value: SoundTheme
+  titleKey: string
+  descriptionKey: string
+}>
+
+const VisualChoiceGroup = <T extends string>({
+  label,
+  value,
+  pending,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  pending: T | null
+  options: ReadonlyArray<{
+    value: T
+    titleKey: string
+    descriptionKey: string
+  }>
+  onChange: (_next: T) => void
+}) => {
+  const { t } = useTranslation()
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-text-body text-sm font-semibold">{label}</legend>
+      <div className="grid gap-2" role="radiogroup">
+        {options.map((option) => {
+          const active = option.value === value
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              className={clsx(
+                "rounded-rz-md focus-visible:outline-brand border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60",
+                active
+                  ? "border-brand-border bg-brand-tint text-brand"
+                  : "border-border bg-surface text-text-body hover:bg-panel",
+              )}
+              disabled={pending !== null}
+              onClick={() => onChange(option.value)}
+            >
+              <span className="block text-sm font-semibold">
+                {t(option.titleKey)}
+              </span>
+              <span
+                className={clsx(
+                  "block text-xs",
+                  active ? "text-brand" : "text-text-muted",
+                )}
+              >
+                {t(option.descriptionKey)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </fieldset>
+  )
+}
+
 const ConfigVisuals = () => {
   const { game } = useConfig()
   const { socket } = useSocket()
@@ -41,8 +123,12 @@ const ConfigVisuals = () => {
   const [clearing, setClearing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [pendingDialect, setPendingDialect] = useState<Dialect | null>(null)
+  const [pendingSoundTheme, setPendingSoundTheme] = useState<SoundTheme | null>(
+    null,
+  )
   const { t } = useTranslation()
   const activeDialect = game.visuals?.dialect ?? DEFAULT_DIALECT
+  const activeSoundTheme = game.visuals?.soundTheme ?? DEFAULT_SOUND_THEME
   const { uploading, uploadFile } = useBackgroundUpload({
     setGlobal: true,
     onSuccess: () => {
@@ -104,7 +190,7 @@ const ConfigVisuals = () => {
     )
   }
 
-  const handleDialectChange = (dialect: Dialect) => () => {
+  const handleDialectChange = (dialect: Dialect) => {
     if (dialect === activeDialect || pendingDialect) {
       return
     }
@@ -115,6 +201,25 @@ const ConfigVisuals = () => {
       { dialect },
       (response: ManagerMutationResponse) => {
         setPendingDialect(null)
+
+        if ("error" in response) {
+          toast.error(t(response.error))
+        }
+      },
+    )
+  }
+
+  const handleSoundThemeChange = (soundTheme: SoundTheme) => {
+    if (soundTheme === activeSoundTheme || pendingSoundTheme) {
+      return
+    }
+
+    setPendingSoundTheme(soundTheme)
+    socket.emit(
+      EVENTS.MANAGER.SOUND_THEME_SET,
+      { soundTheme },
+      (response: ManagerMutationResponse) => {
+        setPendingSoundTheme(null)
 
         if ("error" in response) {
           toast.error(t(response.error))
@@ -135,45 +240,21 @@ const ConfigVisuals = () => {
         {t("manager:visuals.globalDefaultHelp")}
       </p>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-text-body text-sm font-semibold">
-          {t("manager:visuals.dialect.label")}
-        </legend>
-        <div className="grid gap-2" role="radiogroup">
-          {DIALECT_OPTIONS.map((option) => {
-            const active = option.value === activeDialect
+      <VisualChoiceGroup
+        label={t("manager:visuals.dialect.label")}
+        value={activeDialect}
+        pending={pendingDialect}
+        options={DIALECT_OPTIONS}
+        onChange={handleDialectChange}
+      />
 
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                className={clsx(
-                  "rounded-rz-md focus-visible:outline-brand border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60",
-                  active
-                    ? "border-brand-border bg-brand-tint text-brand"
-                    : "border-border bg-surface text-text-body hover:bg-panel",
-                )}
-                disabled={pendingDialect !== null}
-                onClick={handleDialectChange(option.value)}
-              >
-                <span className="block text-sm font-semibold">
-                  {t(option.titleKey)}
-                </span>
-                <span
-                  className={clsx(
-                    "block text-xs",
-                    active ? "text-brand" : "text-text-muted",
-                  )}
-                >
-                  {t(option.descriptionKey)}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </fieldset>
+      <VisualChoiceGroup
+        label={t("manager:visuals.soundTheme.label")}
+        value={activeSoundTheme}
+        pending={pendingSoundTheme}
+        options={SOUND_THEME_OPTIONS}
+        onChange={handleSoundThemeChange}
+      />
 
       <div
         className={clsx(

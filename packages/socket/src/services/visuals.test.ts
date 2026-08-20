@@ -427,3 +427,44 @@ describe("serveBackgroundUpload", () => {
     expect(getGameConfig().visuals?.background?.path).toBe(withGlobal.ref.path)
   })
 })
+
+describe("resolveVisuals", () => {
+  it("resolves configured techno while preserving quiz background precedence", async () => {
+    fs.writeFileSync(
+      path.join(configRoot, "assets/backgrounds/quiz.png"),
+      pngBytes,
+    )
+    fs.writeFileSync(
+      path.join(configRoot, "game.json"),
+      JSON.stringify({
+        managerPassword: "secret",
+        visuals: { soundTheme: "techno" },
+      }),
+    )
+
+    const { resolveVisuals } = await import("@razzia/socket/services/visuals")
+    const { getGameConfig } = await import("@razzia/socket/services/config")
+
+    expect(resolveVisuals(undefined, getGameConfig())).toEqual({
+      soundTheme: "techno",
+    })
+    expect(
+      resolveVisuals(
+        { visuals: { background: { kind: "config-asset", path: "quiz.png" } } },
+        getGameConfig(),
+      ),
+    ).toEqual({
+      backgroundUrl: "/config-assets/backgrounds/quiz.png",
+      soundTheme: "techno",
+    })
+  })
+
+  it("defaults sound theme to classic when game config omits it", async () => {
+    const { resolveVisuals } = await import("@razzia/socket/services/visuals")
+    const { getGameConfig } = await import("@razzia/socket/services/config")
+
+    expect(resolveVisuals(undefined, getGameConfig())).toEqual({
+      soundTheme: "classic",
+    })
+  })
+})

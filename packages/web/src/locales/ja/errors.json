@@ -48,6 +48,8 @@
     "emptyBackground": "背景画像が空です",
     "invalidBackgroundPath": "背景の参照が無効です",
     "invalidDialect": "デザインモードが無効です",
+    "invalidSoundTheme": "サウンドテーマが無効です",
+    "soundThemeSetFailed": "サウンドテーマを更新できませんでした",
     "unsupportedBackgroundType": "PNG、JPEG、WebP、またはGIF画像を使用してください"
   },
   "route": {

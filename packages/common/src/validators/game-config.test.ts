@@ -29,4 +29,14 @@ describe("gameConfigValidator", () => {
     expect(result.managerPassword).toBe("secret")
     expect(result.visuals?.dialect).toBe("dark-everywhere")
   })
+
+  it("falls back unknown sound theme without discarding password", () => {
+    const result = gameConfigValidator.parse({
+      managerPassword: "secret",
+      visuals: { soundTheme: "neon-disco" },
+    })
+
+    expect(result.managerPassword).toBe("secret")
+    expect(result.visuals?.soundTheme).toBe("classic")
+  })
 })

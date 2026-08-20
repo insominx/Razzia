@@ -7,9 +7,10 @@ import {
 import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 import type { GameConfig } from "@razzia/common/validators/game-config"
 import type { Quizz } from "@razzia/common/types/game"
-import type {
-  BackgroundRef,
-  ResolvedVisuals,
+import {
+  DEFAULT_SOUND_THEME,
+  type BackgroundRef,
+  type ResolvedVisuals,
 } from "@razzia/common/types/visuals"
 import {
   getConfigPath,
@@ -310,7 +311,10 @@ export const resolveVisuals = (
     quizz?.visuals?.background ?? gameConfig.visuals?.background
   const backgroundUrl = getBackgroundAssetUrl(background)
 
-  return backgroundUrl ? { backgroundUrl } : {}
+  return {
+    ...(backgroundUrl ? { backgroundUrl } : {}),
+    soundTheme: gameConfig.visuals?.soundTheme ?? DEFAULT_SOUND_THEME,
+  }
 }
 
 export const serveConfigAsset = (

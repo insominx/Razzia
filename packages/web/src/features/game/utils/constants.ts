@@ -12,6 +12,7 @@ import Start from "@razzia/web/features/game/components/states/Start"
 import Wait from "@razzia/web/features/game/components/states/Wait"
 
 import { STATUS } from "@razzia/common/types/game/status"
+import type { SoundTheme } from "@razzia/common/types/visuals"
 
 export const ANSWER_IDENTITY = [
   "border-answer-a-border bg-answer-a text-on-answer",
@@ -66,6 +67,11 @@ export const SFX = {
   SHOW_SOUND: "/sounds/show.mp3",
   BOUMP_SOUND: "/sounds/boump.mp3",
 } as const
+
+export const answersMusicForTheme = (theme?: SoundTheme): string =>
+  theme === "techno"
+    ? "/sounds/themes/techno/answersMusic.mp3"
+    : SFX.ANSWERS.MUSIC
 
 export const MANAGER_SKIP_EVENTS = {
   [STATUS.SHOW_ROOM]: EVENTS.MANAGER.START_GAME,

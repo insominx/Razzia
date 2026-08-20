@@ -1,5 +1,9 @@
 import { z } from "zod"
-import { DEFAULT_DIALECT } from "@razzia/common/types/visuals"
+import {
+  DEFAULT_DIALECT,
+  DEFAULT_SOUND_THEME,
+  SOUND_THEMES,
+} from "@razzia/common/types/visuals"
 import { BACKGROUND_IMAGE_EXTENSION_PATTERN } from "@razzia/common/utils/background-image"
 
 export const backgroundAssetPathValidator = z
@@ -32,6 +36,11 @@ export const dialectValidator = z.enum(["dark-everywhere", "stage-studio"], {
   error: "errors:visuals.invalidDialect",
 })
 
+export const soundThemeValidator = z.enum(SOUND_THEMES, {
+  error: "errors:visuals.invalidSoundTheme",
+})
+
 export const gameVisualsConfigValidator = visualsConfigValidator.extend({
   dialect: dialectValidator.catch(DEFAULT_DIALECT).optional(),
+  soundTheme: soundThemeValidator.catch(DEFAULT_SOUND_THEME).optional(),
 })

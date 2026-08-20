@@ -14,6 +14,7 @@ import type {
   BackgroundRef,
   Dialect,
   ResolvedVisuals,
+  SoundTheme,
 } from "@razzia/common/types/visuals"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
@@ -133,6 +134,10 @@ export interface ClientToServerEvents {
   ) => void
   [EVENTS.MANAGER.DIALECT_SET]: (
     _request: { dialect: Dialect },
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
+  [EVENTS.MANAGER.SOUND_THEME_SET]: (
+    _request: { soundTheme: SoundTheme },
     _callback?: (_response: ManagerMutationResponse) => void,
   ) => void
   [EVENTS.MANAGER.LOGOUT]: () => void

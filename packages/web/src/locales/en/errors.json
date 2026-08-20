@@ -48,6 +48,8 @@
     "emptyBackground": "Background image is empty",
     "invalidBackgroundPath": "Background reference is invalid",
     "invalidDialect": "Design mode is invalid",
+    "invalidSoundTheme": "Sound theme is invalid",
+    "soundThemeSetFailed": "Failed to update sound theme",
     "unsupportedBackgroundType": "Use a PNG, JPEG, WebP, or GIF image"
   },
   "route": {

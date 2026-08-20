@@ -116,6 +116,11 @@ Options:
 
 - `managerPassword`: The master password for accessing the manager interface. **Must be changed from the default `"PASSWORD"` value**, otherwise manager access is blocked.
 - `visuals.background`: Optional instance-wide background. The manager's **Visuals** tab uploads PNG, JPEG, WebP, or GIF images up to 5 MB and writes this portable config-asset reference for you.
+- `visuals.soundTheme`: Optional sound pack. `classic` (default) keeps the original quiz loops. `techno` uses a deeper techno bed during answers. The manager's **Visuals** tab can switch this without changing the classic files.
+
+### Third-party audio
+
+- Techno answers music: Mixkit “Deep Techno Ambience” (`mixkit-deep-techno-ambience-134`), processed for EQ and level, under the Mixkit Stock Music Free License.
 
 Uploaded files are stored in `config/assets/backgrounds/`. Keep that folder together with `config/game.json` and your quizzes when copying, backing up, or mounting a configuration. The repository ignores `config/` by default, so these files travel with the Docker volume or a copied config directory unless you deliberately change your Git workflow.
 

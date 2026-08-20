@@ -16,6 +16,17 @@
         "title": "Scène et studio"
       }
     },
+    "soundTheme": {
+      "classic": {
+        "description": "Les boucles de quiz d’origine pendant les réponses.",
+        "title": "Classique"
+      },
+      "label": "Thème sonore",
+      "techno": {
+        "description": "Ambiance techno profonde pendant les réponses. Les autres sons restent classiques pour l’instant.",
+        "title": "Techno"
+      }
+    },
     "invalidType": "Choisissez un fichier image",
     "preview": "Aperçu de l’arrière-plan",
     "readFailed": "Impossible de lire l’image",

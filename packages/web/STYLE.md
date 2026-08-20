@@ -80,5 +80,5 @@ badges sit on `border-current bg-canvas/25`.
 
 1. Unknown persisted dialect falls back via `.catch(DEFAULT_DIALECT)` without discarding password/background.
 2. Celebration motion (confetti, spotlight, podium SFX schedule, frozen `anim-*`) stays as-is.
-3. Quizzes never persist dialect — only `GameVisualsConfig` may.
+3. Quizzes never persist dialect or sound theme — only `GameVisualsConfig` may.
 4. Room QR modules stay black-on-white for scanner reliability.

@@ -1,5 +1,6 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
+import { useAnswersMusicUrl } from "@razzia/web/features/game/hooks/use-answers-music-url"
 import {
   ANSWER_IDENTITY,
   ANSWERS_LABELS,
@@ -24,7 +25,7 @@ const Responses = ({
     volume: 0.2,
   })
 
-  const [playMusic, { stop: stopMusic }] = useSound(SFX.ANSWERS.MUSIC, {
+  const [playMusic, { stop: stopMusic }] = useSound(useAnswersMusicUrl(), {
     volume: 0.2,
     onplay: () => {
       setIsMusicPlaying(true)

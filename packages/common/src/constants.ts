@@ -42,6 +42,7 @@ export const EVENTS = {
     GLOBAL_BACKGROUND_SET: "manager:globalBackgroundSet",
     GLOBAL_BACKGROUND_CLEAR: "manager:globalBackgroundClear",
     DIALECT_SET: "manager:dialectSet",
+    SOUND_THEME_SET: "manager:soundThemeSet",
     LOGOUT: "manager:logout",
     UNAUTHORIZED: "manager:unauthorized",
   },

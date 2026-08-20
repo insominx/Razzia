@@ -48,6 +48,8 @@
     "emptyBackground": "L'immagine di sfondo è vuota",
     "invalidBackgroundPath": "Il riferimento dello sfondo non è valido",
     "invalidDialect": "La modalità grafica non è valida",
+    "invalidSoundTheme": "Il tema sonoro non è valido",
+    "soundThemeSetFailed": "Impossibile aggiornare il tema sonoro",
     "unsupportedBackgroundType": "Usa un'immagine PNG, JPEG, WebP o GIF"
   },
   "route": {

@@ -16,6 +16,17 @@
         "title": "Escenario y estudio"
       }
     },
+    "soundTheme": {
+      "classic": {
+        "description": "Los loops originales del cuestionario durante las respuestas.",
+        "title": "Clásico"
+      },
+      "label": "Tema de sonido",
+      "techno": {
+        "description": "Ambiente techno profundo durante las respuestas. El resto de sonidos sigue clásico por ahora.",
+        "title": "Techno"
+      }
+    },
     "invalidType": "Elige un archivo de imagen",
     "preview": "Vista previa del fondo",
     "readFailed": "No se pudo leer la imagen",

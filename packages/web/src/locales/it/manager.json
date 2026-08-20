@@ -16,6 +16,17 @@
         "title": "Palco e studio"
       }
     },
+    "soundTheme": {
+      "classic": {
+        "description": "I loop originali del quiz durante le risposte.",
+        "title": "Classico"
+      },
+      "label": "Tema sonoro",
+      "techno": {
+        "description": "Ambiente techno profondo durante le risposte. Gli altri suoni restano classici per ora.",
+        "title": "Techno"
+      }
+    },
     "invalidType": "Scegli un file immagine",
     "preview": "Anteprima sfondo",
     "readFailed": "Impossibile leggere l'immagine",

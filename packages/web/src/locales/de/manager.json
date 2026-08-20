@@ -16,6 +16,17 @@
         "title": "Bühne und Studio"
       }
     },
+    "soundTheme": {
+      "classic": {
+        "description": "Die ursprünglichen Quiz-Loops während der Antworten.",
+        "title": "Klassisch"
+      },
+      "label": "Soundthema",
+      "techno": {
+        "description": "Tiefe Techno-Atmosphäre während der Antworten. Andere Sounds bleiben vorerst klassisch.",
+        "title": "Techno"
+      }
+    },
     "invalidType": "Wähle eine Bilddatei aus",
     "preview": "Hintergrundvorschau",
     "readFailed": "Bild konnte nicht gelesen werden",
