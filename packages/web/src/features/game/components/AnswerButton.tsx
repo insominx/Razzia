@@ -28,11 +28,13 @@ const AnswerButton = ({
       <span className="rounded-rz-sm bg-canvas/25 flex size-8 shrink-0 items-center justify-center border-2 border-current font-mono text-base font-bold md:size-10 md:text-lg">
         {label}
       </span>
-      <p className="w-full flex-1 text-sm break-all md:text-lg">{children}</p>
+      <p className="min-w-0 flex-1 text-sm wrap-break-word md:text-lg">
+        {children}
+      </p>
       {correct !== undefined && (
         <CorrectIcon
           className={clsx(
-            "size-4 stroke-6 md:size-6",
+            "size-4 shrink-0 stroke-6 md:size-6",
             correct ? "text-success" : "text-danger",
           )}
         />
