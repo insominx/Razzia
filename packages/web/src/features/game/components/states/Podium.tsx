@@ -1,4 +1,5 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
+import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { SFX } from "@razzia/web/features/game/utils/constants"
 import useScreenSize from "@razzia/web/hooks/useScreenSize"
 import clsx from "clsx"
@@ -13,12 +14,15 @@ interface Props {
 const usePodiumAnimation = (topLength: number) => {
   const [apparition, setApparition] = useState(0)
 
-  const [sfxtThree] = useSound(SFX.PODIUM.THREE, { volume: 0.1 })
-  const [sfxSecond] = useSound(SFX.PODIUM.SECOND, { volume: 0.1 })
-  const [sfxRool, { stop: sfxRoolStop }] = useSound(SFX.PODIUM.SNEAR_ROOL, {
-    volume: 0.1,
-  })
-  const [sfxFirst] = useSound(SFX.PODIUM.FIRST, { volume: 0.1 })
+  const sfx = useSfx()
+
+  const [sfxtThree] = useSound(sfx(SFX.PODIUM.THREE), { volume: 0.1 })
+  const [sfxSecond] = useSound(sfx(SFX.PODIUM.SECOND), { volume: 0.1 })
+  const [sfxRool, { stop: sfxRoolStop }] = useSound(
+    sfx(SFX.PODIUM.SNEAR_ROOL),
+    { volume: 0.1 },
+  )
+  const [sfxFirst] = useSound(sfx(SFX.PODIUM.FIRST), { volume: 0.1 })
 
   useEffect(() => {
     const actions: Partial<Record<number, () => void>> = {

@@ -2,7 +2,7 @@
   "correct": "¡Bien!",
   "gamePinLabel": "PIN del juego:",
   "hud": {
-    "answers": "Respuestas",
+    "responses": "Respuestas",
     "time": "Tiempo"
   },
   "joinInstruction": "Únete al juego en",

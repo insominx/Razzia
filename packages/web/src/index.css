@@ -38,15 +38,19 @@
   --color-answer-a: var(--rz-answer-a);
   --color-answer-a-border: var(--rz-answer-a-border);
   --color-answer-a-tint: var(--rz-answer-a-tint);
+  --color-answer-a-ink: var(--rz-answer-a-ink);
   --color-answer-b: var(--rz-answer-b);
   --color-answer-b-border: var(--rz-answer-b-border);
   --color-answer-b-tint: var(--rz-answer-b-tint);
+  --color-answer-b-ink: var(--rz-answer-b-ink);
   --color-answer-c: var(--rz-answer-c);
   --color-answer-c-border: var(--rz-answer-c-border);
   --color-answer-c-tint: var(--rz-answer-c-tint);
+  --color-answer-c-ink: var(--rz-answer-c-ink);
   --color-answer-d: var(--rz-answer-d);
   --color-answer-d-border: var(--rz-answer-d-border);
   --color-answer-d-tint: var(--rz-answer-d-tint);
+  --color-answer-d-ink: var(--rz-answer-d-ink);
 
   --radius-rz-sm: var(--rz-radius-sm);
   --radius-rz-md: var(--rz-radius-md);
@@ -60,6 +64,7 @@
   --shadow-bloom-sequence: var(--rz-bloom-sequence);
   --ease-calm: var(--rz-ease-calm);
   --animate-rz-enter: rz-enter var(--rz-dur-base) var(--rz-ease-calm) both;
+  --animate-rz-bar-grow: rz-bar-grow var(--rz-dur-base) var(--rz-ease-calm) both;
 }
 
 :root {
@@ -94,20 +99,28 @@
   --rz-text-faint: #8995ad;
   --rz-on-accent: #06100e;
   --rz-on-answer: #06100e;
+  --rz-dot: #29354d;
   --rz-overlay: rgba(6, 9, 15, 0.72);
 
-  --rz-answer-a: #e69f00;
-  --rz-answer-a-border: #8a5f00;
-  --rz-answer-a-tint: rgba(230, 159, 0, 0.14);
-  --rz-answer-b: #56b4e9;
-  --rz-answer-b-border: #2f6d8a;
-  --rz-answer-b-tint: rgba(86, 180, 233, 0.14);
-  --rz-answer-c: #3dbfa0;
-  --rz-answer-c-border: #237565;
-  --rz-answer-c-tint: rgba(61, 191, 160, 0.14);
-  --rz-answer-d: #cc79a7;
-  --rz-answer-d-border: #7a4864;
-  --rz-answer-d-tint: rgba(204, 121, 167, 0.14);
+  /* Accents sampled from the answer-tile reference. The tint is the accent
+     composited at ~8% over --rz-canvas rather than an alpha, so a tile still
+     occludes the photo Atmosphere behind it. */
+  --rz-answer-a: #ffab24;
+  --rz-answer-a-border: #8a5a18;
+  --rz-answer-a-tint: #1e1b17;
+  --rz-answer-a-ink: #ffab24;
+  --rz-answer-b: #42aeff;
+  --rz-answer-b-border: #255f9c;
+  --rz-answer-b-tint: #0e1b29;
+  --rz-answer-b-ink: #42aeff;
+  --rz-answer-c: #40d693;
+  --rz-answer-c-border: #1f6f4d;
+  --rz-answer-c-tint: #0e1e20;
+  --rz-answer-c-ink: #40d693;
+  --rz-answer-d: #9370e7;
+  --rz-answer-d-border: #4a2f86;
+  --rz-answer-d-tint: #151627;
+  --rz-answer-d-ink: #9370e7;
 
   --rz-radius-sm: 0.375rem;
   --rz-radius-md: 0.625rem;
@@ -122,7 +135,13 @@
   --rz-bloom-info: inset 0 0 20px rgba(91, 157, 255, 0.15);
   --rz-bloom-warning: inset 0 0 12px rgba(240, 138, 60, 0.04);
   --rz-bloom-sequence: inset 0 0 12px rgba(181, 138, 245, 0.04);
-  --rz-scrim: rgba(6, 9, 15, 0.75);
+  --rz-scrim: radial-gradient(
+    ellipse at center,
+    rgba(6, 9, 15, 0.28) 0%,
+    rgba(6, 9, 15, 0.1) 45%,
+    rgba(6, 9, 15, 0.02) 100%
+  );
+  --rz-dark-photo-lift: brightness(1.45) contrast(1.15) saturate(1.25);
   --rz-warning-core: #ffdf85;
 }
 
@@ -158,15 +177,20 @@
   --rz-text-faint: #475569;
   --rz-on-accent: #ffffff;
   --rz-on-answer: #06100e;
+  --rz-dot: #cbd5e1;
 
-  --rz-answer-a-border: #f3cf73;
+  --rz-answer-a-border: #fcd34d;
   --rz-answer-a-tint: #fffbeb;
-  --rz-answer-b-border: #bae6fd;
-  --rz-answer-b-tint: #f0f9ff;
-  --rz-answer-c-border: #99f6e4;
-  --rz-answer-c-tint: #f0fdfa;
-  --rz-answer-d-border: #f5d0e2;
-  --rz-answer-d-tint: #fdf2f8;
+  --rz-answer-a-ink: #b45309;
+  --rz-answer-b-border: #93c5fd;
+  --rz-answer-b-tint: #eff6ff;
+  --rz-answer-b-ink: #1d4ed8;
+  --rz-answer-c-border: #86efac;
+  --rz-answer-c-tint: #f0fdf4;
+  --rz-answer-c-ink: #047857;
+  --rz-answer-d-border: #c4b5fd;
+  --rz-answer-d-tint: #f5f3ff;
+  --rz-answer-d-ink: #6d28d9;
 
   --rz-bloom-brand: inset 0 0 20px rgba(13, 148, 136, 0.1);
   --rz-bloom-success: inset 0 0 20px rgba(21, 128, 61, 0.08);
@@ -193,6 +217,17 @@ button:not(:disabled),
   }
 }
 
+/* Reveal bars grow from their left edge; the width itself stays literal in the
+   markup so the first paint already carries the vote share. */
+@keyframes rz-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --rz-dur-fast: 0.01ms;
@@ -200,10 +235,12 @@ button:not(:disabled),
   }
 
   .animate-rz-enter,
+  .animate-rz-bar-grow,
   .anim-show,
   .anim-quizz,
   .anim-balanced,
   .anim-timer,
+  .rz-timer-ring,
   .spotlight {
     animation: none !important;
     transition: none !important;
@@ -251,6 +288,57 @@ button:not(:disabled),
   100% {
     opacity: 0;
   }
+}
+
+/* Faint dot texture flanking the answer grid. Kept low-contrast so it
+   recedes behind a custom background photo instead of competing with it. */
+.rz-dotfield {
+  background-image: radial-gradient(var(--rz-dot) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+
+/* Master volume slider. The thumb and track live behind vendor pseudo-elements
+   that no utility class can reach, so this sits here like .rz-dotfield and
+   draws only on existing --rz-* tokens. */
+.rz-volume-slider {
+  width: 6rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: var(--rz-border);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.rz-volume-slider:focus-visible {
+  outline: 2px solid var(--rz-brand);
+  outline-offset: 4px;
+}
+
+.rz-volume-slider::-webkit-slider-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--rz-brand);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.rz-volume-slider::-moz-range-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--rz-brand);
+  cursor: pointer;
+}
+
+.rz-volume-slider::-moz-range-track {
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: var(--rz-border);
 }
 
 .anim-show {

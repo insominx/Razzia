@@ -17,5 +17,10 @@
   "save": "Speichern",
   "seconds": "Sek",
   "skip": "Überspringen",
+  "sound": {
+    "mute": "Stummschalten",
+    "unmute": "Stummschaltung aufheben",
+    "volume": "Lautstärke"
+  },
   "submit": "Absenden"
 }

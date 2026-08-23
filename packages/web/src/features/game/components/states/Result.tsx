@@ -1,6 +1,7 @@
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
 import CricleCheck from "@razzia/web/features/game/components/icons/CricleCheck"
 import CricleXmark from "@razzia/web/features/game/components/icons/CricleXmark"
+import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { SFX } from "@razzia/web/features/game/utils/constants"
 import { useEffect } from "react"
@@ -23,7 +24,9 @@ const Result = ({
   }
   const rankKey = rankKeyMap[rank] ?? "rank.other"
 
-  const [sfxResults] = useSound(SFX.RESULTS_SOUND, {
+  const sfx = useSfx()
+
+  const [sfxResults] = useSound(sfx(SFX.RESULTS_SOUND), {
     volume: 0.2,
   })
 

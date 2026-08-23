@@ -2,7 +2,7 @@
   "correct": "Richtig!",
   "gamePinLabel": "Spiel-PIN:",
   "hud": {
-    "answers": "Antworten",
+    "responses": "Antworten",
     "time": "Zeit"
   },
   "joinInstruction": "Tritt dem Spiel bei auf",

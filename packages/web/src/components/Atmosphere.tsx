@@ -1,4 +1,9 @@
 import background from "@razzia/web/assets/background.png"
+import {
+  averageLuminance,
+  isDarkPhoto,
+} from "@razzia/web/features/visuals/photo-luminance"
+import clsx from "clsx"
 import { useState } from "react"
 
 type Props = { recipe: "ambient" } | { recipe: "photo"; backgroundUrl?: string }
@@ -27,6 +32,7 @@ const Atmosphere = (props: Props) => {
 
 const PhotoAtmosphere = ({ backgroundUrl }: { backgroundUrl?: string }) => {
   const [failed, setFailed] = useState(false)
+  const [darkPhoto, setDarkPhoto] = useState(false)
   const src = failed ? background : (backgroundUrl ?? background)
 
   return (
@@ -36,13 +42,27 @@ const PhotoAtmosphere = ({ backgroundUrl }: { backgroundUrl?: string }) => {
     >
       <div className="bg-canvas absolute inset-0" />
       <img
-        className="h-full w-full object-cover select-none"
+        className={clsx(
+          "h-full w-full object-contain select-none",
+          darkPhoto && "[filter:var(--rz-dark-photo-lift)]",
+        )}
         src={src}
         alt=""
         role="presentation"
-        onError={() => setFailed(true)}
+        onLoad={(event) => {
+          setDarkPhoto(isDarkPhoto(averageLuminance(event.currentTarget)))
+        }}
+        onError={() => {
+          setFailed(true)
+          setDarkPhoto(false)
+        }}
       />
-      <div className="absolute inset-0 bg-[var(--rz-scrim)]" />
+      {!darkPhoto && (
+        <div
+          className="absolute inset-0 [background:var(--rz-scrim)]"
+          data-atmosphere-scrim=""
+        />
+      )}
     </div>
   )
 }

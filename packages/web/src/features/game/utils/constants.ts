@@ -14,11 +14,40 @@ import Wait from "@razzia/web/features/game/components/states/Wait"
 import { STATUS } from "@razzia/common/types/game/status"
 import type { SoundTheme } from "@razzia/common/types/visuals"
 
+/**
+ * A–D tile recipe: accent stroke, tinted fill, accent ink. The ink role is
+ * separate from the accent so the light register (studio surface) can darken
+ * the letter without losing the vivid stroke.
+ */
 export const ANSWER_IDENTITY = [
-  "border-answer-a-border bg-answer-a text-on-answer",
-  "border-answer-b-border bg-answer-b text-on-answer",
-  "border-answer-c-border bg-answer-c text-on-answer",
-  "border-answer-d-border bg-answer-d text-on-answer",
+  "border-answer-a bg-answer-a-tint text-answer-a-ink",
+  "border-answer-b bg-answer-b-tint text-answer-b-ink",
+  "border-answer-c bg-answer-c-tint text-answer-c-ink",
+  "border-answer-d bg-answer-d-tint text-answer-d-ink",
+] as const
+
+/**
+ * Solid A–D bar fill, no stroke and no tint. Only for marks whose *length*
+ * carries the quantity — the reveal chart's bars — where a tint reads as empty
+ * and a stroke reads as a frame around a track only a few pixels tall.
+ */
+export const ANSWER_BAR = [
+  "bg-answer-a",
+  "bg-answer-b",
+  "bg-answer-c",
+  "bg-answer-d",
+] as const
+
+/**
+ * A–D numeral ink with no fill or stroke — for marks that sit *beside* the
+ * swatch (the reveal chart's letter, percentage and count) and have to carry
+ * identity through type alone.
+ */
+export const ANSWER_INK = [
+  "text-answer-a-ink",
+  "text-answer-b-ink",
+  "text-answer-c-ink",
+  "text-answer-d-ink",
 ] as const
 
 export const ANSWERS_LABELS = ["A", "B", "C", "D"]
@@ -68,10 +97,50 @@ export const SFX = {
   BOUMP_SOUND: "/sounds/boump.mp3",
 } as const
 
-export const answersMusicForTheme = (theme?: SoundTheme): string =>
-  theme === "techno"
-    ? "/sounds/themes/techno/answersMusic.mp3"
-    : SFX.ANSWERS.MUSIC
+const THEMED_SFX_ROOT = "/sounds/themes"
+
+/**
+ * Basenames each non-classic pack actually ships. A cue that is absent here
+ * falls back to the classic file, so a partial pack degrades instead of
+ * letting Howler 404 into silence. `themed-sfx.test.ts` pins these lists to
+ * the files under `public/sounds/themes/`.
+ */
+export const THEMED_SFX_FILES: Partial<Record<SoundTheme, readonly string[]>> =
+  {
+    techno: [
+      "answersMusic.mp3",
+      "answersSound.mp3",
+      "boump.mp3",
+      "show.mp3",
+      "results.mp3",
+      "three.mp3",
+      "second.mp3",
+      "snearRoll.mp3",
+      "first.mp3",
+    ],
+  }
+
+/**
+ * Maps a classic cue path to its themed counterpart for the session theme.
+ * Classic, undefined, and any cue the pack does not ship stay on the classic
+ * path.
+ */
+export const sfxForTheme = (
+  theme: SoundTheme | undefined,
+  classicPath: string,
+): string => {
+  const pack = theme ? THEMED_SFX_FILES[theme] : undefined
+
+  if (!pack) {
+    return classicPath
+  }
+
+  const basename = classicPath.slice(classicPath.lastIndexOf("/") + 1)
+
+  return pack.includes(basename)
+    ? `${THEMED_SFX_ROOT}/${theme}/${basename}`
+    : classicPath
+}
 
 export const MANAGER_SKIP_EVENTS = {
   [STATUS.SHOW_ROOM]: EVENTS.MANAGER.START_GAME,

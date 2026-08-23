@@ -17,5 +17,10 @@
   "save": "Salva",
   "seconds": "sec",
   "skip": "Salta",
+  "sound": {
+    "mute": "Disattiva audio",
+    "unmute": "Attiva audio",
+    "volume": "Volume"
+  },
   "submit": "Invia"
 }

@@ -20,7 +20,7 @@ const AnswerButton = ({
   return (
     <button
       className={clsx(
-        "rounded-rz-xl ease-calm relative flex items-center gap-3 border-2 px-4 py-6 text-left transition-transform duration-[var(--rz-dur-fast)] hover:-translate-y-0.5",
+        "rounded-rz-lg ease-calm relative flex items-center gap-3 border-2 px-4 py-6 text-left transition-transform duration-[var(--rz-dur-fast)] hover:-translate-y-0.5",
         className,
       )}
       {...otherProps}
@@ -28,7 +28,7 @@ const AnswerButton = ({
       <span className="rounded-rz-sm bg-canvas/25 flex size-8 shrink-0 items-center justify-center border-2 border-current font-mono text-base font-bold md:size-10 md:text-lg">
         {label}
       </span>
-      <p className="min-w-0 flex-1 text-sm wrap-break-word md:text-lg">
+      <p className="text-text-primary min-w-0 flex-1 text-sm wrap-break-word md:text-lg">
         {children}
       </p>
       {correct !== undefined && (

@@ -17,5 +17,10 @@
   "save": "Save",
   "seconds": "sec",
   "skip": "Skip",
+  "sound": {
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "volume": "Volume"
+  },
   "submit": "Submit"
 }

@@ -2,7 +2,7 @@
   "correct": "正解！",
   "gamePinLabel": "ゲームPIN:",
   "hud": {
-    "answers": "回答数",
+    "responses": "回答数",
     "time": "時間"
   },
   "joinInstruction": "以下でゲームに参加してください",

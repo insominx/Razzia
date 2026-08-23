@@ -3,6 +3,7 @@ import type { Status } from "@razzia/common/types/game/status"
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import Button from "@razzia/web/components/Button"
 import Loader from "@razzia/web/components/Loader"
+import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
 import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
@@ -70,42 +71,46 @@ const GameWrapper = ({
           </div>
         ) : (
           <>
-            <div className="flex w-full justify-between p-4">
-              {questionStates && (
-                <div className="bg-surface border-border text-text-primary rounded-rz-md flex items-center border p-2 px-4 font-mono text-lg font-bold">
-                  {`${questionStates.current} / ${questionStates.total}`}
-                </div>
-              )}
+            <div className="flex w-full items-center gap-2 p-4">
+              <div className="flex flex-1 items-center justify-between">
+                {questionStates && (
+                  <div className="border-info/35 bg-panel/70 text-text-primary rounded-rz-lg flex items-center border p-2 px-4 font-mono text-lg font-bold">
+                    {`${questionStates.current} / ${questionStates.total}`}
+                  </div>
+                )}
 
-              {manager && next && (
-                <Button
-                  className={clsx(
-                    "bg-surface border-border text-text-primary hover:bg-panel border px-4",
-                    {
-                      "pointer-events-none": isDisabled,
-                    },
-                  )}
-                  onClick={handleNext}
-                >
-                  {t(next)}
-                </Button>
-              )}
+                {manager && next && (
+                  <Button
+                    className={clsx(
+                      "bg-surface border-border text-text-primary hover:bg-panel border px-4",
+                      {
+                        "pointer-events-none": isDisabled,
+                      },
+                    )}
+                    onClick={handleNext}
+                  >
+                    {t(next)}
+                  </Button>
+                )}
 
-              {manager && onBack && (
-                <Button
-                  onClick={onBack}
-                  className="bg-surface border-border text-text-primary hover:bg-panel border px-4"
-                >
-                  {t("common:exit")}
-                </Button>
-              )}
+                {manager && onBack && (
+                  <Button
+                    onClick={onBack}
+                    className="bg-surface border-border text-text-primary hover:bg-panel border px-4"
+                  >
+                    {t("common:exit")}
+                  </Button>
+                )}
+              </div>
+
+              <VolumeControl />
             </div>
 
             {children}
 
             {!manager && (
-              <div className="bg-surface border-border text-text-body z-50 flex items-center justify-between border-t px-4 py-2 text-lg font-bold">
-                <p className="text-text-primary">{player?.username}</p>
+              <div className="bg-panel/70 border-border text-text-body z-50 flex items-center justify-between border-t px-4 py-2 text-lg font-bold">
+                <p className="text-text-muted">{player?.username}</p>
                 <div className="bg-panel border-border text-text-primary rounded-rz-md border px-3 py-1 font-mono text-lg">
                   {player?.points}
                 </div>

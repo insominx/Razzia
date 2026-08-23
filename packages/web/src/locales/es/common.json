@@ -17,5 +17,10 @@
   "save": "Guardar",
   "seconds": "seg",
   "skip": "Omitir",
+  "sound": {
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "volume": "Volumen"
+  },
   "submit": "Enviar"
 }

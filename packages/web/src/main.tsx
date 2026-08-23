@@ -2,6 +2,9 @@ import "@fontsource-variable/jetbrains-mono/wght.css"
 import "@fontsource-variable/space-grotesk/wght.css"
 import Toaster from "@razzia/web/components/Toaster"
 import { socketClient } from "@razzia/web/features/game/contexts/socket-context"
+// Side-effect import: applies the stored volume/mute to Howler's master gain
+// before the first sound mounts, on every route.
+import "@razzia/web/features/game/stores/sound"
 import "@razzia/web/i18n"
 import "@razzia/web/index.css"
 import { routeTree } from "@razzia/web/route.gen"

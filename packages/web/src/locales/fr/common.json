@@ -17,5 +17,10 @@
   "save": "Enregistrer",
   "seconds": "sec",
   "skip": "Passer",
+  "sound": {
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "volume": "Volume"
+  },
   "submit": "Valider"
 }

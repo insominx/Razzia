@@ -1,13 +1,15 @@
 import { EVENTS, MEDIA_TYPES, NO_TIME_LIMIT } from "@razzia/common/constants"
 import type { QuestionMediaType } from "@razzia/common/types/game"
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
-import QuestionMedia from "@razzia/web/components/QuestionMedia"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
+import DotField from "@razzia/web/features/game/components/DotField"
+import HudModule from "@razzia/web/features/game/components/HudModule"
+import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
 import {
   useEvent,
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
-import { useAnswersMusicUrl } from "@razzia/web/features/game/hooks/use-answers-music-url"
+import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import {
   ANSWER_IDENTITY,
@@ -32,12 +34,13 @@ const Answers = ({
   const [cooldown, setCooldown] = useState(time)
   const [totalAnswer, setTotalAnswer] = useState(0)
   const { t } = useTranslation()
+  const sfx = useSfx()
 
-  const [sfxPop] = useSound(SFX.ANSWERS.SOUND, {
+  const [sfxPop] = useSound(sfx(SFX.ANSWERS.SOUND), {
     volume: 0.1,
   })
 
-  const [playMusic, { stop: stopMusic }] = useSound(useAnswersMusicUrl(), {
+  const [playMusic, { stop: stopMusic }] = useSound(sfx(SFX.ANSWERS.MUSIC), {
     volume: 0.2,
     interrupt: true,
     loop: true,
@@ -84,37 +87,43 @@ const Answers = ({
     sfxPop()
   })
 
+  const timed = time !== NO_TIME_LIMIT
+
   return (
-    <div className="flex h-full flex-1 flex-col justify-between">
-      <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <h2 className="text-text-primary text-center text-2xl font-bold md:text-4xl lg:text-5xl">
-          {question}
-        </h2>
+    // Full-bleed so the dot fields can sit in the gutter beside the content
+    // column; the clip hides them entirely once the viewport has no gutter.
+    <section className="relative flex h-full w-full flex-1 flex-col overflow-x-clip">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4">
+        <DotField side="left" />
+        <DotField side="right" />
 
-        <QuestionMedia media={media} alt={question} />
-      </div>
-
-      <div>
-        <div className="text-text-primary mx-auto mb-4 flex w-full max-w-7xl justify-between gap-2 px-2 text-lg font-bold md:text-xl">
-          {time !== NO_TIME_LIMIT && (
-            <div className="border-border bg-panel/90 rounded-rz-md flex flex-col items-center border px-4 py-1 text-lg font-bold">
-              <span className="text-text-muted text-sm">
-                {t("game:hud.time")}
-              </span>
-              <span className="font-mono">{cooldown}</span>
-            </div>
-          )}
-          <div className="border-border bg-panel/90 rounded-rz-md flex flex-col items-center border px-4 py-1 text-lg font-bold">
-            <span className="text-text-muted text-sm">
-              {t("game:hud.answers")}
-            </span>
-            <span className="font-mono">
-              {totalAnswer}/{totalPlayer}
-            </span>
-          </div>
+        <div className="flex flex-1 items-center justify-center">
+          <QuestionCard
+            question={question}
+            media={media}
+            className="anim-show"
+          />
         </div>
 
-        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-2 px-2 text-lg font-bold md:text-xl">
+        <div className="flex items-end justify-between">
+          {timed && (
+            <HudModule
+              role="info"
+              label={t("game:hud.time")}
+              value={String(cooldown)}
+              countdown={{ remaining: cooldown, total: time }}
+            />
+          )}
+
+          <HudModule
+            role="sequence"
+            className="ml-auto"
+            label={t("game:hud.responses")}
+            value={`${totalAnswer} / ${totalPlayer}`}
+          />
+        </div>
+
+        <div className="mb-4 grid grid-cols-1 gap-3 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl">
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
@@ -127,7 +136,7 @@ const Answers = ({
           ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

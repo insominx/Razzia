@@ -17,5 +17,10 @@
   "save": "保存",
   "seconds": "秒",
   "skip": "スキップ",
+  "sound": {
+    "mute": "ミュート",
+    "unmute": "ミュート解除",
+    "volume": "音量"
+  },
   "submit": "送信"
 }

@@ -1,14 +1,17 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
-import { useAnswersMusicUrl } from "@razzia/web/features/game/hooks/use-answers-music-url"
+import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
+import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import {
+  ANSWER_BAR,
   ANSWER_IDENTITY,
+  ANSWER_INK,
   ANSWERS_LABELS,
   SFX,
 } from "@razzia/web/features/game/utils/constants"
 import { calculatePercentages } from "@razzia/web/features/game/utils/score"
 import clsx from "clsx"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import useSound from "use-sound"
 
 interface Props {
@@ -16,72 +19,102 @@ interface Props {
 }
 
 const Responses = ({
-  data: { question, answers, responses, solutions },
+  data: { question, answers, media, responses, solutions },
 }: Props) => {
-  const [percentages, setPercentages] = useState<Record<string, string>>({})
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false)
+  const sfx = useSfx()
+  const percentages = calculatePercentages(responses)
 
-  const [sfxResults] = useSound(SFX.RESULTS_SOUND, {
+  const [sfxResults] = useSound(sfx(SFX.RESULTS_SOUND), {
     volume: 0.2,
   })
 
-  const [playMusic, { stop: stopMusic }] = useSound(useAnswersMusicUrl(), {
+  const [playMusic, { stop: stopMusic }] = useSound(sfx(SFX.ANSWERS.MUSIC), {
     volume: 0.2,
-    onplay: () => {
-      setIsMusicPlaying(true)
-    },
-    onend: () => {
-      setIsMusicPlaying(false)
-    },
+    interrupt: true,
+    loop: true,
   })
 
+  // `use-sound` hands back a no-op until Howler has loaded the file, so the
+  // callback identity is the ready signal, not a dependency to chase.
   useEffect(() => {
-    stopMusic()
     sfxResults()
+  }, [sfxResults])
 
-    setPercentages(calculatePercentages(responses))
-  }, [responses, playMusic, stopMusic, sfxResults])
-
+  // Mount-owned bed, same as `Answers`: start it once the Howl is ready and
+  // stop it in cleanup so the loop cannot outlive the reveal screen.
   useEffect(() => {
-    if (!isMusicPlaying) {
-      playMusic()
+    playMusic()
+
+    return () => {
+      stopMusic()
     }
-  }, [isMusicPlaying, playMusic])
-
-  useEffect(() => {
-    stopMusic()
-  }, [playMusic, stopMusic])
+    // oxlint-disable-next-line
+  }, [playMusic])
 
   return (
     <div className="flex h-full flex-1 flex-col justify-between">
       <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
-        <h2 className="text-text-primary text-center text-2xl font-bold md:text-4xl lg:text-5xl">
-          {question}
-        </h2>
+        <QuestionCard question={question} media={media} />
 
-        <div
-          className={`mt-8 grid h-40 w-full max-w-3xl gap-4 px-2`}
-          style={{ gridTemplateColumns: `repeat(${answers.length}, 1fr)` }}
-        >
-          {answers.map((_, key) => (
-            <div
-              key={key}
-              className={clsx(
-                "rounded-rz-md flex flex-col justify-end self-end overflow-hidden border-2",
-                ANSWER_IDENTITY[key],
-              )}
-              style={{ height: percentages[key] }}
-            >
-              <span className="bg-canvas/60 text-text-primary w-full text-center text-lg font-bold">
-                {responses[key] || 0}
-              </span>
-            </div>
-          ))}
+        <div className="mt-8 flex w-full max-w-3xl flex-col gap-3 px-2 md:gap-4">
+          {answers.map((_, key) => {
+            const count = responses[key] || 0
+            // A slot nobody picked has no share at all, and an unset width
+            // fills the track instead of emptying it.
+            const width = percentages[key] ?? "0%"
+
+            return (
+              <div
+                key={key}
+                className={clsx("flex items-center gap-3 md:gap-4", {
+                  "opacity-80": !solutions.includes(key),
+                })}
+              >
+                <span
+                  className={clsx(
+                    "w-6 shrink-0 font-mono text-xl font-bold md:w-8 md:text-2xl",
+                    ANSWER_INK[key],
+                  )}
+                >
+                  {ANSWERS_LABELS[key]}
+                </span>
+
+                <div className="bg-border h-3 flex-1 overflow-hidden rounded-full md:h-4">
+                  <div
+                    data-bar
+                    className={clsx(
+                      "animate-rz-bar-grow h-full origin-left rounded-full",
+                      ANSWER_BAR[key],
+                    )}
+                    style={{ width }}
+                  />
+                </div>
+
+                <span
+                  className={clsx(
+                    "w-14 shrink-0 text-right font-mono font-bold tabular-nums md:w-20 md:text-xl",
+                    count ? ANSWER_INK[key] : "text-text-primary",
+                  )}
+                >
+                  {width}
+                </span>
+
+                <span
+                  className={clsx(
+                    "w-8 shrink-0 text-right font-mono font-bold tabular-nums md:w-12 md:text-xl",
+                    ANSWER_INK[key],
+                  )}
+                >
+                  {count}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
 
       <div>
-        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-2 gap-1 rounded-full px-2 text-lg font-bold md:text-xl">
+        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-1 gap-3 px-4 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl">
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}

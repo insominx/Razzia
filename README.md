@@ -116,11 +116,16 @@ Options:
 
 - `managerPassword`: The master password for accessing the manager interface. **Must be changed from the default `"PASSWORD"` value**, otherwise manager access is blocked.
 - `visuals.background`: Optional instance-wide background. The manager's **Visuals** tab uploads PNG, JPEG, WebP, or GIF images up to 5 MB and writes this portable config-asset reference for you.
-- `visuals.soundTheme`: Optional sound pack. `classic` (default) keeps the original quiz loops. `techno` uses a deeper techno bed during answers. The manager's **Visuals** tab can switch this without changing the classic files.
+- `visuals.soundTheme`: Optional sound pack. `classic` (default) keeps the original quiz loops. `techno` replaces the whole pack — the answers bed plus every UI and podium cue — from `public/sounds/themes/techno/`. The manager's **Visuals** tab can switch this without changing the classic files; the pack is snapshotted when a game is created, so switching it never swaps cues under a running game.
 
 ### Third-party audio
 
-- Techno answers music: Mixkit “Deep Techno Ambience” (`mixkit-deep-techno-ambience-134`), processed for EQ and level, under the Mixkit Stock Music Free License.
+The `techno` sound pack in `packages/web/public/sounds/themes/techno/` is
+third-party audio. The classic cues in `packages/web/public/sounds/` are not
+covered by these licenses.
+
+- Answers loop (`answersMusic.mp3`): “Background Loop Melodic Techno #03” by tAUREON, [Pixabay audio 2691](https://pixabay.com/music/techno-trance-background-loop-melodic-techno-03-2691/), under the [Pixabay Content License](https://pixabay.com/service/license-summary/). Royalty-free; no attribution required; redistribution as a standalone audio file is not permitted.
+- The eight one-shot cues (`answersSound`, `boump`, `show`, `results`, `three`, `second`, `snearRoll`, `first`): Mixkit sound effects 900, 2299, 3114, 3116, 253, 254, 2295, and 266, under the [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree). Use in games is permitted; redistribution as standalone sound files is not. Converted from the source WAVs to MP3; `answersSound.mp3` is additionally trimmed to a ~160 ms click so repeated answer pops do not overlap.
 
 Uploaded files are stored in `config/assets/backgrounds/`. Keep that folder together with `config/game.json` and your quizzes when copying, backing up, or mounting a configuration. The repository ignores `config/` by default, so these files travel with the Docker volume or a copied config directory unless you deliberately change your Git workflow.
 
