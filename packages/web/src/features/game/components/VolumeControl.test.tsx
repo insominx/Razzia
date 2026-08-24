@@ -23,8 +23,24 @@ const VolumeControl = (
   await import("@razzia/web/features/game/components/VolumeControl")
 ).default
 
-const trigger = () => screen.getByRole("button")
+const trigger = () =>
+  screen.getByRole("button", { name: /common:sound\.(mute|unmute)/ })
 const slider = () => screen.getByRole("slider")
+const querySlider = () => screen.queryByRole("slider")
+const control = (): HTMLDivElement => {
+  const root = trigger().parentElement
+
+  if (!(root instanceof HTMLDivElement)) {
+    throw new TypeError("Expected the volume trigger to be inside its control")
+  }
+
+  return root
+}
+
+const touchPress = () => {
+  fireEvent.pointerDown(trigger(), { pointerType: "touch" })
+  fireEvent.click(trigger())
+}
 
 describe("VolumeControl", () => {
   beforeEach(() => {
@@ -33,58 +49,102 @@ describe("VolumeControl", () => {
     state.muted = false
   })
 
-  // Vitest runs without `globals`, so Testing Library never registers its own
-  // auto-cleanup and renders would otherwise stack up in the document.
   afterEach(cleanup)
 
-  it("opens on the first press instead of muting, then mutes", () => {
+  it("keeps the closed slider out of the focus tree", () => {
     render(<VolumeControl />)
 
-    fireEvent.click(trigger())
-    expect(state.toggleMute).not.toHaveBeenCalled()
-
-    fireEvent.click(trigger())
-    expect(state.toggleMute).toHaveBeenCalledTimes(1)
+    expect(querySlider()).not.toBeInTheDocument()
+    expect(trigger()).toHaveAttribute("aria-expanded", "false")
+    expect(trigger()).toHaveAttribute("aria-controls")
   })
 
-  it("mutes on the first press once hovering has opened it", () => {
-    const { container } = render(<VolumeControl />)
+  it("opens and closes on hover only for a mouse pointer", () => {
+    render(<VolumeControl />)
 
-    fireEvent.pointerEnter(container.firstChild as Element)
-    fireEvent.click(trigger())
+    fireEvent.pointerEnter(control(), { pointerType: "touch" })
+    expect(querySlider()).not.toBeInTheDocument()
 
-    expect(state.toggleMute).toHaveBeenCalledTimes(1)
+    fireEvent.pointerEnter(control(), { pointerType: "mouse" })
+    expect(slider()).toBeInTheDocument()
+
+    fireEvent.pointerLeave(control(), { pointerType: "touch" })
+    expect(slider()).toBeInTheDocument()
+
+    fireEvent.pointerLeave(control(), { pointerType: "mouse" })
+    expect(querySlider()).not.toBeInTheDocument()
   })
 
-  it("unlocks the audio context on every press", () => {
+  it("mutes on the first mouse click and opens the level control", () => {
     render(<VolumeControl />)
 
     fireEvent.click(trigger())
 
     expect(state.unlock).toHaveBeenCalledTimes(1)
+    expect(state.toggleMute).toHaveBeenCalledTimes(1)
+    expect(trigger()).toHaveAttribute("aria-expanded", "true")
+    expect(slider()).toBeInTheDocument()
+  })
+
+  it("opens on the first touch press and mutes on the second", () => {
+    render(<VolumeControl />)
+
+    touchPress()
+    expect(state.unlock).toHaveBeenCalledTimes(1)
+    expect(state.toggleMute).not.toHaveBeenCalled()
+    expect(slider()).toBeInTheDocument()
+
+    touchPress()
+    expect(state.unlock).toHaveBeenCalledTimes(2)
+    expect(state.toggleMute).toHaveBeenCalledTimes(1)
+  })
+
+  it("opens on keyboard focus and toggles on keyboard activation", () => {
+    render(<VolumeControl />)
+
+    fireEvent.focus(trigger())
+    expect(slider()).toBeInTheDocument()
+
+    fireEvent.keyDown(trigger(), { key: "Enter" })
+    fireEvent.click(trigger())
+    fireEvent.keyUp(trigger(), { key: "Enter" })
+
+    expect(state.unlock).toHaveBeenCalledTimes(1)
+    expect(state.toggleMute).toHaveBeenCalledTimes(1)
+  })
+
+  it("closes after a pointer press outside the control", () => {
+    render(
+      <>
+        <VolumeControl />
+        <button type="button">Outside</button>
+      </>,
+    )
+    fireEvent.focus(trigger())
+    expect(slider()).toBeInTheDocument()
+
+    fireEvent.mouseDown(screen.getByRole("button", { name: "Outside" }))
+
+    expect(querySlider()).not.toBeInTheDocument()
+    expect(trigger()).toHaveAttribute("aria-expanded", "false")
   })
 
   it("reports a dragged level to the store", () => {
     render(<VolumeControl />)
+    fireEvent.focus(trigger())
 
     fireEvent.change(slider(), { target: { value: "0.35" } })
 
     expect(state.setVolume).toHaveBeenCalledWith(0.35)
   })
 
-  it("shows the slider at zero while muted", () => {
+  it("shows the slider at zero and offers unmute while muted", () => {
     state.muted = true
     state.volume = 0.6
-
     render(<VolumeControl />)
+    fireEvent.focus(trigger())
 
     expect(slider()).toHaveValue("0")
     expect(trigger()).toHaveAccessibleName("common:sound.unmute")
-  })
-
-  it("labels the trigger for muting while audible", () => {
-    render(<VolumeControl />)
-
-    expect(trigger()).toHaveAccessibleName("common:sound.mute")
   })
 })

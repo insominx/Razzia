@@ -14,6 +14,7 @@ export const averageLuminance = (img: HTMLImageElement): number | null => {
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
+
   if (!ctx) {
     return null
   }
@@ -24,8 +25,13 @@ export const averageLuminance = (img: HTMLImageElement): number | null => {
     let sum = 0
     const pixels = data.length / 4
     for (let i = 0; i < data.length; i += 4) {
-      sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+      const red = data[i] ?? 0
+      const green = data[i + 1] ?? 0
+      const blue = data[i + 2] ?? 0
+
+      sum += 0.299 * red + 0.587 * green + 0.114 * blue
     }
+
     return sum / pixels
   } catch {
     return null

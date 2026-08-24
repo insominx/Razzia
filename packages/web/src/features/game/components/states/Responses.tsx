@@ -11,6 +11,7 @@ import {
 } from "@razzia/web/features/game/utils/constants"
 import { calculatePercentages } from "@razzia/web/features/game/utils/score"
 import clsx from "clsx"
+import { Check, X } from "lucide-react"
 import { useEffect } from "react"
 import useSound from "use-sound"
 
@@ -62,13 +63,20 @@ const Responses = ({
             // A slot nobody picked has no share at all, and an unset width
             // fills the track instead of emptying it.
             const width = percentages[key] ?? "0%"
+            const isCorrect = solutions.includes(key)
+            const Mark = isCorrect ? Check : X
 
             return (
               <div
                 key={key}
-                className={clsx("flex items-center gap-3 md:gap-4", {
-                  "opacity-80": !solutions.includes(key),
-                })}
+                data-response-row
+                data-mark={isCorrect ? "correct" : "incorrect"}
+                className={clsx(
+                  "rounded-rz-md flex items-center gap-3 border-2 px-2 py-1 md:gap-4 md:py-1.5",
+                  isCorrect
+                    ? "border-success bg-success-tint shadow-bloom-success"
+                    : "border-transparent",
+                )}
               >
                 <span
                   className={clsx(
@@ -79,34 +87,54 @@ const Responses = ({
                   {ANSWERS_LABELS[key]}
                 </span>
 
-                <div className="bg-border h-3 flex-1 overflow-hidden rounded-full md:h-4">
-                  <div
-                    data-bar
+                <span
+                  data-mark-badge
+                  className={clsx(
+                    "flex size-8 shrink-0 items-center justify-center rounded-full md:size-10",
+                    isCorrect
+                      ? "bg-success text-on-accent shadow-bloom-success"
+                      : "text-danger",
+                  )}
+                >
+                  <Mark aria-hidden className="size-4 stroke-6 md:size-5" />
+                </span>
+
+                <div
+                  data-quantity
+                  className={clsx(
+                    "flex min-w-0 flex-1 items-center gap-3 md:gap-4",
+                    !isCorrect && "opacity-40 grayscale",
+                  )}
+                >
+                  <div className="bg-border h-3 flex-1 overflow-hidden rounded-full md:h-4">
+                    <div
+                      data-bar
+                      className={clsx(
+                        "animate-rz-bar-grow h-full origin-left rounded-full",
+                        ANSWER_BAR[key],
+                      )}
+                      style={{ width }}
+                    />
+                  </div>
+
+                  <span
                     className={clsx(
-                      "animate-rz-bar-grow h-full origin-left rounded-full",
-                      ANSWER_BAR[key],
+                      "w-14 shrink-0 text-right font-mono font-bold tabular-nums md:w-20 md:text-xl",
+                      count ? ANSWER_INK[key] : "text-text-primary",
                     )}
-                    style={{ width }}
-                  />
+                  >
+                    {width}
+                  </span>
+
+                  <span
+                    className={clsx(
+                      "w-8 shrink-0 text-right font-mono font-bold tabular-nums md:w-12 md:text-xl",
+                      ANSWER_INK[key],
+                    )}
+                  >
+                    {count}
+                  </span>
                 </div>
-
-                <span
-                  className={clsx(
-                    "w-14 shrink-0 text-right font-mono font-bold tabular-nums md:w-20 md:text-xl",
-                    count ? ANSWER_INK[key] : "text-text-primary",
-                  )}
-                >
-                  {width}
-                </span>
-
-                <span
-                  className={clsx(
-                    "w-8 shrink-0 text-right font-mono font-bold tabular-nums md:w-12 md:text-xl",
-                    ANSWER_INK[key],
-                  )}
-                >
-                  {count}
-                </span>
               </div>
             )
           })}

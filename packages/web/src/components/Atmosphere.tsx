@@ -6,7 +6,15 @@ import {
 import clsx from "clsx"
 import { useState } from "react"
 
-type Props = { recipe: "ambient" } | { recipe: "photo"; backgroundUrl?: string }
+type PhotoPlacement = "viewport" | "container"
+
+type Props =
+  | { recipe: "ambient" }
+  | {
+      recipe: "photo"
+      backgroundUrl?: string
+      placement?: PhotoPlacement
+    }
 
 const Atmosphere = (props: Props) => {
   if (props.recipe === "ambient") {
@@ -26,18 +34,28 @@ const Atmosphere = (props: Props) => {
     <PhotoAtmosphere
       key={props.backgroundUrl ?? "bundled"}
       backgroundUrl={props.backgroundUrl}
+      placement={props.placement}
     />
   )
 }
 
-const PhotoAtmosphere = ({ backgroundUrl }: { backgroundUrl?: string }) => {
+const PhotoAtmosphere = ({
+  backgroundUrl,
+  placement = "viewport",
+}: {
+  backgroundUrl?: string
+  placement?: PhotoPlacement
+}) => {
   const [failed, setFailed] = useState(false)
   const [darkPhoto, setDarkPhoto] = useState(false)
   const src = failed ? background : (backgroundUrl ?? background)
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className={clsx(
+        "pointer-events-none inset-0 z-0 overflow-hidden",
+        placement === "viewport" ? "fixed" : "absolute",
+      )}
       aria-hidden="true"
     >
       <div className="bg-canvas absolute inset-0" />

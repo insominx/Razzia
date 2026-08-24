@@ -67,11 +67,11 @@ const renderResponses = async (
   return render(<Responses data={data} />)
 }
 
-// The count closes its row, so the row is the count's parent, and `data-bar`
-// marks the fill inside the row's track — steadier than selecting on the inline
-// style, and it keeps the row itself reachable for the dimming assertions.
+// The count sits inside the quantity cluster; `data-response-row` is the
+// whole A–D row (letter, mark, bar, stats), which is what the scoring
+// assertions need to reach.
 const rowOf = (count: HTMLElement): HTMLElement => {
-  const row = count.parentElement
+  const row = count.closest<HTMLElement>("[data-response-row]")
 
   if (!row) {
     throw new Error(`no row around count ${count.textContent}`)
@@ -79,6 +79,9 @@ const rowOf = (count: HTMLElement): HTMLElement => {
 
   return row
 }
+
+const rows = (): HTMLElement[] =>
+  Array.from(document.querySelectorAll<HTMLElement>("[data-response-row]"))
 
 const barOf = (count: HTMLElement): HTMLElement => {
   const bar = rowOf(count).querySelector<HTMLElement>("[data-bar]")
@@ -122,15 +125,80 @@ describe("Responses", () => {
     expect(screen.getByText("6%")).toBeInTheDocument()
   })
 
-  // Correctness is the tiles' job; the rows only recede so the solution's row
-  // is the one at full strength.
-  it("dims every row but the solution's", async () => {
+  it("marks the solution row correct and the rest incorrect", async () => {
     await renderResponses()
 
-    expect(rowFor(12).className).not.toContain("opacity-80")
-    expect(rowFor(2).className).toContain("opacity-80")
-    expect(rowFor(3).className).toContain("opacity-80")
-    expect(rowFor(1).className).toContain("opacity-80")
+    expect(rowFor(12).dataset.mark).toBe("correct")
+    expect(rowFor(2).dataset.mark).toBe("incorrect")
+    expect(rowFor(3).dataset.mark).toBe("incorrect")
+    expect(rowFor(1).dataset.mark).toBe("incorrect")
+
+    expect(rowFor(12).querySelector("[data-mark-badge]")?.className).toContain(
+      "bg-success",
+    )
+    expect(rowFor(2).querySelector("[data-mark-badge]")?.className).toContain(
+      "text-danger",
+    )
+    expect(
+      rowFor(2).querySelector("[data-mark-badge]")?.className,
+    ).not.toContain("bg-success")
+
+    expect(rowFor(12).className).toContain("bg-success-tint")
+    expect(rowFor(2).className).not.toContain("bg-success-tint")
+
+    expect(
+      rowFor(12).querySelector("[data-quantity]")?.className,
+    ).not.toContain("opacity-40")
+    expect(rowFor(2).querySelector("[data-quantity]")?.className).toContain(
+      "opacity-40",
+    )
+    expect(rowFor(2).querySelector("[data-quantity]")?.className).toContain(
+      "grayscale",
+    )
+  })
+
+  it("keeps A-D identity fills on the bars", async () => {
+    await renderResponses()
+
+    expect(barFor(12).className).toContain("bg-answer-a")
+    expect(barFor(12).className).not.toContain("bg-success")
+    expect(barFor(2).className).toContain("bg-answer-b")
+    expect(barFor(3).className).toContain("bg-answer-c")
+    expect(barFor(1).className).toContain("bg-answer-d")
+  })
+
+  it("still marks the empty solution correct when the crowd picked a wrong slot", async () => {
+    await renderResponses({
+      ...DATA,
+      responses: { 0: 1 },
+      solutions: [2],
+    })
+
+    const [rowA, rowB, rowC, rowD] = rows()
+
+    expect(rowA.dataset.mark).toBe("incorrect")
+    expect(rowB.dataset.mark).toBe("incorrect")
+    expect(rowC.dataset.mark).toBe("correct")
+    expect(rowD.dataset.mark).toBe("incorrect")
+
+    expect(rowA.querySelector<HTMLElement>("[data-bar]")?.style.width).toBe(
+      "100%",
+    )
+    expect(rowC.querySelector<HTMLElement>("[data-bar]")?.style.width).toBe(
+      "0%",
+    )
+    expect(rowC.querySelector("[data-mark-badge]")?.className).toContain(
+      "bg-success",
+    )
+    expect(rowA.querySelector("[data-mark-badge]")?.className).not.toContain(
+      "bg-success",
+    )
+    expect(rowA.querySelector("[data-quantity]")?.className).toContain(
+      "opacity-40",
+    )
+    expect(rowC.querySelector("[data-quantity]")?.className).not.toContain(
+      "opacity-40",
+    )
   })
 
   // Effects never run in a server render, so this is the one place that can

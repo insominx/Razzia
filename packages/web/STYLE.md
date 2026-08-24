@@ -59,8 +59,13 @@ A share of zero keeps `text-text-primary`; the percentage joins the slot's ink
 only once it has weight.
 
 Meaning roles (`success` / `danger` / …) must never identify answers, though
-they may layer on top (the reveal check / cross). Mono A/B/C/D badges sit on
-`border-current bg-canvas/25`, inheriting the ink.
+they may layer on top (the reveal check / cross). On the reveal chart that
+means a filled success disc on every solution (danger mark on the rest), a
+success-accent frame so a zero-share correct slot still reads as the answer,
+and the incorrect quantity receding and desaturating. The bar fill itself stays
+`ANSWER_BAR`.
+
+Mono A/B/C/D badges sit on `border-current bg-canvas/25`, inheriting the ink.
 
 | identity   | accent    | dark border / tint / ink       | light border / tint / ink         |
 | ---------- | --------- | ------------------------------ | --------------------------------- |
@@ -82,6 +87,8 @@ they may layer on top (the reveal check / cross). Mono A/B/C/D badges sit on
 
 `<Atmosphere recipe="photo">`: canvas → `object-contain` image → optional `--rz-scrim` → content (`z-10`).
 `--rz-scrim` is a light center wash for bright photos. Dark uploads skip the wash and use `--rz-dark-photo-lift` so gold/rim detail stays visible.
+Photo atmosphere placement defaults to `viewport` (`fixed`) for live game screens.
+Use `placement="container"` (`absolute`) only inside a positioned, overflow-clipped preview such as `/dev/gallery`.
 `<Atmosphere recipe="ambient">` is the no-photo auth/config recipe.
 
 ## Banned patterns

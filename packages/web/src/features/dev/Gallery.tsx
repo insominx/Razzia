@@ -149,6 +149,19 @@ const STATE_PREVIEWS = [
     render: () => <Responses data={STATUS_FIXTURES[STATUS.SHOW_RESPONSES]} />,
   },
   {
+    id: "show-responses-crowd-wrong",
+    label: "Responses · crowd wrong",
+    render: () => (
+      <Responses
+        data={{
+          ...STATUS_FIXTURES[STATUS.SHOW_RESPONSES],
+          responses: { 0: 1 },
+          solutions: [2],
+        }}
+      />
+    ),
+  },
+  {
     id: "show-leaderboard",
     label: "Leaderboard",
     render: () => (
@@ -292,7 +305,7 @@ const Gallery = () => {
             </p>
           </header>
           <div className="bg-canvas relative flex min-h-[680px] flex-col overflow-hidden p-4">
-            <Atmosphere recipe="photo" />
+            <Atmosphere recipe="photo" placement="container" />
             <div className="relative z-10 flex min-h-0 flex-1 flex-col">
               {currentState.render()}
             </div>
