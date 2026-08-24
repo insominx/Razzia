@@ -7,9 +7,15 @@ import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
 import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
+import { useSoundStore } from "@razzia/web/features/game/stores/sound"
 import { MANAGER_SKIP_BTN } from "@razzia/web/features/game/utils/constants"
 import clsx from "clsx"
-import { type PropsWithChildren, useEffect, useState } from "react"
+import {
+  type PropsWithChildren,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -34,6 +40,10 @@ const GameWrapper = ({
   const { t } = useTranslation()
   const [isDisabled, setIsDisabled] = useState(false)
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
+
+  useLayoutEffect(() => {
+    useSoundStore.getState().bindSurface(manager ? "manager" : "player")
+  }, [manager])
 
   useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total }) => {
     setQuestionStates({

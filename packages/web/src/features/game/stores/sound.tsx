@@ -2,9 +2,20 @@ import { Howler } from "howler"
 import { create } from "zustand"
 
 const VOLUME_KEY = "sound_volume"
-const MUTED_KEY = "sound_muted"
 
 export const DEFAULT_VOLUME = 1
+
+type SoundSurface = "player" | "manager"
+
+const MUTED_KEYS: Record<SoundSurface, string> = {
+  player: "sound_muted_player",
+  manager: "sound_muted_manager",
+}
+
+const DEFAULT_MUTED: Record<SoundSurface, boolean> = {
+  player: true,
+  manager: false,
+}
 
 const clamp = (volume: number): number => Math.min(1, Math.max(0, volume))
 
@@ -24,18 +35,27 @@ const getStoredVolume = (): number => {
   }
 }
 
-const getStoredMuted = (): boolean => {
+const getStoredMuted = (surface: SoundSurface): boolean => {
   try {
-    return localStorage.getItem(MUTED_KEY) === "true"
+    const stored = localStorage.getItem(MUTED_KEYS[surface])
+
+    return stored === null ? DEFAULT_MUTED[surface] : stored === "true"
   } catch {
-    return false
+    return DEFAULT_MUTED[surface]
   }
 }
 
-const persist = (volume: number, muted: boolean) => {
+const persist = (
+  volume: number,
+  muted: boolean,
+  surface: SoundSurface | null,
+) => {
   try {
     localStorage.setItem(VOLUME_KEY, String(volume))
-    localStorage.setItem(MUTED_KEY, String(muted))
+
+    if (surface) {
+      localStorage.setItem(MUTED_KEYS[surface], String(muted))
+    }
   } catch {
     // Private browsing can refuse writes; the level still applies this session.
   }
@@ -61,14 +81,15 @@ const applyToHowler = (volume: number, muted: boolean) => {
 interface SoundStore {
   volume: number
   muted: boolean
+  surface: SoundSurface | null
 
+  bindSurface: (_surface: SoundSurface) => void
   setVolume: (_volume: number) => void
   toggleMute: () => void
   unlock: () => void
 }
 
 const initialVolume = getStoredVolume()
-const initialMuted = getStoredMuted()
 
 // Applied at module scope, not from an effect. `main.tsx` imports this module
 // for the side effect so the stored level reaches Howler before the first Howl
@@ -78,18 +99,33 @@ const initialMuted = getStoredMuted()
 // Known limitation, accepted: two tabs of the same origin diverge until reload.
 // `setItem` fires no `storage` event in the writing tab and nothing listens in
 // the others. The preference is per-device by design.
-applyToHowler(initialVolume, initialMuted)
+Howler.volume(initialVolume)
 
 export const useSoundStore = create<SoundStore>((set, get) => ({
   volume: initialVolume,
-  muted: initialMuted,
+  muted: false,
+  surface: null,
+
+  bindSurface: (surface) => {
+    const state = get()
+
+    if (state.surface === surface) {
+      return
+    }
+
+    const muted = getStoredMuted(surface)
+
+    applyToHowler(state.volume, muted)
+    set({ surface, muted })
+  },
 
   // Any slider movement also unmutes: adjusting a muted slider would otherwise
   // move the thumb and stay silent, which reads as a broken control.
   setVolume: (volume) => {
     const clamped = clamp(volume)
+    const { surface } = get()
 
-    persist(clamped, false)
+    persist(clamped, false, surface)
     applyToHowler(clamped, false)
     set({ volume: clamped, muted: false })
   },
@@ -97,11 +133,11 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
   // Unmuting a slider sitting at zero restores the default, so the toggle is
   // never a no-op that looks broken.
   toggleMute: () => {
-    const { volume, muted } = get()
+    const { volume, muted, surface } = get()
     const nextMuted = !muted
     const nextVolume = !nextMuted && volume === 0 ? DEFAULT_VOLUME : volume
 
-    persist(nextVolume, nextMuted)
+    persist(nextVolume, nextMuted, surface)
     applyToHowler(nextVolume, nextMuted)
     set({ volume: nextVolume, muted: nextMuted })
   },

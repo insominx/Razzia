@@ -47,24 +47,111 @@ describe("useSoundStore", () => {
     vi.unstubAllGlobals()
   })
 
-  it("applies the stored preference to Howler at import time", async () => {
+  it("applies only the stored volume to Howler at import time", async () => {
     const storage = stubStorage()
     storage.setItem("sound_volume", "0.4")
     storage.setItem("sound_muted", "true")
 
     const useSoundStore = await importStore()
 
-    expect(howler.mute).toHaveBeenCalledWith(true)
+    expect(howler.mute).not.toHaveBeenCalled()
     expect(howler.volume).toHaveBeenCalledWith(0.4)
-    expect(useSoundStore.getState()).toMatchObject({ volume: 0.4, muted: true })
+    expect(useSoundStore.getState()).toMatchObject({
+      volume: 0.4,
+      muted: false,
+      surface: null,
+    })
   })
 
-  it("falls back to full volume, unmuted, with nothing stored", async () => {
+  it("starts unbound at full volume with nothing stored", async () => {
     stubStorage()
 
     const useSoundStore = await importStore()
 
-    expect(useSoundStore.getState()).toMatchObject({ volume: 1, muted: false })
+    expect(useSoundStore.getState()).toMatchObject({
+      volume: 1,
+      muted: false,
+      surface: null,
+    })
+  })
+
+  it("mutes a player surface by default", async () => {
+    stubStorage()
+    const useSoundStore = await importStore()
+
+    useSoundStore.getState().bindSurface("player")
+
+    expect(useSoundStore.getState()).toMatchObject({
+      muted: true,
+      surface: "player",
+    })
+    expect(howler.mute).toHaveBeenLastCalledWith(true)
+  })
+
+  it("leaves a manager surface unmuted by default", async () => {
+    const storage = stubStorage()
+    storage.setItem("sound_muted", "true")
+    const useSoundStore = await importStore()
+
+    useSoundStore.getState().bindSurface("manager")
+
+    expect(useSoundStore.getState()).toMatchObject({
+      muted: false,
+      surface: "manager",
+    })
+    expect(howler.mute).toHaveBeenLastCalledWith(false)
+  })
+
+  it.each([
+    ["player", "false", false],
+    ["manager", "true", true],
+  ] as const)(
+    "honors the stored %s mute preference",
+    async (surface, stored, expected) => {
+      const storage = stubStorage()
+      storage.setItem(`sound_muted_${surface}`, stored)
+      const useSoundStore = await importStore()
+
+      useSoundStore.getState().bindSurface(surface)
+
+      expect(useSoundStore.getState()).toMatchObject({
+        muted: expected,
+        surface,
+      })
+      expect(howler.mute).toHaveBeenLastCalledWith(expected)
+    },
+  )
+
+  it("does not reapply an already-bound surface", async () => {
+    stubStorage()
+    const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("player")
+    vi.clearAllMocks()
+
+    useSoundStore.getState().bindSurface("player")
+
+    expect(howler.mute).not.toHaveBeenCalled()
+    expect(howler.volume).not.toHaveBeenCalled()
+  })
+
+  it("loads the mute preference when switching surfaces", async () => {
+    const storage = stubStorage()
+    storage.setItem("sound_muted_player", "false")
+    storage.setItem("sound_muted_manager", "true")
+    const useSoundStore = await importStore()
+
+    useSoundStore.getState().bindSurface("player")
+    expect(useSoundStore.getState()).toMatchObject({
+      muted: false,
+      surface: "player",
+    })
+
+    useSoundStore.getState().bindSurface("manager")
+    expect(useSoundStore.getState()).toMatchObject({
+      muted: true,
+      surface: "manager",
+    })
+    expect(howler.mute).toHaveBeenLastCalledWith(true)
   })
 
   it.each([
@@ -103,11 +190,10 @@ describe("useSoundStore", () => {
     expect(howler.volume).toHaveBeenLastCalledWith(0.5)
   })
 
-  it("setVolume persists, applies, and clears mute", async () => {
+  it("setVolume persists to only the bound surface and clears mute", async () => {
     const storage = stubStorage()
-    storage.setItem("sound_muted", "true")
-
     const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("player")
     useSoundStore.getState().setVolume(0.7)
 
     expect(useSoundStore.getState()).toMatchObject({
@@ -115,15 +201,28 @@ describe("useSoundStore", () => {
       muted: false,
     })
     expect(storage.getItem("sound_volume")).toBe("0.7")
-    expect(storage.getItem("sound_muted")).toBe("false")
+    expect(storage.getItem("sound_muted_player")).toBe("false")
+    expect(storage.getItem("sound_muted_manager")).toBeNull()
     expect(howler.mute).toHaveBeenLastCalledWith(false)
     expect(howler.volume).toHaveBeenLastCalledWith(0.7)
+  })
+
+  it("toggleMute persists to only the bound surface", async () => {
+    const storage = stubStorage()
+    const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("manager")
+
+    useSoundStore.getState().toggleMute()
+
+    expect(storage.getItem("sound_muted_manager")).toBe("true")
+    expect(storage.getItem("sound_muted_player")).toBeNull()
   })
 
   it("toggleMute restores the default when unmuting a zeroed slider", async () => {
     stubStorage()
 
     const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("manager")
 
     useSoundStore.getState().setVolume(0)
     useSoundStore.getState().toggleMute()
@@ -137,6 +236,7 @@ describe("useSoundStore", () => {
     stubStorage()
 
     const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("manager")
 
     useSoundStore.getState().setVolume(0.3)
     useSoundStore.getState().toggleMute()
@@ -154,6 +254,7 @@ describe("useSoundStore", () => {
     stubStorage()
 
     const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("manager")
 
     vi.clearAllMocks()
     useSoundStore.getState().toggleMute()
