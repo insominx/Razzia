@@ -19,16 +19,22 @@ export interface CommonStatusDataMap {
   SHOW_START: { time: number; subject: string }
   SHOW_PREPARED: { totalAnswers: number; questionNumber: number }
   SHOW_QUESTION: {
+    questionNumber: number
     question: string
     media?: QuestionMedia
     cooldown: number
   }
   SELECT_ANSWER: {
+    questionNumber: number
     question: string
     answers: string[]
     media?: QuestionMedia
     time: number
     totalPlayer: number
+    revealStartedAt: number
+    unlockAt: number
+    serverNow: number
+    answeringOpen: boolean
   }
   SHOW_RESULT: {
     correct: boolean
@@ -45,6 +51,7 @@ export interface CommonStatusDataMap {
 interface ManagerExtraStatus {
   SHOW_ROOM: { text: string; inviteCode?: string }
   SHOW_RESPONSES: {
+    questionNumber: number
     question: string
     responses: Record<number, number>
     solutions: number[]

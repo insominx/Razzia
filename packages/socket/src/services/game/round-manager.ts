@@ -14,9 +14,18 @@ import {
   STATUS,
   type StatusDataMap,
 } from "@razzia/common/types/game/status"
+import { getAnswerRevealDuration } from "@razzia/common/utils/answer-reveal"
+import {
+  QUESTION_CONTENT_ENTER_MS,
+  QUESTION_NUMBER_INTRO_MS,
+} from "@razzia/common/utils/question-transition"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
 import { PlayerManager } from "@razzia/socket/services/game/player-manager"
 import { orderToPoint, timeToPoint } from "@razzia/socket/utils/game"
+import {
+  createInterruptibleDelay,
+  type InterruptibleDelay,
+} from "@razzia/socket/utils/interruptible-delay"
 import sleep from "@razzia/socket/utils/sleep"
 import { nanoid } from "nanoid"
 
@@ -43,6 +52,15 @@ export interface RoundManagerOptions {
   onGameFinished: (_result: GameResult) => void
 }
 
+type RoundPhase = "idle" | "prompt" | "revealing" | "answering" | "results"
+
+interface UnlockContext {
+  generation: number
+  question: Question
+  revealStartedAt: number
+  unlockAt: number
+}
+
 export class RoundManager {
   private readonly opts: RoundManagerOptions
   private started = false
@@ -52,6 +70,9 @@ export class RoundManager {
   private leaderboard: Player[] = []
   private tempOldLeaderboard: Player[] | null = null
   private questionsHistory: QuestionResult[] = []
+  private phase: RoundPhase = "idle"
+  private questionGeneration = 0
+  private revealWaiter: InterruptibleDelay | null = null
 
   constructor(opts: RoundManagerOptions) {
     this.opts = opts
@@ -103,7 +124,16 @@ export class RoundManager {
       return
     }
 
+    this.questionGeneration += 1
+    const generation = this.questionGeneration
+    this.revealWaiter?.interrupt()
+    this.revealWaiter = null
+    this.phase = "prompt"
+    this.startTime = 0
+    this.playersAnswers = []
+
     const question = this.opts.quizz.questions[this.currentQuestion]
+    const questionNumber = this.currentQuestion + 1
 
     this.opts.onNewQuestion()
 
@@ -114,12 +144,12 @@ export class RoundManager {
 
     this.opts.broadcast(STATUS.SHOW_PREPARED, {
       totalAnswers: question.answers.length,
-      questionNumber: this.currentQuestion + 1,
+      questionNumber,
     })
 
-    await sleep(2)
+    await sleep(QUESTION_NUMBER_INTRO_MS / 1_000)
 
-    if (!this.started) {
+    if (!this.started || generation !== this.questionGeneration) {
       return
     }
 
@@ -127,33 +157,100 @@ export class RoundManager {
       question.media?.type === MEDIA_TYPES.IMAGE ? question.media : undefined
 
     this.opts.broadcast(STATUS.SHOW_QUESTION, {
+      questionNumber,
       question: question.question,
       media: imageMedia,
       cooldown: question.cooldown,
     })
 
-    await sleep(question.cooldown)
+    await sleep(QUESTION_CONTENT_ENTER_MS / 1_000)
 
-    if (!this.started) {
+    if (!this.started || generation !== this.questionGeneration) {
       return
     }
 
-    this.startTime = Date.now()
+    await sleep(question.cooldown)
+
+    if (!this.started || generation !== this.questionGeneration) {
+      return
+    }
+
+    const revealStartedAt = Date.now()
+    const unlockAt =
+      revealStartedAt + getAnswerRevealDuration(question.answers.length)
+    this.phase = "revealing"
 
     this.opts.broadcast(STATUS.SELECT_ANSWER, {
+      questionNumber,
       question: question.question,
       answers: question.answers,
       media: question.media,
       time: question.time,
       totalPlayer: this.opts.players.count(),
+      revealStartedAt,
+      unlockAt,
+      serverNow: revealStartedAt,
+      answeringOpen: false,
+    })
+
+    const revealWaiter = createInterruptibleDelay(unlockAt - revealStartedAt)
+    this.revealWaiter = revealWaiter
+    await revealWaiter.promise
+
+    if (this.revealWaiter === revealWaiter) {
+      this.revealWaiter = null
+    }
+
+    await this.commitUnlock({
+      generation,
+      question,
+      revealStartedAt,
+      unlockAt,
+    })
+  }
+
+  private async commitUnlock({
+    generation,
+    question,
+    revealStartedAt,
+    unlockAt,
+  }: UnlockContext): Promise<void> {
+    if (
+      !this.started ||
+      generation !== this.questionGeneration ||
+      this.phase !== "revealing"
+    ) {
+      return
+    }
+
+    this.phase = "answering"
+    const serverNow = Date.now()
+    this.startTime = serverNow
+
+    this.opts.broadcast(STATUS.SELECT_ANSWER, {
+      questionNumber: this.currentQuestion + 1,
+      question: question.question,
+      answers: question.answers,
+      media: question.media,
+      time: question.time,
+      totalPlayer: this.opts.players.count(),
+      revealStartedAt,
+      unlockAt,
+      serverNow,
+      answeringOpen: true,
     })
 
     await this.opts.cooldown.start(question.time)
 
-    if (!this.started) {
+    if (
+      !this.started ||
+      generation !== this.questionGeneration ||
+      this.phase !== "answering"
+    ) {
       return
     }
 
+    this.phase = "results"
     this.showResults(question)
   }
 
@@ -215,6 +312,7 @@ export class RoundManager {
 
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_RESPONSES, {
       ...question,
+      questionNumber: this.currentQuestion + 1,
       responses: totalType,
     })
 
@@ -237,7 +335,13 @@ export class RoundManager {
     const player = this.opts.players.findById(socket.id)
     const question = this.opts.quizz.questions[this.currentQuestion]
 
-    if (!player) {
+    if (
+      this.phase !== "answering" ||
+      !player ||
+      !Number.isInteger(answerId) ||
+      answerId < 0 ||
+      answerId >= question.answers.length
+    ) {
       return
     }
 
@@ -294,7 +398,7 @@ export class RoundManager {
   }
 
   abortQuestion(socket: Socket): void {
-    if (!this.started) {
+    if (!this.started || this.phase !== "answering") {
       return
     }
 
@@ -305,12 +409,25 @@ export class RoundManager {
     this.opts.cooldown.abort()
   }
 
+  unlockAnswers(socket: Socket): void {
+    if (!this.started || this.phase !== "revealing") {
+      return
+    }
+
+    if (socket.id !== this.opts.getManagerId()) {
+      return
+    }
+
+    this.revealWaiter?.interrupt()
+  }
+
   showLeaderboard(): void {
     const isLastRound =
       this.currentQuestion + 1 === this.opts.quizz.questions.length
 
     if (isLastRound) {
       this.started = false
+      this.phase = "idle"
 
       const top = this.leaderboard.slice(0, 3)
 

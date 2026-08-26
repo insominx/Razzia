@@ -4,8 +4,11 @@ import {
   ANSWER_INK,
   ANSWERS_LABELS,
   SFX,
+  getManagerSkipEvent,
   sfxForTheme,
 } from "@razzia/web/features/game/utils/constants"
+import { EVENTS } from "@razzia/common/constants"
+import { STATUS } from "@razzia/common/types/game/status"
 import { describe, expect, it } from "vitest"
 
 const CLASSIC_CUES = [
@@ -46,6 +49,47 @@ describe("sfxForTheme", () => {
     expect(sfxForTheme("techno", "/sounds/notInThePack.mp3")).toBe(
       "/sounds/notInThePack.mp3",
     )
+  })
+})
+
+describe("getManagerSkipEvent", () => {
+  const answerData = {
+    question: "Question",
+    questionNumber: 1,
+    answers: ["A", "B"],
+    time: 10,
+    totalPlayer: 2,
+    revealStartedAt: 1_000,
+    unlockAt: 5_000,
+    serverNow: 1_000,
+    answeringOpen: false,
+  }
+
+  it("uses distinct reveal and answering commands for the same status", () => {
+    expect(
+      getManagerSkipEvent({ name: STATUS.SELECT_ANSWER, data: answerData }),
+    ).toBe(EVENTS.MANAGER.UNLOCK_ANSWERS)
+    expect(
+      getManagerSkipEvent({
+        name: STATUS.SELECT_ANSWER,
+        data: { ...answerData, answeringOpen: true },
+      }),
+    ).toBe(EVENTS.MANAGER.ABORT_QUIZ)
+  })
+
+  it("preserves existing manager navigation and closed statuses", () => {
+    expect(
+      getManagerSkipEvent({
+        name: STATUS.SHOW_ROOM,
+        data: { text: "Waiting" },
+      }),
+    ).toBe(EVENTS.MANAGER.START_GAME)
+    expect(
+      getManagerSkipEvent({
+        name: STATUS.SHOW_QUESTION,
+        data: { question: "Question", questionNumber: 1, cooldown: 5 },
+      }),
+    ).toBeNull()
   })
 })
 

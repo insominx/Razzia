@@ -1,6 +1,7 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
 import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
+import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import {
   ANSWER_BAR,
@@ -20,7 +21,7 @@ interface Props {
 }
 
 const Responses = ({
-  data: { question, answers, media, responses, solutions },
+  data: { questionNumber, question, answers, media, responses, solutions },
 }: Props) => {
   const sfx = useSfx()
   const percentages = calculatePercentages(responses)
@@ -53,8 +54,15 @@ const Responses = ({
   }, [playMusic])
 
   return (
-    <div className="flex h-full flex-1 flex-col justify-between">
-      <div className="mx-auto inline-flex h-full w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5">
+    <div
+      data-response-screen
+      className="flex h-full flex-1 flex-col gap-10 md:gap-12"
+    >
+      <div
+        data-response-content
+        className="mx-auto inline-flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-5"
+      >
+        <QuestionNumber questionNumber={questionNumber} />
         <QuestionCard question={question} media={media} />
 
         <div className="mt-8 flex w-full max-w-3xl flex-col gap-3 px-2 md:gap-4">
@@ -141,7 +149,7 @@ const Responses = ({
         </div>
       </div>
 
-      <div>
+      <div className="shrink-0">
         <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-1 gap-3 px-4 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl">
           {answers.map((answer, key) => (
             <AnswerButton

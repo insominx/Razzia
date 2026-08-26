@@ -12,7 +12,9 @@ import Start from "@razzia/web/features/game/components/states/Start"
 import Wait from "@razzia/web/features/game/components/states/Wait"
 
 import { STATUS } from "@razzia/common/types/game/status"
+import type { StatusDataMap } from "@razzia/common/types/game/status"
 import type { SoundTheme } from "@razzia/common/types/visuals"
+import type { Status as GameStatus } from "@razzia/web/features/game/utils/createStatus"
 
 /**
  * A–D tile recipe: accent stroke, tinted fill, accent ink. The ink role is
@@ -144,12 +146,32 @@ export const sfxForTheme = (
 
 export const MANAGER_SKIP_EVENTS = {
   [STATUS.SHOW_ROOM]: EVENTS.MANAGER.START_GAME,
-  [STATUS.SELECT_ANSWER]: EVENTS.MANAGER.ABORT_QUIZ,
   [STATUS.SHOW_RESPONSES]: EVENTS.MANAGER.SHOW_LEADERBOARD,
   [STATUS.SHOW_LEADERBOARD]: EVENTS.MANAGER.NEXT_QUESTION,
 } as const satisfies Partial<
   Record<keyof typeof GAME_STATE_COMPONENTS_MANAGER, string>
 >
+
+type ManagerSkipEvent =
+  | (typeof EVENTS.MANAGER)["START_GAME"]
+  | (typeof EVENTS.MANAGER)["UNLOCK_ANSWERS"]
+  | (typeof EVENTS.MANAGER)["ABORT_QUIZ"]
+  | (typeof EVENTS.MANAGER)["SHOW_LEADERBOARD"]
+  | (typeof EVENTS.MANAGER)["NEXT_QUESTION"]
+
+export const getManagerSkipEvent = (
+  status: GameStatus<StatusDataMap>,
+): ManagerSkipEvent | null => {
+  if (status.name === STATUS.SELECT_ANSWER) {
+    return status.data.answeringOpen
+      ? EVENTS.MANAGER.ABORT_QUIZ
+      : EVENTS.MANAGER.UNLOCK_ANSWERS
+  }
+
+  return isKeyOf(MANAGER_SKIP_EVENTS, status.name)
+    ? MANAGER_SKIP_EVENTS[status.name]
+    : null
+}
 
 export function isKeyOf<T extends object>(
   obj: T,

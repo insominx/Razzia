@@ -53,6 +53,7 @@ const soundFor = (src: string): SoundMock => {
 
 const DATA: ManagerStatusDataMap["SHOW_RESPONSES"] = {
   question: "Which one?",
+  questionNumber: 7,
   answers: ["Alpha", "Beta", "Gamma", "Delta"],
   responses: { 0: 12, 1: 2, 2: 3, 3: 1 },
   solutions: [0],
@@ -105,6 +106,26 @@ describe("Responses", () => {
   beforeEach(() => {
     cleanup()
     sounds.clear()
+  })
+
+  it("keeps the shared question number above the response question", async () => {
+    await renderResponses()
+
+    expect(
+      document.querySelector(
+        '[data-question-number-layout="game-question-number"]',
+      ),
+    ).toHaveAttribute("data-question-number-phase", "settled")
+  })
+
+  it("keeps a deliberate responsive gutter between response bars and options", async () => {
+    await renderResponses()
+
+    const screenLayout = document.querySelector("[data-response-screen]")
+    const resultContent = document.querySelector("[data-response-content]")
+
+    expect(screenLayout).toHaveClass("gap-10", "md:gap-12")
+    expect(resultContent).not.toHaveClass("h-full")
   })
 
   it("paints the bars from the responses on first render", async () => {

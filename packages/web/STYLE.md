@@ -67,6 +67,32 @@ and the incorrect quantity receding and desaturating. The bar fill itself stays
 
 Mono A/B/C/D badges sit on `border-current bg-canvas/25`, inheriting the ink.
 
+### Answer reveal
+
+The shared player/manager answer grid reserves every 2–4 answer slot from its
+first paint. After a one-second pause, slots reveal in A–D order with a
+two-second opacity fade each. Each fade starts three seconds after the previous
+one, leaving a one-second beat after a fade completes.
+`@razzia/common/utils/answer-reveal` is the timing authority. The server owns
+the answering unlock, so visibility never opens submission, the timer HUD, or
+the answers music by itself. While revealed but locked, keep answer copy at
+`text-primary`, suppress hover movement, and render the identity border/tint on
+a separate decorative layer at low opacity with a 2 px blur and low saturation.
+Never blur the label or answer copy. When the server opens answering, transition
+every decorative layer together through a brief brightness/saturation overshoot
+before settling at its full identity surface as the timer begins. Locked tiles
+must have no hover motion or glow. Active tiles also stay positionally stable,
+but hover and keyboard focus immediately grow one soft A–D color-matched shadow
+around the panel. Render that glow as a dedicated identity-colored halo layer:
+reveal its strong 3 px edge immediately on hover/focus, then ease its 18 px blur
+and 1.03× expansion outward over 300 ms. Fade it quickly on exit. Do not rely
+on a delayed box-shadow interpolation, add a persistent second ring, or let the
+halo blur the panel or answer copy. Reduced-motion surfaces show every reserved
+slot immediately and snap between surface states while still waiting for that
+same server unlock. Protocol (same-status payload, `manager:unlockAnswers` vs
+`manager:abortQuiz`, reconnect restamp) is in
+`docs/adr/0001-server-clocked-answer-reveal.md`.
+
 | identity   | accent    | dark border / tint / ink       | light border / tint / ink         |
 | ---------- | --------- | ------------------------------ | --------------------------------- |
 | `answer-a` | `#ffab24` | `#8a5a18` / `#1e1b17` / accent | `#fcd34d` / `#fffbeb` / `#b45309` |
@@ -79,6 +105,26 @@ Mono A/B/C/D badges sit on `border-current bg-canvas/25`, inheriting the ink.
 - Space Grotesk display/body; JetBrains Mono for badges, codes, numerals.
 - Calm motion: `--rz-dur-base: .5s`, `--rz-ease-calm: cubic-bezier(.16,1,.3,1)`.
   Respect `prefers-reduced-motion`.
+- The question intro renders only the localized `Question #N` label. Fade it in
+  over 500 ms, keep the intro beat at one second total, then reuse the
+  `game-question-number` layout identity to translate it above the question
+  while the question text/media fades in over 950 ms. Keep that label above the
+  question through answers and manager responses; do not duplicate progress in
+  the top bar. The reading progress bar and server prompt cooldown begin after
+  the 950 ms content entrance.
+- The live `SHOW_QUESTION` → `SELECT_ANSWER` boundary reuses the
+  `game-question` Motion layout identity. Keep identical width and padding in
+  both states and translate it into its answer-screen position over 950 ms with
+  the calm easing; size-changing layout animation can reflow the title before
+  Motion applies its transform. Do not add a competing `anim-show` entrance.
+  Reduced motion sets the layout transition duration to zero.
+- Question text and media float directly on the atmosphere. The shared layout
+  wrapper must not add a panel background, border, or rounded container.
+- On manager responses, keep a deliberate vertical gutter between the response
+  distribution and the answer-option cards (`gap-10`, increasing to
+  `md:gap-12`). Let the response content remain the flexible region so this
+  spacing comes from available whitespace instead of crowding or displacing the
+  option grid.
 - Depth: accent `shadow-bloom-*` only. New radius: `rounded-rz-sm/md/lg/xl`.
 - `.rz-dotfield` is the only sanctioned decorative texture: a `--rz-dot`
   radial-gradient grid, kept low-opacity so it recedes behind a photo.

@@ -35,6 +35,7 @@ export const EVENTS = {
     LEAVE: "manager:leave",
     KICK_PLAYER: "manager:kickPlayer",
     START_GAME: "manager:startGame",
+    UNLOCK_ANSWERS: "manager:unlockAnswers",
     ABORT_QUIZ: "manager:abortQuiz",
     NEXT_QUESTION: "manager:nextQuestion",
     SHOW_LEADERBOARD: "manager:showLeaderboard",

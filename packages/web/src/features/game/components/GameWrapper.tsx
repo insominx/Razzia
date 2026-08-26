@@ -10,6 +10,7 @@ import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import { useSoundStore } from "@razzia/web/features/game/stores/sound"
 import { MANAGER_SKIP_BTN } from "@razzia/web/features/game/utils/constants"
 import clsx from "clsx"
+import { LayoutGroup } from "motion/react"
 import {
   type PropsWithChildren,
   useEffect,
@@ -25,6 +26,7 @@ type Props = PropsWithChildren & {
   onNext?: () => void
   onBack?: () => void
   manager?: boolean
+  nextActionKey?: string | null
 }
 
 const GameWrapper = ({
@@ -34,9 +36,10 @@ const GameWrapper = ({
   onNext,
   onBack,
   manager,
+  nextActionKey,
 }: Props) => {
   const { player } = usePlayerStore()
-  const { questionStates, setQuestionStates } = useQuestionStore()
+  const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
   const [isDisabled, setIsDisabled] = useState(false)
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
@@ -60,7 +63,7 @@ const GameWrapper = ({
 
   useEffect(() => {
     setIsDisabled(false)
-  }, [statusName])
+  }, [nextActionKey, statusName])
 
   const handleNext = () => {
     setIsDisabled(true)
@@ -83,12 +86,6 @@ const GameWrapper = ({
           <>
             <div className="flex w-full items-center gap-2 p-4">
               <div className="flex flex-1 items-center justify-between">
-                {questionStates && (
-                  <div className="border-info/35 bg-panel/70 text-text-primary rounded-rz-lg flex items-center border p-2 px-4 font-mono text-lg font-bold">
-                    {`${questionStates.current} / ${questionStates.total}`}
-                  </div>
-                )}
-
                 {manager && next && (
                   <Button
                     className={clsx(
@@ -116,7 +113,9 @@ const GameWrapper = ({
               <VolumeControl />
             </div>
 
-            {children}
+            <LayoutGroup id={manager ? "manager-game" : "player-game"}>
+              {children}
+            </LayoutGroup>
 
             {!manager && (
               <div className="bg-panel/70 border-border text-text-body z-50 flex items-center justify-between border-t px-4 py-2 text-lg font-bold">

@@ -1,23 +1,27 @@
 import { EVENTS, MEDIA_TYPES, NO_TIME_LIMIT } from "@razzia/common/constants"
 import type { QuestionMediaType } from "@razzia/common/types/game"
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
+import { ANSWER_REVEAL_FADE_MS } from "@razzia/common/utils/answer-reveal"
 import AnswerButton from "@razzia/web/features/game/components/AnswerButton"
 import DotField from "@razzia/web/features/game/components/DotField"
 import HudModule from "@razzia/web/features/game/components/HudModule"
 import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
+import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import {
   useEvent,
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
+import { useAnswerReveal } from "@razzia/web/features/game/hooks/use-answer-reveal"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import {
   ANSWER_IDENTITY,
+  ANSWER_INK,
   ANSWERS_LABELS,
   SFX,
 } from "@razzia/web/features/game/utils/constants"
 import clsx from "clsx"
-import { useEffect, useState } from "react"
+import { type CSSProperties, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
 
@@ -25,14 +29,22 @@ interface Props {
   data: CommonStatusDataMap["SELECT_ANSWER"]
 }
 
-const Answers = ({
-  data: { question, answers, media, time, totalPlayer },
-}: Props) => {
+const Answers = ({ data }: Props) => {
+  const {
+    questionNumber,
+    question,
+    answers,
+    media,
+    time,
+    totalPlayer,
+    answeringOpen,
+  } = data
   const { socket } = useSocket()
   const { player, gameId } = usePlayerStore()
 
   const [cooldown, setCooldown] = useState(time)
   const [totalAnswer, setTotalAnswer] = useState(0)
+  const visibleCount = useAnswerReveal(data)
   const { t } = useTranslation()
   const sfx = useSfx()
 
@@ -47,7 +59,7 @@ const Answers = ({
   })
 
   const handleAnswer = (answerKey: number) => () => {
-    if (!player || !gameId) {
+    if (!answeringOpen || !player || !gameId) {
       return
     }
 
@@ -66,7 +78,7 @@ const Answers = ({
       MEDIA_TYPES.VIDEO,
     ] as QuestionMediaType[]
 
-    if (disabledMusicMedia.includes(media?.type)) {
+    if (!answeringOpen || disabledMusicMedia.includes(media?.type)) {
       return
     }
 
@@ -75,8 +87,7 @@ const Answers = ({
     return () => {
       stopMusic()
     }
-    // oxlint-disable-next-line
-  }, [playMusic])
+  }, [answeringOpen, media?.type, playMusic, stopMusic])
 
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
     setCooldown(sec)
@@ -97,18 +108,16 @@ const Answers = ({
         <DotField side="left" />
         <DotField side="right" />
 
-        <div className="flex flex-1 items-center justify-center">
-          <QuestionCard
-            question={question}
-            media={media}
-            className="anim-show"
-          />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4">
+          <QuestionNumber questionNumber={questionNumber} />
+          <QuestionCard question={question} media={media} />
         </div>
 
         <div className="flex items-end justify-between">
           {timed && (
             <HudModule
               role="info"
+              className={clsx(!answeringOpen && "invisible")}
               label={t("game:hud.time")}
               value={String(cooldown)}
               countdown={{ remaining: cooldown, total: time }}
@@ -123,13 +132,30 @@ const Answers = ({
           />
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-3 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl">
+        <div
+          className="mb-4 grid grid-cols-1 gap-3 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl"
+          style={
+            {
+              "--rz-answer-reveal-fade": `${ANSWER_REVEAL_FADE_MS}ms`,
+            } as CSSProperties
+          }
+        >
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
-              className={clsx(ANSWER_IDENTITY[key])}
+              className={clsx(
+                ANSWER_INK[key],
+                "rz-answer-slot",
+                key < visibleCount && "rz-answer-slot-visible",
+              )}
+              data-answer-state={answeringOpen ? "active" : "revealing"}
+              surface={{
+                className: ANSWER_IDENTITY[key],
+                state: answeringOpen ? "active" : "locked",
+              }}
               label={ANSWERS_LABELS[key]}
               onClick={handleAnswer(key)}
+              disabled={!answeringOpen || key >= visibleCount}
             >
               {answer}
             </AnswerButton>

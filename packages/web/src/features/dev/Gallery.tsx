@@ -1,5 +1,6 @@
 import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
 import Atmosphere from "@razzia/web/components/Atmosphere"
+import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
 import Answers from "@razzia/web/features/game/components/states/Answers"
 import Leaderboard from "@razzia/web/features/game/components/states/Leaderboard"
 import PlayerFinished from "@razzia/web/features/game/components/states/PlayerFinished"
@@ -62,10 +63,12 @@ const STATUS_FIXTURES = {
     questionNumber: 7,
   },
   [STATUS.SHOW_QUESTION]: {
+    questionNumber: 7,
     question: "Which boundary owns the persisted state?",
     cooldown: 5,
   },
   [STATUS.SELECT_ANSWER]: {
+    questionNumber: 7,
     question: "Which boundary owns the persisted state?",
     answers: [
       "The configuration service",
@@ -75,6 +78,10 @@ const STATUS_FIXTURES = {
     ],
     time: 20,
     totalPlayer: 18,
+    revealStartedAt: 0,
+    unlockAt: 12_000,
+    serverNow: 12_000,
+    answeringOpen: true,
   },
   [STATUS.SHOW_RESULT]: {
     correct: true,
@@ -85,6 +92,7 @@ const STATUS_FIXTURES = {
     aheadOfMe: null,
   },
   [STATUS.SHOW_RESPONSES]: {
+    questionNumber: 7,
     question: "Which boundary owns the persisted state?",
     responses: { 0: 12, 1: 2, 2: 3, 3: 1 },
     solutions: [0],
@@ -300,9 +308,12 @@ const Gallery = () => {
             <p className="text-text-primary text-sm font-semibold">
               {currentState.label}
             </p>
-            <p className="text-text-muted text-xs tracking-wider uppercase">
-              fixture
-            </p>
+            <div className="flex items-center gap-3">
+              <VolumeControl />
+              <p className="text-text-muted text-xs tracking-wider uppercase">
+                fixture
+              </p>
+            </div>
           </header>
           <div className="bg-canvas relative flex min-h-[680px] flex-col overflow-hidden p-4">
             <Atmosphere recipe="photo" placement="container" />

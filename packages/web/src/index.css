@@ -297,15 +297,13 @@ button:not(:disabled),
   background-size: 28px 28px;
 }
 
-/* Master volume slider. The thumb and track live behind vendor pseudo-elements
-   that no utility class can reach, so this sits here like .rz-dotfield and
-   draws only on existing --rz-* tokens. */
+/* Master volume slider. Hit size is `h-11 w-32` on the input; the visible
+   track and thumb live behind vendor pseudo-elements no utility can reach. */
 .rz-volume-slider {
-  width: 6rem;
-  height: 0.25rem;
-  border-radius: 9999px;
-  background: var(--rz-border);
+  background: transparent;
   outline: none;
+  cursor: pointer;
+  touch-action: none;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -315,9 +313,16 @@ button:not(:disabled),
   outline-offset: 4px;
 }
 
+.rz-volume-slider::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: var(--rz-border);
+}
+
 .rz-volume-slider::-webkit-slider-thumb {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.375rem;
   border: none;
   border-radius: 9999px;
   background: var(--rz-brand);
@@ -327,8 +332,8 @@ button:not(:disabled),
 }
 
 .rz-volume-slider::-moz-range-thumb {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1rem;
+  height: 1rem;
   border: none;
   border-radius: 9999px;
   background: var(--rz-brand);
@@ -341,8 +346,56 @@ button:not(:disabled),
   background: var(--rz-border);
 }
 
+.rz-answer-slot {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--rz-answer-reveal-fade) var(--rz-ease-calm);
+}
+
+.rz-answer-slot-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* The halo becomes visible on the first hover frame, then its tight identity
+   edge diffuses outward. Keeping it separate from the panel avoids relying on
+   browser box-shadow interpolation and never blurs the answer copy. */
+.rz-answer-hover-glow {
+  position: absolute;
+  inset: 0;
+  border: 3px solid currentColor;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(0px);
+  transform: scale(1);
+  transition:
+    filter 300ms ease-out,
+    transform 300ms ease-out,
+    opacity 120ms ease-in;
+  will-change: filter, transform;
+}
+
+.rz-answer-slot[data-hover-effect="glow"]:is(:hover, :focus-visible)
+  > .rz-answer-hover-glow {
+  opacity: 0.72;
+  filter: blur(18px);
+  transform: scale(1.03);
+  transition:
+    filter 300ms ease-out,
+    transform 300ms ease-out,
+    opacity 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rz-answer-slot,
+  .rz-answer-hover-glow {
+    transition: none;
+  }
+}
+
 .anim-show {
-  animation: show 0.5s ease-out;
+  animation: show var(--rz-dur-base) var(--rz-ease-calm) backwards;
 }
 
 .anim-timer {
@@ -382,16 +435,12 @@ button:not(:disabled),
 }
 
 @keyframes show {
-  0% {
+  from {
+    opacity: 0;
     transform: scale(0);
   }
-  30% {
-    transform: scale(0.9);
-  }
-  60% {
-    transform: scale(0.8);
-  }
-  80% {
+  to {
+    opacity: 1;
     transform: scale(1);
   }
 }

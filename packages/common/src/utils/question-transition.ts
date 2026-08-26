@@ -1,0 +1,5 @@
+export const QUESTION_NUMBER_INTRO_MS = 1_000
+
+export const QUESTION_NUMBER_FADE_MS = 500
+
+export const QUESTION_CONTENT_ENTER_MS = 950

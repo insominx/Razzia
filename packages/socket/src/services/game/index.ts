@@ -24,6 +24,35 @@ interface GameOptions {
   visuals: ResolvedVisuals
 }
 
+type StatusSnapshot = {
+  name: Status
+  data: StatusDataMap[Status]
+}
+
+export const restampReconnectStatus = <T extends StatusSnapshot>(
+  status: T,
+  serverNow = Date.now(),
+): T => {
+  if (status.name !== STATUS.SELECT_ANSWER) {
+    return status
+  }
+
+  return {
+    ...status,
+    data: { ...status.data, serverNow },
+  } as T
+}
+
+export const selectReconnectStatus = (
+  targetStatus: StatusSnapshot | null | undefined,
+  roomStatus: StatusSnapshot | null | undefined,
+): StatusSnapshot =>
+  targetStatus ??
+  roomStatus ?? {
+    name: STATUS.WAIT,
+    data: { text: "game:waitingForPlayers" },
+  }
+
 class Game {
   readonly gameId: string
   readonly inviteCode: string
@@ -175,11 +204,11 @@ class Game {
     this._manager.id = socket.id
     this._manager.connected = true
 
-    const status = this.managerStatus ??
-      this.lastBroadcastStatus ?? {
-        name: STATUS.WAIT,
-        data: { text: "game:waitingForPlayers" },
-      }
+    const selectedStatus = selectReconnectStatus(
+      this.managerStatus,
+      this.lastBroadcastStatus,
+    )
+    const status = restampReconnectStatus(selectedStatus)
 
     socket.emit(EVENTS.MANAGER.SUCCESS_RECONNECT, {
       gameId: this.gameId,
@@ -214,11 +243,11 @@ class Game {
     this.playerManager.updateSocketId(oldSocketId, socket.id)
     player.connected = true
 
-    const status = this.playerStatus.get(oldSocketId) ??
-      this.lastBroadcastStatus ?? {
-        name: STATUS.WAIT,
-        data: { text: "game:waitingForPlayers" },
-      }
+    const selectedStatus = selectReconnectStatus(
+      this.playerStatus.get(oldSocketId),
+      this.lastBroadcastStatus,
+    )
+    const status = restampReconnectStatus(selectedStatus)
 
     const oldStatus = this.playerStatus.get(oldSocketId)
 
@@ -283,6 +312,10 @@ class Game {
 
   abortRound(socket: Socket) {
     this.round.abortQuestion(socket)
+  }
+
+  unlockAnswers(socket: Socket) {
+    this.round.unlockAnswers(socket)
   }
 
   showLeaderboard() {

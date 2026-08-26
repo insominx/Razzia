@@ -10,7 +10,7 @@ import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import {
   GAME_STATE_COMPONENTS_MANAGER,
-  MANAGER_SKIP_EVENTS,
+  getManagerSkipEvent,
   isKeyOf,
 } from "@razzia/web/features/game/utils/constants"
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
@@ -33,6 +33,7 @@ const ManagerGamePage = () => {
   } = useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
+  const nextAction = status ? getManagerSkipEvent(status) : null
 
   useEvent(EVENTS.GAME.STATUS, ({ name, data }) => {
     if (name in GAME_STATE_COMPONENTS_MANAGER) {
@@ -87,8 +88,8 @@ const ManagerGamePage = () => {
       return
     }
 
-    if (isKeyOf(MANAGER_SKIP_EVENTS, status.name)) {
-      socket.emit(MANAGER_SKIP_EVENTS[status.name], { gameId })
+    if (nextAction) {
+      socket.emit(nextAction, { gameId })
     }
   }
 
@@ -108,6 +109,7 @@ const ManagerGamePage = () => {
       statusName={status?.name}
       backgroundUrl={visuals.backgroundUrl}
       onNext={status ? handleSkip : undefined}
+      nextActionKey={nextAction}
       onBack={status?.name === STATUS.SHOW_ROOM ? handleBack : undefined}
       manager
     >
