@@ -1,0 +1,30 @@
+{
+  "subject": "Untitled Quizz",
+  "questions": [
+    {
+      "question": "answer is A",
+      "answers": [
+        "asdf",
+        "qwer"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "answer is b",
+      "answers": [
+        "asdf",
+        "qwer"
+      ],
+      "solutions": [
+        0,
+        1
+      ],
+      "cooldown": 3,
+      "time": 3
+    }
+  ]
+}

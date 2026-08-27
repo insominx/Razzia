@@ -1,3 +1,7 @@
 **/node_modules
 .pnpm-store
 .git
+config/game.json
+config/assets
+config/results
+config/quizz/_*.mjs

@@ -129,6 +129,44 @@ describe("VolumeControl", () => {
     expect(trigger()).toHaveAttribute("aria-expanded", "false")
   })
 
+  it("stays open while the pointer travels from the trigger onto the slider", () => {
+    render(<VolumeControl />)
+    fireEvent.pointerEnter(control(), { pointerType: "mouse" })
+
+    const panel = document.getElementById(
+      trigger().getAttribute("aria-controls")!,
+    )
+    expect(panel).toHaveClass("pr-1")
+    expect(panel).toHaveClass("right-full")
+    expect(panel?.className ?? "").not.toMatch(/\bmt-\d/)
+
+    // Native pointerleave does not bubble; bubbling here would fake a leave of
+    // the whole control, which is the opposite of travelling onto the slider.
+    fireEvent.pointerLeave(trigger(), { pointerType: "mouse", bubbles: false })
+    fireEvent.pointerEnter(slider(), { pointerType: "mouse" })
+
+    expect(slider()).toBeInTheDocument()
+  })
+
+  it("stays open while the thumb is dragged outside the control", () => {
+    render(<VolumeControl />)
+    fireEvent.pointerEnter(control(), { pointerType: "mouse" })
+    fireEvent.pointerDown(slider())
+    fireEvent.pointerLeave(control(), { pointerType: "mouse" })
+
+    expect(slider()).toBeInTheDocument()
+
+    fireEvent.change(slider(), { target: { value: "0.35" } })
+    expect(state.setVolume).toHaveBeenCalledWith(0.35)
+  })
+
+  it("slider hit target is at least 44px tall", () => {
+    render(<VolumeControl />)
+    fireEvent.focus(trigger())
+
+    expect(slider()).toHaveClass("h-11")
+  })
+
   it("reports a dragged level to the store", () => {
     render(<VolumeControl />)
     fireEvent.focus(trigger())

@@ -48,6 +48,9 @@ const toQuestionWithId = (q: Question): QuestionWithId => ({
   id: uuid(),
 })
 
+const boundQuestionIndex = (index: number, length: number) =>
+  Math.min(Math.max(0, index), Math.max(0, length - 1))
+
 type QuizzEditorProviderProps = PropsWithChildren<{
   initialData?: QuizzWithId
   initialBackgroundUrl?: string
@@ -62,18 +65,23 @@ export const QuizzEditorProvider = ({
     initialData?.subject ?? "Untitled Quizz",
   )
   const [questions, setQuestions] = useState<QuestionWithId[]>(
-    initialData
+    initialData?.questions.length
       ? initialData.questions.map(toQuestionWithId)
       : [defaultQuestion()],
   )
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const currentQuestion = questions[currentIndex]
+  const [currentIndex, setCurrentIndexState] = useState(0)
   const [background, setBackgroundRef] = useState<BackgroundRef | undefined>(
     initialData?.visuals?.background,
   )
   const [backgroundUrl, setBackgroundUrl] = useState<string | undefined>(
     initialBackgroundUrl,
   )
+  const activeIndex = boundQuestionIndex(currentIndex, questions.length)
+  const currentQuestion = questions[activeIndex]
+
+  if (activeIndex !== currentIndex) {
+    setCurrentIndexState(activeIndex)
+  }
 
   const setBackground = (
     ref: BackgroundRef | undefined,
@@ -83,18 +91,26 @@ export const QuizzEditorProvider = ({
     setBackgroundUrl(url)
   }
 
+  const setCurrentIndex = (index: number) => {
+    setCurrentIndexState(boundQuestionIndex(index, questions.length))
+  }
+
   const addQuestion = () => {
     setQuestions((prev) => [...prev, defaultQuestion()])
-    setCurrentIndex(questions.length)
+    setCurrentIndexState(questions.length)
   }
 
   const removeQuestion = (index: number) => {
+    if (questions.length <= 1) {
+      return
+    }
+
     const next = questions.filter((_, i) => i !== index)
     setQuestions(next)
-    setCurrentIndex((current) =>
-      Math.min(
-        Math.max(0, current >= index ? current - 1 : current),
-        next.length - 1,
+    setCurrentIndexState(
+      boundQuestionIndex(
+        currentIndex >= index ? currentIndex - 1 : currentIndex,
+        next.length,
       ),
     )
   }
@@ -123,7 +139,7 @@ export const QuizzEditorProvider = ({
         subject,
         setSubject,
         questions,
-        currentIndex,
+        currentIndex: activeIndex,
         currentQuestion,
         setCurrentIndex,
         addQuestion,

@@ -12,7 +12,7 @@ interface Props {
   value: string
   role: HudRole
   className?: string
-  /** Draws a depleting ring beside the value. Omit for a plain readout. */
+  /** Draws a depleting ring around the value. Omit for a plain boxed readout. */
   countdown?: {
     remaining: number
     total: number
@@ -30,30 +30,42 @@ const ROLE_STYLES: Record<HudRole, { label: string; box: string }> = {
   },
 }
 
+const VALUE_TEXT =
+  "font-mono text-xl font-bold tabular-nums md:text-2xl"
+
 const HudModule = ({ label, value, role, className, countdown }: Props) => {
   const styles = ROLE_STYLES[role]
 
   return (
-    <div className={clsx("flex flex-col items-start", className)}>
+    <div className={clsx("flex flex-col items-start gap-2", className)}>
       <span
         className={clsx(
-          "mb-1 pl-1 text-[0.65rem] font-bold tracking-[0.18em] uppercase",
+          "pl-1 text-[0.65rem] font-bold tracking-[0.18em] uppercase",
           styles.label,
         )}
       >
         {label}
       </span>
 
-      <div className="relative">
-        {countdown && (
+      {countdown ? (
+        <div className="relative grid size-14 place-items-center md:size-16">
           <svg
             aria-hidden="true"
             viewBox="0 0 48 48"
             className={clsx(
-              "absolute top-1/2 -right-5 z-0 size-12 -translate-y-1/2 -rotate-90",
+              "pointer-events-none absolute inset-0 -rotate-90",
               styles.label,
             )}
           >
+            <circle
+              cx="24"
+              cy="24"
+              r={RING_RADIUS}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              className="opacity-25"
+            />
             <circle
               className="rz-timer-ring transition-[stroke-dashoffset] duration-1000 ease-linear"
               cx="24"
@@ -70,17 +82,26 @@ const HudModule = ({ label, value, role, className, countdown }: Props) => {
               )}
             />
           </svg>
-        )}
-
+          <span
+            className={clsx(
+              "relative leading-none text-text-primary",
+              VALUE_TEXT,
+            )}
+          >
+            {value}
+          </span>
+        </div>
+      ) : (
         <div
           className={clsx(
-            "rounded-rz-md relative z-10 border px-5 py-1.5 font-mono text-xl font-bold tabular-nums md:text-2xl",
+            "rounded-rz-md border px-5 py-1.5",
+            VALUE_TEXT,
             styles.box,
           )}
         >
           {value}
         </div>
-      </div>
+      )}
     </div>
   )
 }

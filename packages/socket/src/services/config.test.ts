@@ -23,6 +23,7 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.CONFIG_PATH
+  delete process.env.QUIZ_SEED_PATH
   for (const root of tempRoots.splice(0)) {
     fs.rmSync(root, { recursive: true, force: true })
   }
@@ -180,5 +181,80 @@ describe("getReferencedBackgroundAssetPaths", () => {
       await import("@razzia/socket/services/config")
 
     expect(() => getReferencedBackgroundAssetPaths()).toThrow()
+  })
+})
+
+const sampleQuiz = (subject: string) => ({
+  subject,
+  questions: [
+    {
+      question: `${subject} Q1`,
+      answers: ["A", "B"],
+      solutions: [0],
+      cooldown: 5,
+      time: 20,
+    },
+  ],
+})
+
+describe("initConfig quiz seed", () => {
+  it("replaces volume quizzes with seed JSON and leaves game.json alone", async () => {
+    const seedDir = fs.mkdtempSync(path.join(os.tmpdir(), "razzia-seed-"))
+    tempRoots.push(seedDir)
+    fs.writeFileSync(
+      path.join(configRoot, "game.json"),
+      JSON.stringify({ managerPassword: "keep-me" }),
+    )
+    fs.writeFileSync(
+      path.join(configRoot, "quizz/old.json"),
+      JSON.stringify(sampleQuiz("Old")),
+    )
+    fs.writeFileSync(
+      path.join(seedDir, "netcode.json"),
+      JSON.stringify(sampleQuiz("Netcode")),
+    )
+    fs.writeFileSync(path.join(seedDir, "broken.json"), "{")
+    process.env.QUIZ_SEED_PATH = seedDir
+
+    const { initConfig, getGameConfig, getQuizz } =
+      await import("@razzia/socket/services/config")
+
+    initConfig()
+
+    expect(getGameConfig().managerPassword).toBe("keep-me")
+    expect(fs.existsSync(path.join(configRoot, "quizz/old.json"))).toBe(false)
+    expect(fs.existsSync(path.join(configRoot, "quizz/broken.json"))).toBe(
+      false,
+    )
+    expect(getQuizz().map((quiz) => quiz.subject)).toEqual(["Netcode"])
+  })
+
+  it("does not wipe volume quizzes when the seed has no valid JSON", async () => {
+    const seedDir = fs.mkdtempSync(path.join(os.tmpdir(), "razzia-seed-"))
+    tempRoots.push(seedDir)
+    fs.writeFileSync(path.join(seedDir, "broken.json"), "{")
+    fs.writeFileSync(
+      path.join(configRoot, "quizz/keep.json"),
+      JSON.stringify(sampleQuiz("Keep")),
+    )
+    process.env.QUIZ_SEED_PATH = seedDir
+
+    const { initConfig, getQuizz } =
+      await import("@razzia/socket/services/config")
+
+    initConfig()
+
+    expect(getQuizz().map((quiz) => quiz.subject)).toEqual(["Keep"])
+  })
+
+  it("writes the example quiz when there is no seed and no quizz folder", async () => {
+    fs.rmSync(path.join(configRoot, "quizz"), { recursive: true, force: true })
+
+    const { initConfig, getQuizz } =
+      await import("@razzia/socket/services/config")
+
+    initConfig()
+
+    expect(getQuizz().some((quiz) => quiz.id === "example")).toBe(true)
   })
 })

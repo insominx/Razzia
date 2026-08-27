@@ -1,5 +1,8 @@
 /node_modules
-/config
+/config/*
+!/config/quizz/
+/config/quizz/*
+!/config/quizz/*.json
 .env
 .secrets
 release.json

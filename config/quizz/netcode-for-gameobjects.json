@@ -1,0 +1,89 @@
+{
+  "subject": "Netcode for GameObjects Quiz",
+  "questions": [
+    {
+      "question": "You change a normal C# field on one game instance, but the value on another instance stays the same. Why?",
+      "answers": [
+        "The instances are running at different frame rates",
+        "Each instance has its own copy of the field",
+        "The NetworkObjectId changes when the field changes",
+        "The server waits for the owner to copy the field"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "What does a NetworkObject primarily add to a GameObject?",
+      "answers": [
+        "A NetworkVariable for each serialized field",
+        "Transform synchronization",
+        "A network identity for the spawned object",
+        "Client authority for the object's owner"
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A client is the owner of a NetworkObject. Which statement is correct?",
+      "answers": [
+        "Ownership identifies the owning client; it doesn't automatically grant authority",
+        "Ownership makes NetworkVariables owner-writable",
+        "Ownership makes transforms owner-authoritative",
+        "Ownership gives the client spawn control"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A client tries to pick up a shared item. What should normally happen?",
+      "answers": [
+        "The client takes ownership and changes the item",
+        "The client requests the pickup, and the server validates and applies it",
+        "The client changes the item first, and the server relays the result",
+        "The client sends the result directly to the other clients"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 30
+    },
+    {
+      "question": "A door is opened during the game. Players joining later should see that it is already open. How should its open/closed state normally be synchronized?",
+      "answers": [
+        "A NetworkVariable storing the current state",
+        "An RPC sent whenever the door opens",
+        "A local bool on each client",
+        "An ownership change when the door is used"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "The server confirms a projectile hit. Current clients should be notified when it happens, but players joining later should not receive the old event. What best fits this job?",
+      "answers": [
+        "A NetworkVariable storing that a hit occurred",
+        "An RPC sent when the hit is confirmed",
+        "A local variable on the shooter",
+        "A NetworkObject ownership change"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 25
+    }
+  ]
+}

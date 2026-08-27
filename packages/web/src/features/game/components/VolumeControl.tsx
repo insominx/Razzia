@@ -19,10 +19,15 @@ const VolumeControl = () => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const openedByTouchPress = useRef(false)
+  const dragging = useRef(false)
   const panelId = useId()
   const { t } = useTranslation()
 
   const close = () => {
+    if (dragging.current) {
+      return
+    }
+
     openedByTouchPress.current = false
     setOpen(false)
   }
@@ -65,10 +70,33 @@ const VolumeControl = () => {
     }
   }
 
+  const handleSliderPointerDown = (
+    event: ReactPointerEvent<HTMLInputElement>,
+  ) => {
+    dragging.current = true
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  const handleSliderPointerUp = (
+    event: ReactPointerEvent<HTMLInputElement>,
+  ) => {
+    dragging.current = false
+
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+
+    const next = document.elementFromPoint(event.clientX, event.clientY)
+
+    if (next && ref.current && !ref.current.contains(next)) {
+      close()
+    }
+  }
+
   return (
     <div
       ref={ref}
-      className="relative flex items-center"
+      className="relative z-50 flex items-center"
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
@@ -92,18 +120,23 @@ const VolumeControl = () => {
       {open && (
         <div
           id={panelId}
-          className="border-border bg-surface rounded-rz-md ease-calm absolute top-full right-0 z-50 mt-1 flex items-center border p-2 transition-opacity"
+          className="absolute top-1/2 right-full z-50 -translate-y-1/2 pr-1"
         >
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={muted ? 0 : volume}
-            onChange={(event) => setVolume(Number(event.target.value))}
-            aria-label={t("common:sound.volume")}
-            className="rz-volume-slider"
-          />
+          <div className="border-border bg-surface rounded-rz-md flex items-center border px-2">
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={muted ? 0 : volume}
+              onChange={(event) => setVolume(Number(event.target.value))}
+              onPointerDown={handleSliderPointerDown}
+              onPointerUp={handleSliderPointerUp}
+              onPointerCancel={handleSliderPointerUp}
+              aria-label={t("common:sound.volume")}
+              className="rz-volume-slider h-11 w-32"
+            />
+          </div>
         </div>
       )}
     </div>

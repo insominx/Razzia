@@ -15,7 +15,7 @@ import {
 } from "@razzia/common/validators/quizz"
 import { normalizeFilename } from "@razzia/socket/utils/game"
 import fs from "fs"
-import { resolve } from "path"
+import { join, resolve } from "path"
 
 export const getConfigPath = (path = "") => {
   const configRoot = process.env.CONFIG_PATH
@@ -51,12 +51,64 @@ export const initConfig = () => {
 
   if (!isQuizzExists) {
     fs.mkdirSync(getConfigPath("quizz"))
+  }
 
+  if (syncSeedQuizzes()) {
+    return
+  }
+
+  if (!isQuizzExists) {
     fs.writeFileSync(
       getConfigPath("quizz/example.json"),
       JSON.stringify(EXAMPLE_QUIZZ, null, 2),
     )
   }
+}
+
+const syncSeedQuizzes = (): boolean => {
+  const seedDir = process.env.QUIZ_SEED_PATH
+
+  if (!seedDir || !fs.existsSync(seedDir)) {
+    return false
+  }
+
+  const seedFiles = fs
+    .readdirSync(seedDir)
+    .filter((file) => file.endsWith(".json"))
+  const valid: string[] = []
+
+  for (const file of seedFiles) {
+    try {
+      const parsed = quizzValidator.safeParse(
+        JSON.parse(fs.readFileSync(join(seedDir, file), "utf-8")),
+      )
+
+      if (parsed.success) {
+        valid.push(file)
+      }
+    } catch {
+      continue
+    }
+  }
+
+  if (valid.length === 0) {
+    return false
+  }
+
+  const destDir = getConfigPath("quizz")
+  fs.mkdirSync(destDir, { recursive: true })
+
+  for (const file of fs
+    .readdirSync(destDir)
+    .filter((name) => name.endsWith(".json"))) {
+    fs.unlinkSync(join(destDir, file))
+  }
+
+  for (const file of valid) {
+    fs.copyFileSync(join(seedDir, file), join(destDir, file))
+  }
+
+  return true
 }
 
 export const getGameConfig = (): GameConfig => {
