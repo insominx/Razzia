@@ -108,10 +108,18 @@ same server unlock. Protocol (same-status payload, `manager:unlockAnswers` vs
 - The question intro renders only the localized `Question #N` label. Fade it in
   over 500 ms, keep the intro beat at one second total, then reuse the
   `game-question-number` layout identity to translate it above the question
-  while the question text/media fades in over 950 ms. Keep that label above the
+  while the question text/media fade in. Keep that label above the
   question through answers and manager responses; do not duplicate progress in
-  the top bar. The reading progress bar and server prompt cooldown begin after
-  the 950 ms content entrance.
+  the top bar. The shared card fills the `max-w-7xl` game column. It always
+  mounts every sentence so later lines are reserved in place: one measured
+  lift to that finished center, then 500 ms linear fades. Earlier sentences
+  stay and do not move. The server still waits 950 ms after a one-sentence
+  entrance, or `500 + max(400, chars * 80)` after each earlier sentence of a
+  longer prompt (last line is only the 500 ms fade), before the
+  reading bar and prompt cooldown. Reduced motion skips the lift, shows every
+  sentence immediately, and still waits for that same room clock. A reconnect
+  with elapsed prompt time sits at the final position and does not replay the
+  lift.
 - The live `SHOW_QUESTION` → `SELECT_ANSWER` boundary reuses the
   `game-question` Motion layout identity. Keep identical width and padding in
   both states and translate it into its answer-screen position over 950 ms with

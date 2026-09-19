@@ -44,6 +44,20 @@ describe("reconnect status selection", () => {
   })
 })
 
+const showQuestionStatus: {
+  name: typeof STATUS.SHOW_QUESTION
+  data: StatusDataMap["SHOW_QUESTION"]
+} = {
+  name: STATUS.SHOW_QUESTION,
+  data: {
+    question: "Setup one. Why?",
+    questionNumber: 1,
+    cooldown: 5,
+    promptStartedAt: 1_000,
+    serverNow: 1_100,
+  },
+}
+
 describe("restampReconnectStatus", () => {
   it("clones SELECT_ANSWER and refreshes only serverNow", () => {
     const restamped = restampReconnectStatus(selectAnswerStatus, 1_800)
@@ -55,6 +69,18 @@ describe("restampReconnectStatus", () => {
       data: { ...selectAnswerStatus.data, serverNow: 1_800 },
     })
     expect(selectAnswerStatus.data.serverNow).toBe(1_100)
+  })
+
+  it("clones SHOW_QUESTION and refreshes only serverNow", () => {
+    const restamped = restampReconnectStatus(showQuestionStatus, 1_800)
+
+    expect(restamped).not.toBe(showQuestionStatus)
+    expect(restamped.data).not.toBe(showQuestionStatus.data)
+    expect(restamped).toEqual({
+      ...showQuestionStatus,
+      data: { ...showQuestionStatus.data, serverNow: 1_800 },
+    })
+    expect(showQuestionStatus.data.serverNow).toBe(1_100)
   })
 
   it("leaves WAIT selected and unchanged", () => {

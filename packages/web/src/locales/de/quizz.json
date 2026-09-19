@@ -13,7 +13,7 @@
       "noTimeLimit": "Kein Zeitlimit",
       "noTimeLimitHint": "Punkte werden nach Antwortreihenfolge vergeben. Es gibt kein Zeitlimit zum Antworten.",
       "questionDisplay": "Frageanzeige",
-      "questionDisplayHint": "Dauer bevor Antworten erscheinen",
+      "questionDisplayHint": "Lesezeit, nachdem die gesamte Frage sichtbar ist",
       "timings": "Zeiten"
     },
     "deleteQuestion": "Frage löschen",

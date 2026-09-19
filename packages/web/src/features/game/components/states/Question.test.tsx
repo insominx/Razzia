@@ -1,5 +1,8 @@
 import { render } from "@testing-library/react"
-import { QUESTION_CONTENT_ENTER_MS } from "@razzia/common/utils/question-transition"
+import {
+  getQuestionPromptRevealMs,
+  QUESTION_CONTENT_ENTER_MS,
+} from "@razzia/common/utils/question-transition"
 import { describe, expect, it, vi } from "vitest"
 import {
   QUESTION_LAYOUT_MODE,
@@ -19,6 +22,9 @@ vi.mock("use-sound", () => ({
   default: () => [mocks.show],
 }))
 
+const MULTI =
+  "A door is opened during the game. Players joining later should see that it is already open. How should its open/closed state normally be synchronized?"
+
 describe("Question shared layout", () => {
   it("renders the prompt as the source of the question-to-answers morph", () => {
     const { container } = render(
@@ -27,6 +33,8 @@ describe("Question shared layout", () => {
           question: "Which boundary owns this state?",
           questionNumber: 7,
           cooldown: 5,
+          promptStartedAt: 0,
+          serverNow: 0,
           media: { type: "image", url: "/question.png" },
         }}
       />,
@@ -35,13 +43,8 @@ describe("Question shared layout", () => {
     const card = container.querySelector(
       '[data-question-layout="game-question"]',
     )
-    expect(card).toHaveClass(
-      "max-w-4xl",
-      "px-6",
-      "py-8",
-      "md:px-10",
-      "md:py-10",
-    )
+    expect(card).toHaveClass("w-full", "px-6", "py-8", "md:px-10", "md:py-10")
+    expect(card).not.toHaveClass("max-w-4xl")
     expect(card?.parentElement).toHaveClass("w-full")
     expect(card).not.toHaveClass("bg-panel/40", "border")
     expect(card).toHaveAttribute("data-question-entrance", "fade")
@@ -53,8 +56,44 @@ describe("Question shared layout", () => {
     expect(QUESTION_LAYOUT_MODE).toBe("position")
     expect(QUESTION_LAYOUT_TRANSITION_MS).toBe(950)
     expect(QUESTION_CONTENT_ENTER_MS).toBe(950)
+    expect(container.querySelectorAll("[data-question-sentence]")).toHaveLength(
+      1,
+    )
+    expect(
+      container.querySelector('[data-question-sentence-state="visible"]'),
+    ).toBeTruthy()
     expect(
       container.querySelector("[style*='progressBar 5s linear 950ms both']"),
+    ).toBeTruthy()
+  })
+
+  it("holds the reading bar until the last sentence has faded in", () => {
+    const { container } = render(
+      <Question
+        data={{
+          question: MULTI,
+          questionNumber: 7,
+          cooldown: 5,
+          promptStartedAt: 0,
+          serverNow: 0,
+        }}
+      />,
+    )
+
+    const delay = getQuestionPromptRevealMs(MULTI)
+    expect(container.querySelectorAll("[data-question-sentence]")).toHaveLength(
+      3,
+    )
+    expect(
+      container.querySelectorAll('[data-question-sentence-state="visible"]'),
+    ).toHaveLength(1)
+    expect(
+      container.querySelectorAll('[data-question-sentence-state="reserved"]'),
+    ).toHaveLength(2)
+    expect(
+      container.querySelector(
+        `[style*='progressBar 5s linear ${delay}ms both']`,
+      ),
     ).toBeTruthy()
   })
 })

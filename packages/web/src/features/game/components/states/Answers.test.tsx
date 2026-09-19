@@ -112,7 +112,10 @@ describe("Answers reveal lifecycle", () => {
     expect(answerButtons[0]).not.toHaveClass("rz-answer-slot-visible")
     expect(
       document.querySelector('[data-question-layout="game-question"]'),
-    ).toHaveClass("max-w-4xl")
+    ).toHaveClass("w-full", "px-6", "py-8", "md:px-10", "md:py-10")
+    expect(
+      document.querySelector('[data-question-layout="game-question"]'),
+    ).not.toHaveClass("max-w-4xl")
     expect(
       document.querySelector(
         '[data-question-number-layout="game-question-number"]',

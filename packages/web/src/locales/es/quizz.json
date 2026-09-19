@@ -13,7 +13,7 @@
       "noTimeLimit": "Sin límite de tiempo",
       "noTimeLimitHint": "Los puntos se otorgan según el orden de respuesta. No hay límite de tiempo para responder.",
       "questionDisplay": "Visualización de la pregunta",
-      "questionDisplayHint": "Duración antes de que aparezcan las respuestas",
+      "questionDisplayHint": "Tiempo de lectura después de que la pregunta completa sea visible",
       "timings": "Tiempos"
     },
     "deleteQuestion": "Eliminar pregunta",

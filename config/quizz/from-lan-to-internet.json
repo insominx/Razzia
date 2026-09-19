@@ -1,0 +1,101 @@
+{
+  "subject": "From LAN to Internet Multiplayer",
+  "questions": [
+    {
+      "question": "You and your friend were playing together at your house on the same LAN. Your friend joined your game at: 192.168.1.10:7777\n\nThen your friend goes home to a different network. Their home also uses 192.168.1.x private addresses.\n\nThey try the same address again: 192.168.1.10:7777\n\nWhat happens?",
+      "answers": [
+        "The packet travels across the Internet back to your PC",
+        "Their PC looks for 192.168.1.10 on their own local network",
+        "Their router converts it to your router's public address",
+        "Unity automatically redirects it through Relay"
+      ],
+      "solutions": [1],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You're hosting a game at home. A friend tries to join using your public IP and game port. Their request reaches your router but is not forwarded to your PC. What is the router missing?",
+      "answers": [
+        "The identity of the player trying to join",
+        "The name of the Unity project running the game",
+        "The private LAN address of your friend's PC",
+        "A rule directing that game traffic to your PC"
+      ],
+      "solutions": [3],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "Your internet works: your PC can connect to other computers and receive replies. What lets those replies get back to your PC?",
+      "answers": [
+        "The router remembers the connection your PC started",
+        "The router sends the replies to every PC on your LAN",
+        "The other computer supplies your PC's private LAN address",
+        "The router finds a PC running the same application"
+      ],
+      "solutions": [0],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "Your router forwards incoming game traffic to your desktop. You move the game host to your laptop but leave that rule unchanged. Where does the rule still send the traffic?",
+      "answers": [
+        "To your laptop",
+        "To your friend's PC",
+        "To your desktop",
+        "To every PC on your LAN"
+      ],
+      "solutions": [2],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "Port forwarding lets friends join the game you host at home. Why might you still choose Relay for a game that other players will host?",
+      "answers": [
+        "Relay guarantees less latency than a direct connection",
+        "Relay takes over running the game from the host",
+        "Some players cannot access or configure their network's router",
+        "Relay gives every host PC a public IP address"
+      ],
+      "solutions": [2],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You host a game using Relay, with no port-forwarding rule. Your PC first establishes a connection to the Relay server. Later, Relay sends traffic from your friend back toward your PC. Why can that traffic get through your router?",
+      "answers": [
+        "Relay installs a forwarding rule on your router",
+        "Your router remembers your PC's connection to Relay and lets traffic back through",
+        "The join code disables your router's incoming filter",
+        "Relay makes your host's private address publicly routable"
+      ],
+      "solutions": [1],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You're hosting the class game through Relay. A friend requests a pickup. Who decides whether the pickup succeeds?",
+      "answers": [
+        "The Relay service forwarding the request",
+        "The friend's game sending the request",
+        "Whichever client owns the pickup object",
+        "Your host running the game server"
+      ],
+      "solutions": [3],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You give your friend the Relay join code for your game. They enter it to join.\n\nWhat does the join code help their game do?",
+      "answers": [
+        "Find the Relay connection information for your game",
+        "Decode your public IP address and game port",
+        "Install a forwarding rule on your home router",
+        "Ask matchmaking to choose an available host"
+      ],
+      "solutions": [0],
+      "cooldown": 5,
+      "time": 20
+    }
+  ]
+}

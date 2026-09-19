@@ -13,7 +13,7 @@
       "noTimeLimit": "No time limit",
       "noTimeLimitHint": "Points are awarded based on answer order. There is no time limit to answer.",
       "questionDisplay": "Question display",
-      "questionDisplayHint": "Duration before answers appear",
+      "questionDisplayHint": "Reading time after the full question is shown",
       "timings": "Timings"
     },
     "deleteQuestion": "Delete question",

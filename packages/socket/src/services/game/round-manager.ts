@@ -16,7 +16,7 @@ import {
 } from "@razzia/common/types/game/status"
 import { getAnswerRevealDuration } from "@razzia/common/utils/answer-reveal"
 import {
-  QUESTION_CONTENT_ENTER_MS,
+  getQuestionPromptRevealMs,
   QUESTION_NUMBER_INTRO_MS,
 } from "@razzia/common/utils/question-transition"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
@@ -156,14 +156,18 @@ export class RoundManager {
     const imageMedia =
       question.media?.type === MEDIA_TYPES.IMAGE ? question.media : undefined
 
+    const promptStartedAt = Date.now()
+
     this.opts.broadcast(STATUS.SHOW_QUESTION, {
       questionNumber,
       question: question.question,
       media: imageMedia,
       cooldown: question.cooldown,
+      promptStartedAt,
+      serverNow: promptStartedAt,
     })
 
-    await sleep(QUESTION_CONTENT_ENTER_MS / 1_000)
+    await sleep(getQuestionPromptRevealMs(question.question) / 1_000)
 
     if (!this.started || generation !== this.questionGeneration) {
       return

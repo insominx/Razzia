@@ -13,7 +13,7 @@
       "noTimeLimit": "制限時間なし",
       "noTimeLimitHint": "ポイントは回答順に付与されます。回答に制限時間はありません。",
       "questionDisplay": "問題表示",
-      "questionDisplayHint": "回答が表示されるまでの時間",
+      "questionDisplayHint": "問題文がすべて表示されたあとの読み取り時間",
       "timings": "タイミング"
     },
     "deleteQuestion": "この質問を削除",

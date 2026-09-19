@@ -33,7 +33,10 @@ export const restampReconnectStatus = <T extends StatusSnapshot>(
   status: T,
   serverNow = Date.now(),
 ): T => {
-  if (status.name !== STATUS.SELECT_ANSWER) {
+  if (
+    status.name !== STATUS.SELECT_ANSWER &&
+    status.name !== STATUS.SHOW_QUESTION
+  ) {
     return status
   }
 

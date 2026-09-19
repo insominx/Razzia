@@ -64,8 +64,11 @@ const STATUS_FIXTURES = {
   },
   [STATUS.SHOW_QUESTION]: {
     questionNumber: 7,
-    question: "Which boundary owns the persisted state?",
+    question:
+      "You host a game at home. Your friend's home uses the same private address range as yours. They enter your PC's private LAN address to join. Where does their PC look for that destination?",
     cooldown: 5,
+    promptStartedAt: 0,
+    serverNow: 0,
   },
   [STATUS.SELECT_ANSWER]: {
     questionNumber: 7,

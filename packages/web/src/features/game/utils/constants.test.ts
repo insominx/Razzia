@@ -87,7 +87,13 @@ describe("getManagerSkipEvent", () => {
     expect(
       getManagerSkipEvent({
         name: STATUS.SHOW_QUESTION,
-        data: { question: "Question", questionNumber: 1, cooldown: 5 },
+        data: {
+          question: "Question",
+          questionNumber: 1,
+          cooldown: 5,
+          promptStartedAt: 0,
+          serverNow: 0,
+        },
       }),
     ).toBeNull()
   })

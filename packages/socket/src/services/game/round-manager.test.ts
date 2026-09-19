@@ -2,6 +2,7 @@ import { NO_TIME_LIMIT } from "@razzia/common/constants"
 import type { Player, Quizz } from "@razzia/common/types/game"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
 import { STATUS } from "@razzia/common/types/game/status"
+import { getQuestionPromptRevealMs } from "@razzia/common/utils/question-transition"
 import type { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
 import type { PlayerManager } from "@razzia/socket/services/game/player-manager"
 import { RoundManager } from "@razzia/socket/services/game/round-manager"
@@ -28,12 +29,12 @@ const makeSocket = (id: string) => {
   }
 }
 
-const createHarness = (time = 10) => {
+const createHarness = (time = 10, question = "Pick one") => {
   const quizz: Quizz = {
     subject: "Reveal",
     questions: [
       {
-        question: "Pick one",
+        question,
         answers: ["No", "Yes"],
         solutions: [1],
         cooldown: 1,
@@ -277,5 +278,37 @@ describe("RoundManager answer reveal authority", () => {
       STATUS.SHOW_RESULT,
       expect.objectContaining({ points: 500 }),
     )
+  })
+
+  it("holds SELECT_ANSWER until the last sentence fade ends", async () => {
+    const question =
+      "A door is opened during the game. Players joining later should see that it is already open. How should its open/closed state normally be synchronized?"
+    const harness = createHarness(10, question)
+
+    await enterQuestion(harness)
+    const prompt = harness.broadcast.mock.calls.find(
+      ([status]) => status === STATUS.SHOW_QUESTION,
+    )
+    expect(prompt?.[1]).toMatchObject({
+      question,
+      promptStartedAt: Date.parse("2026-08-26T17:00:04.000Z"),
+      serverNow: Date.parse("2026-08-26T17:00:04.000Z"),
+    })
+
+    await vi.advanceTimersByTimeAsync(1_950)
+    expect(
+      harness.broadcast.mock.calls.filter(
+        ([status]) => status === STATUS.SELECT_ANSWER,
+      ),
+    ).toHaveLength(0)
+
+    await vi.advanceTimersByTimeAsync(
+      getQuestionPromptRevealMs(question) + 1_000 - 1_950,
+    )
+    expect(
+      harness.broadcast.mock.calls.filter(
+        ([status]) => status === STATUS.SELECT_ANSWER,
+      ),
+    ).toHaveLength(1)
   })
 })
