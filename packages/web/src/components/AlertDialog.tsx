@@ -25,9 +25,9 @@ const AlertDialog = ({
       <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>
 
       <RadixAlertDialog.Portal>
-        <RadixAlertDialog.Overlay className="bg-overlay data-[state=open]:animate-fade-in fixed inset-0 z-50" />
+        <RadixAlertDialog.Overlay className="bg-overlay data-[state=open]:animate-rz-fade-in fixed inset-0 z-50" />
 
-        <RadixAlertDialog.Content className="bg-surface border-border text-text-body rounded-rz-lg fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border p-6">
+        <RadixAlertDialog.Content className="bg-surface border-border text-text-body rounded-rz-lg data-[state=open]:animate-rz-fade-in fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border p-6">
           <RadixAlertDialog.Title className="text-text-primary text-lg font-semibold">
             {title}
           </RadixAlertDialog.Title>

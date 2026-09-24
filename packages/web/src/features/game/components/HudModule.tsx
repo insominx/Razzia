@@ -31,7 +31,11 @@ const ROLE_STYLES: Record<HudRole, { label: string; box: string }> = {
 }
 
 const VALUE_TEXT =
-  "font-mono text-xl font-bold tabular-nums md:text-2xl"
+  "font-mono text-xl font-bold tabular-nums md:text-2xl 2xl:text-4xl"
+
+// Both readouts sit in a slot the ring's size, so a ring module and a boxed
+// module side by side share one label baseline and one value centreline.
+const VALUE_SLOT = "h-14 md:h-16 2xl:h-24"
 
 const HudModule = ({ label, value, role, className, countdown }: Props) => {
   const styles = ROLE_STYLES[role]
@@ -40,7 +44,7 @@ const HudModule = ({ label, value, role, className, countdown }: Props) => {
     <div className={clsx("flex flex-col items-start gap-2", className)}>
       <span
         className={clsx(
-          "pl-1 text-[0.65rem] font-bold tracking-[0.18em] uppercase",
+          "pl-1 text-[0.65rem] font-bold tracking-[0.18em] uppercase 2xl:text-sm",
           styles.label,
         )}
       >
@@ -48,7 +52,13 @@ const HudModule = ({ label, value, role, className, countdown }: Props) => {
       </span>
 
       {countdown ? (
-        <div className="relative grid size-14 place-items-center md:size-16">
+        <div
+          data-hud-slot
+          className={clsx(
+            "relative grid aspect-square place-items-center",
+            VALUE_SLOT,
+          )}
+        >
           <svg
             aria-hidden="true"
             viewBox="0 0 48 48"
@@ -84,7 +94,7 @@ const HudModule = ({ label, value, role, className, countdown }: Props) => {
           </svg>
           <span
             className={clsx(
-              "relative leading-none text-text-primary",
+              "text-text-primary relative leading-none",
               VALUE_TEXT,
             )}
           >
@@ -92,14 +102,16 @@ const HudModule = ({ label, value, role, className, countdown }: Props) => {
           </span>
         </div>
       ) : (
-        <div
-          className={clsx(
-            "rounded-rz-md border px-5 py-1.5",
-            VALUE_TEXT,
-            styles.box,
-          )}
-        >
-          {value}
+        <div data-hud-slot className={clsx("flex items-center", VALUE_SLOT)}>
+          <div
+            className={clsx(
+              "rounded-rz-md border px-5 py-1.5 2xl:px-7 2xl:py-2.5",
+              VALUE_TEXT,
+              styles.box,
+            )}
+          >
+            {value}
+          </div>
         </div>
       )}
     </div>

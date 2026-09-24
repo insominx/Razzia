@@ -54,6 +54,46 @@ export const ANSWER_INK = [
 
 export const ANSWERS_LABELS = ["A", "B", "C", "D"]
 
+/**
+ * Gold, silver and bronze for ranks 1–3 (index = rank − 1). Rank is the only
+ * thing these colours mean; they never mark answers or correctness.
+ */
+export const MEDAL = [
+  "bg-medal-gold border-medal-gold-border text-on-medal",
+  "bg-medal-silver border-medal-silver-border text-on-medal",
+  "bg-medal-bronze border-medal-bronze-border text-on-medal",
+] as const
+
+/**
+ * Tracks for an A–D tile grid. Past the breakpoint the grid runs on four
+ * tracks and every tile spans two, so an odd last tile (C of a three-answer
+ * question) can start on track two and sit centred under the pair above it
+ * instead of hanging off the left edge. Pair with `answerSlotPlacement`.
+ *
+ * `viewport` breaks at `sm` for full-width game screens; `container` breaks on
+ * the nearest `@container` for tiles squeezed between editor panels.
+ */
+export const ANSWER_GRID_TRACKS = {
+  viewport: "grid-cols-1 sm:grid-cols-4",
+  container: "grid-cols-1 @xl:grid-cols-4",
+} as const
+
+type AnswerGridScope = keyof typeof ANSWER_GRID_TRACKS
+
+const ANSWER_SLOT_PLACEMENT = {
+  viewport: { pair: "sm:col-span-2", odd: "sm:col-span-2 sm:col-start-2" },
+  container: { pair: "@xl:col-span-2", odd: "@xl:col-span-2 @xl:col-start-2" },
+} as const
+
+export const answerSlotPlacement = (
+  index: number,
+  count: number,
+  scope: AnswerGridScope = "viewport",
+): string =>
+  count % 2 === 1 && index === count - 1
+    ? ANSWER_SLOT_PLACEMENT[scope].odd
+    : ANSWER_SLOT_PLACEMENT[scope].pair
+
 export const GAME_STATES = {
   status: {
     name: STATUS.WAIT,
@@ -143,6 +183,65 @@ export const sfxForTheme = (
     ? `${THEMED_SFX_ROOT}/${theme}/${basename}`
     : classicPath
 }
+
+/**
+ * Classic-pack gain per cue, as tuned by ear. It is the reference mix every
+ * other pack is levelled against, and it multiplies Howler's master gain (see
+ * `stores/sound`).
+ */
+const SFX_BASE_VOLUME: Partial<Record<string, number>> = {
+  "answersMusic.mp3": 0.2,
+  "answersSound.mp3": 0.1,
+  "boump.mp3": 0.2,
+  "show.mp3": 0.5,
+  "results.mp3": 0.2,
+  "three.mp3": 0.1,
+  "second.mp3": 0.1,
+  "snearRoll.mp3": 0.1,
+  "first.mp3": 0.1,
+}
+
+/**
+ * Per-pack trims (dB) that land each themed cue on its classic loudness, so
+ * switching packs changes the sound but not the mix. Measured with ffmpeg's
+ * EBU R128 `ebur128` filter: integrated loudness for the looping bed and the
+ * drum roll, maximum momentary loudness for every one-shot. Re-measure when a
+ * pack file changes.
+ */
+export const THEMED_SFX_TRIM_DB: Partial<
+  Record<SoundTheme, Partial<Record<string, number>>>
+> = {
+  techno: {
+    "answersMusic.mp3": 8.2,
+    "answersSound.mp3": 1.5,
+    "boump.mp3": -3.7,
+    "show.mp3": -2.3,
+    "results.mp3": 11,
+    "three.mp3": -4.8,
+    "second.mp3": 4.1,
+    "snearRoll.mp3": -8.6,
+    "first.mp3": 9.9,
+  },
+}
+
+const THEMED_SFX_PATH = /^\/sounds\/themes\/([^/]+)\/[^/]+$/u
+
+/**
+ * Playback volume for a resolved cue path, classic or themed. Reads the theme
+ * from the path `sfxForTheme` produced, so call sites stay
+ * `useSound(src, { volume: sfxVolume(src) })`.
+ */
+export const sfxVolume = (src: string): number => {
+  const basename = src.slice(src.lastIndexOf("/") + 1)
+  const base = SFX_BASE_VOLUME[basename] ?? 1
+  const theme = THEMED_SFX_PATH.exec(src)?.[1] as SoundTheme | undefined
+  const trim = theme ? (THEMED_SFX_TRIM_DB[theme]?.[basename] ?? 0) : 0
+
+  return Math.min(1, base * 10 ** (trim / 20))
+}
+
+/** Seconds left at which the answering countdown starts ticking. */
+export const FINAL_COUNTDOWN_SECONDS = 5
 
 export const MANAGER_SKIP_EVENTS = {
   [STATUS.SHOW_ROOM]: EVENTS.MANAGER.START_GAME,

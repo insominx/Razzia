@@ -24,9 +24,16 @@
       "video": "動画"
     },
     "mediaUrlPlaceholder": "URLを入力...",
-    "placeholder": "質問を入力してください..."
+    "placeholder": "質問を入力してください...",
+    "mediaLoadFailed": "メディアを読み込めませんでした。URLを確認してください。",
+    "mediaAlt": "問題のメディア"
   },
   "quizzSaved": "クイズを保存しました",
   "quizzUpdated": "クイズを更新しました",
-  "titleQuizzPlaceholder": "クイズのタイトル..."
+  "titleQuizzPlaceholder": "クイズのタイトル...",
+  "unsaved": {
+    "title": "保存していない変更を破棄しますか？",
+    "description": "このクイズの変更は保存されていません。",
+    "discard": "破棄"
+  }
 }

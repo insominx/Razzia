@@ -23,5 +23,13 @@
   "usernamePlaceholder": "ユーザー名を入力",
   "waitingForAnswers": "プレイヤーの回答を待っています",
   "waitingForPlayers": "プレイヤーを待っています",
-  "wrong": "残念！"
+  "wrong": "残念！",
+  "pointsShort": "{{points}}点",
+  "kick": {
+    "action": "{{name}}を退出させる",
+    "title": "プレイヤーを退出させますか？",
+    "description": "{{name}}はこのゲームから退出させられます。",
+    "confirm": "退出させる"
+  },
+  "yourAnswer": "あなたの回答"
 }

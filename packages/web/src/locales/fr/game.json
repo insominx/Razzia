@@ -23,5 +23,13 @@
   "usernamePlaceholder": "Pseudo",
   "waitingForAnswers": "En attente des réponses des joueurs",
   "waitingForPlayers": "En attente des joueurs",
-  "wrong": "Dommage"
+  "wrong": "Dommage",
+  "pointsShort": "{{points}} pts",
+  "kick": {
+    "action": "Exclure {{name}}",
+    "title": "Exclure le joueur ?",
+    "description": "{{name}} sera retiré de cette partie.",
+    "confirm": "Exclure"
+  },
+  "yourAnswer": "Ta réponse"
 }

@@ -5,10 +5,13 @@ import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import {
   ANSWER_BAR,
+  ANSWER_GRID_TRACKS,
   ANSWER_IDENTITY,
   ANSWER_INK,
   ANSWERS_LABELS,
+  answerSlotPlacement,
   SFX,
+  sfxVolume,
 } from "@razzia/web/features/game/utils/constants"
 import { calculatePercentages } from "@razzia/web/features/game/utils/score"
 import clsx from "clsx"
@@ -26,12 +29,13 @@ const Responses = ({
   const sfx = useSfx()
   const percentages = calculatePercentages(responses)
 
-  const [sfxResults] = useSound(sfx(SFX.RESULTS_SOUND), {
-    volume: 0.2,
-  })
+  const resultsSrc = sfx(SFX.RESULTS_SOUND)
+  const musicSrc = sfx(SFX.ANSWERS.MUSIC)
 
-  const [playMusic, { stop: stopMusic }] = useSound(sfx(SFX.ANSWERS.MUSIC), {
-    volume: 0.2,
+  const [sfxResults] = useSound(resultsSrc, { volume: sfxVolume(resultsSrc) })
+
+  const [playMusic, { stop: stopMusic }] = useSound(musicSrc, {
+    volume: sfxVolume(musicSrc),
     interrupt: true,
     loop: true,
   })
@@ -150,14 +154,23 @@ const Responses = ({
       </div>
 
       <div className="shrink-0">
-        <div className="mx-auto mb-4 grid w-full max-w-7xl grid-cols-1 gap-3 px-4 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl">
+        <div
+          className={clsx(
+            "mx-auto mb-4 grid w-full max-w-7xl gap-3 px-4 text-lg font-bold md:gap-4 md:text-xl",
+            ANSWER_GRID_TRACKS.viewport,
+          )}
+        >
           {answers.map((answer, key) => (
             <AnswerButton
               key={key}
-              className={clsx(ANSWER_IDENTITY[key], {
-                // oxlint-disable-next-line typescript/no-unnecessary-condition
-                "opacity-80": responses && !solutions.includes(key),
-              })}
+              className={clsx(
+                ANSWER_IDENTITY[key],
+                answerSlotPlacement(key, answers.length),
+                {
+                  // oxlint-disable-next-line typescript/no-unnecessary-condition
+                  "opacity-80": responses && !solutions.includes(key),
+                },
+              )}
               label={ANSWERS_LABELS[key]}
               correct={solutions.includes(key)}
             >

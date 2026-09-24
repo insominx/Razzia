@@ -100,9 +100,36 @@ same server unlock. Protocol (same-status payload, `manager:unlockAnswers` vs
 | `answer-c` | `#40d693` | `#1f6f4d` / `#0e1e20` / accent | `#86efac` / `#f0fdf4` / `#047857` |
 | `answer-d` | `#9370e7` | `#4a2f86` / `#151627` / accent | `#c4b5fd` / `#f5f3ff` / `#6d28d9` |
 
+### Answer grid
+
+`ANSWER_GRID_TRACKS` + `answerSlotPlacement` lay out every A–D grid. Past the
+breakpoint the grid runs four tracks and each tile spans two, so the odd last
+tile of a three-answer question starts on track two and sits centred under the
+pair. Game screens break on the viewport (`sm`); the editor breaks on its
+`@container` (`@xl`) because its tiles sit between two side panels.
+
+## Medals
+
+`MEDAL` (gold / silver / bronze, `bg-medal-*` + `border-medal-*-border` +
+`text-on-medal`) marks ranks 1–3 on the leaderboard badge and the podium, and
+nothing else. They are physical metal colours, identical in both registers:
+gold `#f5c542` / `#9a7412`, silver `#c7d0dc` / `#6b7688`, bronze `#d08a4c` /
+`#7a4a22`, on-medal `#06100e`. Ranks 4+ use the neutral `border` / `surface` /
+`text-muted` badge.
+
 ## Typography, motion, depth, radius
 
 - Space Grotesk display/body; JetBrains Mono for badges, codes, numerals.
+- Projection scale: host screens are read from across a room on 720p–1080p
+  projectors, so stage copy keeps growing past `md`. Answer copy is
+  `xl:text-2xl 2xl:text-3xl`; lobby PIN, join URL and QR, the HUD, the
+  leaderboard and the question label also step up at `lg`/`2xl`. Add large
+  steps only at `xl`+ so phones are unchanged.
+- HUD modules share one value slot (`h-14 md:h-16 2xl:h-24`, the ring's size),
+  so a ring readout and a boxed readout side by side keep one label baseline.
+- Dialogs and their overlays enter with `animate-rz-fade-in` (opacity only, so
+  it composes with the centring translate). Toasts take the `surface` /
+  `border` / `text-primary` roles in both registers.
 - Calm motion: `--rz-dur-base: .5s`, `--rz-ease-calm: cubic-bezier(.16,1,.3,1)`.
   Respect `prefers-reduced-motion`.
 - The question intro renders only the localized `Question #N` label. Fade it in
@@ -158,6 +185,6 @@ Use `placement="container"` (`absolute`) only inside a positioned, overflow-clip
 ## Recorded deviations
 
 1. Unknown persisted dialect falls back via `.catch(DEFAULT_DIALECT)` without discarding password/background.
-2. Celebration motion (confetti, spotlight, podium SFX schedule, frozen `anim-*`) stays as-is.
+2. Celebration motion (confetti, spotlight, podium SFX schedule, frozen `anim-*`) stays as-is. Only the confetti colours changed: they are read from the answer, brand and gold tokens instead of the library's rainbow.
 3. Quizzes never persist dialect or sound theme — only `GameVisualsConfig` may.
 4. Room QR modules stay black-on-white for scanner reliability.

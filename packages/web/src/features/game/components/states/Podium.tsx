@@ -1,6 +1,10 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
-import { SFX } from "@razzia/web/features/game/utils/constants"
+import {
+  MEDAL,
+  SFX,
+  sfxVolume,
+} from "@razzia/web/features/game/utils/constants"
 import useScreenSize from "@razzia/web/hooks/useScreenSize"
 import clsx from "clsx"
 import { useEffect, useState } from "react"
@@ -16,13 +20,17 @@ const usePodiumAnimation = (topLength: number) => {
 
   const sfx = useSfx()
 
-  const [sfxtThree] = useSound(sfx(SFX.PODIUM.THREE), { volume: 0.1 })
-  const [sfxSecond] = useSound(sfx(SFX.PODIUM.SECOND), { volume: 0.1 })
-  const [sfxRool, { stop: sfxRoolStop }] = useSound(
-    sfx(SFX.PODIUM.SNEAR_ROOL),
-    { volume: 0.1 },
-  )
-  const [sfxFirst] = useSound(sfx(SFX.PODIUM.FIRST), { volume: 0.1 })
+  const threeSrc = sfx(SFX.PODIUM.THREE)
+  const secondSrc = sfx(SFX.PODIUM.SECOND)
+  const roolSrc = sfx(SFX.PODIUM.SNEAR_ROOL)
+  const firstSrc = sfx(SFX.PODIUM.FIRST)
+
+  const [sfxtThree] = useSound(threeSrc, { volume: sfxVolume(threeSrc) })
+  const [sfxSecond] = useSound(secondSrc, { volume: sfxVolume(secondSrc) })
+  const [sfxRool, { stop: sfxRoolStop }] = useSound(roolSrc, {
+    volume: sfxVolume(roolSrc),
+  })
+  const [sfxFirst] = useSound(firstSrc, { volume: sfxVolume(firstSrc) })
 
   useEffect(() => {
     const actions: Partial<Record<number, () => void>> = {
@@ -59,45 +67,52 @@ const usePodiumAnimation = (topLength: number) => {
   return apparition
 }
 
-const medalColor = [
-  {
-    background: "bg-warning",
-    border: "border-warning-border",
-  },
-  {
-    background: "bg-text-muted",
-    border: "border-border",
-  },
-  {
-    background: "bg-sequence",
-    border: "border-sequence-border",
-  },
+// Confetti draws from the same palette as the rest of the stage instead of
+// the library's rainbow. The canvas needs literal colours, so the tokens are
+// resolved once from the root; an empty read falls back to the default set.
+const CONFETTI_TOKENS = [
+  "--rz-answer-a",
+  "--rz-answer-b",
+  "--rz-answer-c",
+  "--rz-answer-d",
+  "--rz-brand",
+  "--rz-medal-gold",
 ]
 
-const Medal = ({ rank }: { rank: number }) => {
-  const color = medalColor[rank - 1]
+const readConfettiColors = (): string[] | undefined => {
+  const styles = getComputedStyle(document.documentElement)
+  const colors = CONFETTI_TOKENS.map((token) =>
+    styles.getPropertyValue(token).trim(),
+  ).filter(Boolean)
 
-  return (
-    <div
-      className={clsx(
-        "text-on-accent relative flex aspect-square size-20 items-center justify-center overflow-hidden rounded-full border-8 text-5xl font-extrabold md:size-26 md:border-10 md:text-6xl",
-        color.background,
-        color.border,
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
-        <div className="bg-text-primary/25 absolute top-[30%] left-1/2 h-6 w-[160%] -translate-x-1/2 -rotate-40" />
-        <div className="bg-text-primary/25 absolute top-[70%] left-1/2 h-3 w-[160%] -translate-x-1/2 -rotate-40" />
-      </div>
-      <p className="relative z-10 font-mono">{rank}</p>
-    </div>
-  )
+  return colors.length > 0 ? colors : undefined
 }
+
+// Names wrap to two lines and clip inside their column rather than widening
+// it; `shrink-0` so the podium block below gives way instead of the name.
+const PODIUM_NAME =
+  "text-text-primary line-clamp-2 w-full shrink-0 px-2 text-center text-2xl font-bold text-balance wrap-break-word md:text-4xl"
+
+const Medal = ({ rank }: { rank: number }) => (
+  <div
+    className={clsx(
+      "relative flex aspect-square size-20 items-center justify-center overflow-hidden rounded-full border-8 text-5xl font-extrabold md:size-26 md:border-10 md:text-6xl",
+      MEDAL[rank - 1],
+    )}
+  >
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
+      <div className="bg-text-primary/25 absolute top-[30%] left-1/2 h-6 w-[160%] -translate-x-1/2 -rotate-40" />
+      <div className="bg-text-primary/25 absolute top-[70%] left-1/2 h-3 w-[160%] -translate-x-1/2 -rotate-40" />
+    </div>
+    <p className="relative z-10 font-mono">{rank}</p>
+  </div>
+)
 
 const Podium = ({ data: { subject, top } }: Props) => {
   const apparition = usePodiumAnimation(top.length)
 
   const { width, height } = useScreenSize()
+  const [confettiColors] = useState(readConfettiColors)
 
   return (
     <>
@@ -105,6 +120,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
         <ReactConfetti
           width={width}
           height={height}
+          colors={confettiColors}
           className="h-full w-full"
         />
       )}
@@ -120,7 +136,9 @@ const Podium = ({ data: { subject, top } }: Props) => {
         </h2>
 
         <div
-          style={{ gridTemplateColumns: `repeat(${top.length}, 1fr)` }}
+          style={{
+            gridTemplateColumns: `repeat(${top.length}, minmax(0, 1fr))`,
+          }}
           className={`grid w-full max-w-200 flex-1 items-end justify-center justify-self-end overflow-x-visible overflow-y-hidden`}
         >
           {top[1] && (
@@ -131,12 +149,9 @@ const Podium = ({ data: { subject, top } }: Props) => {
               )}
             >
               <p
-                className={clsx(
-                  "text-text-primary overflow-visible text-center text-2xl font-bold whitespace-nowrap md:text-4xl",
-                  {
-                    "anim-balanced": apparition >= 4,
-                  },
-                )}
+                className={clsx(PODIUM_NAME, {
+                  "anim-balanced": apparition >= 4,
+                })}
               >
                 {top[1].username}
               </p>
@@ -161,10 +176,9 @@ const Podium = ({ data: { subject, top } }: Props) => {
             )}
           >
             <p
-              className={clsx(
-                "text-text-primary overflow-visible text-center text-2xl font-bold whitespace-nowrap opacity-0 md:text-4xl",
-                { "anim-balanced opacity-100": apparition >= 4 },
-              )}
+              className={clsx(PODIUM_NAME, "opacity-0", {
+                "anim-balanced opacity-100": apparition >= 4,
+              })}
             >
               {top[0].username}
             </p>
@@ -186,12 +200,9 @@ const Podium = ({ data: { subject, top } }: Props) => {
               )}
             >
               <p
-                className={clsx(
-                  "text-text-primary overflow-visible text-center text-2xl font-bold whitespace-nowrap md:text-4xl",
-                  {
-                    "anim-balanced": apparition >= 4,
-                  },
-                )}
+                className={clsx(PODIUM_NAME, {
+                  "anim-balanced": apparition >= 4,
+                })}
               >
                 {top[2].username}
               </p>

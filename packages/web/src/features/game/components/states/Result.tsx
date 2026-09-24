@@ -3,7 +3,8 @@ import CricleCheck from "@razzia/web/features/game/components/icons/CricleCheck"
 import CricleXmark from "@razzia/web/features/game/components/icons/CricleXmark"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
-import { SFX } from "@razzia/web/features/game/utils/constants"
+import { SFX, sfxVolume } from "@razzia/web/features/game/utils/constants"
+import { HAPTIC, haptic } from "@razzia/web/features/game/utils/haptics"
 import { formatRank } from "@razzia/web/features/game/utils/rank"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
@@ -21,9 +22,12 @@ const Result = ({
 
   const sfx = useSfx()
 
-  const [sfxResults] = useSound(sfx(SFX.RESULTS_SOUND), {
-    volume: 0.2,
-  })
+  const resultsSrc = sfx(SFX.RESULTS_SOUND)
+  const [sfxResults] = useSound(resultsSrc, { volume: sfxVolume(resultsSrc) })
+
+  useEffect(() => {
+    haptic(correct ? HAPTIC.correct : HAPTIC.wrong)
+  }, [correct])
 
   useEffect(() => {
     player.updatePoints(myPoints)

@@ -2,16 +2,20 @@ import * as AlertDialog from "@radix-ui/react-alert-dialog"
 import { EVENTS } from "@razzia/common/constants"
 import type { Player } from "@razzia/common/types/game"
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
+import ConfirmDialog from "@razzia/web/components/AlertDialog"
 import {
   useEvent,
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
+import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { SFX, sfxVolume } from "@razzia/web/features/game/utils/constants"
 import { useOnClickOutside } from "@razzia/web/hooks/useOnClickOutside"
 import { Maximize2, X } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import useSound from "use-sound"
 
 interface Props {
   data: ManagerStatusDataMap["SHOW_ROOM"]
@@ -27,11 +31,15 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   const [qrOpen, setQrOpen] = useState(false)
   const qrContentRef = useRef<HTMLDivElement>(null)
   const { t } = useTranslation()
+  const sfx = useSfx()
+  const joinSrc = sfx(SFX.ANSWERS.SOUND)
+  const [sfxJoin] = useSound(joinSrc, { volume: sfxVolume(joinSrc) })
 
   useOnClickOutside({ ref: qrContentRef, handler: () => setQrOpen(false) })
 
   useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
     setPlayerList([...playerList, player])
+    sfxJoin()
   })
 
   useEvent(EVENTS.MANAGER.REMOVE_PLAYER, (playerId) => {
@@ -65,8 +73,10 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
         <div className="flex flex-col gap-3 md:flex-row">
           <div className="bg-surface border-border text-text-body rounded-rz-lg flex flex-col items-center justify-center border px-6 py-4 md:flex-row">
             <div>
-              <p className="text-2xl font-bold">{t("game:joinInstruction")}</p>
-              <p className="max-w-64 text-lg font-extrabold break-all">
+              <p className="text-2xl font-bold 2xl:text-4xl">
+                {t("game:joinInstruction")}
+              </p>
+              <p className="max-w-64 text-lg font-extrabold break-all lg:max-w-96 lg:text-2xl 2xl:text-3xl">
                 {webUrl}
               </p>
             </div>
@@ -74,15 +84,20 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
             <div className="bg-border my-4 h-0.5 w-full md:mx-4 md:h-full md:w-0.5" />
 
             <div>
-              <p className="text-2xl font-bold">{t("game:gamePinLabel")}</p>
-              <p className="font-mono text-6xl font-extrabold">{inviteCode}</p>
+              <p className="text-2xl font-bold 2xl:text-4xl">
+                {t("game:gamePinLabel")}
+              </p>
+              <p className="font-mono text-6xl font-extrabold lg:text-7xl 2xl:text-9xl">
+                {inviteCode}
+              </p>
             </div>
           </div>
         </div>
 
         <AlertDialog.Root open={qrOpen} onOpenChange={setQrOpen}>
           <AlertDialog.Trigger asChild>
-            <div className="bg-surface border-border rounded-rz-lg group relative flex h-40 shrink-0 cursor-pointer border p-2">
+            {/* Scanned from seats across the room, so it grows with the screen. */}
+            <div className="bg-surface border-border rounded-rz-lg group relative flex h-40 shrink-0 cursor-pointer border p-2 lg:h-56 2xl:h-80 2xl:p-3">
               <QRCodeSVG
                 className="h-auto w-auto"
                 bgColor="#ffffff"
@@ -98,10 +113,10 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
           </AlertDialog.Trigger>
 
           <AlertDialog.Portal>
-            <AlertDialog.Overlay className="bg-overlay fixed inset-0 z-50" />
+            <AlertDialog.Overlay className="bg-overlay data-[state=open]:animate-rz-fade-in fixed inset-0 z-50" />
             <AlertDialog.Content
               ref={qrContentRef}
-              className="bg-surface border-border rounded-rz-xl fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border p-6"
+              className="bg-surface border-border rounded-rz-xl data-[state=open]:animate-rz-fade-in fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border p-6"
             >
               <AlertDialog.Title className="sr-only">
                 {t("game:gamePinLabel")}
@@ -126,7 +141,9 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
         </AlertDialog.Root>
       </div>
 
-      <h2 className="text-text-primary mb-4 text-4xl font-bold">{t(text)}</h2>
+      <h2 className="text-text-primary mb-4 text-4xl font-bold 2xl:text-5xl">
+        {t(text)}
+      </h2>
 
       <div className="bg-panel border-border rounded-rz-md mb-6 flex items-center justify-center border px-6 py-3">
         <span className="text-text-primary text-2xl font-bold">
@@ -135,17 +152,33 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         {playerList.map((player) => (
-          <div
+          // A stray click on a projected lobby used to remove a player on the
+          // spot; kicking now always goes through a confirmation.
+          <ConfirmDialog
             key={player.id}
-            className="bg-brand text-on-accent rounded-rz-lg px-4 py-3 font-bold"
-            onClick={handleKick(player.id)}
-          >
-            <span className="cursor-pointer text-3xl hover:line-through hover:decoration-3">
-              {player.username}
-            </span>
-          </div>
+            trigger={
+              <button
+                type="button"
+                data-player-chip
+                aria-label={t("game:kick.action", { name: player.username })}
+                className="bg-brand text-on-accent rounded-rz-lg animate-rz-enter group flex items-center gap-2 px-4 py-3 text-3xl font-bold"
+              >
+                <span>{player.username}</span>
+                <X
+                  aria-hidden
+                  className="ease-calm size-6 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 pointer-coarse:opacity-60"
+                />
+              </button>
+            }
+            title={t("game:kick.title")}
+            description={t("game:kick.description", {
+              name: player.username,
+            })}
+            confirmLabel={t("game:kick.confirm")}
+            onConfirm={handleKick(player.id)}
+          />
         ))}
       </div>
     </section>

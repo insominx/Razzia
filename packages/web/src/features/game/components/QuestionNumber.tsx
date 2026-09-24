@@ -42,7 +42,7 @@ const QuestionNumber = ({
       data-question-number-layout={QUESTION_NUMBER_LAYOUT_ID}
       data-question-number-phase={intro ? "intro" : "settled"}
       className={clsx(
-        "text-text-primary text-center text-2xl font-bold md:text-3xl",
+        "text-text-primary text-center text-2xl font-bold md:text-3xl 2xl:text-4xl",
         className,
       )}
     >

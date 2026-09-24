@@ -22,7 +22,7 @@ const PlayerFinished = ({ data: { rank, subject } }: Props) => {
       </p>
 
       <p className="bg-panel border-border text-text-primary rounded-rz-md mt-2 border px-6 py-2 text-2xl font-bold">
-        {player?.points ?? 0} pts
+        {t("game:pointsShort", { points: player?.points ?? 0 })}
       </p>
     </div>
   )

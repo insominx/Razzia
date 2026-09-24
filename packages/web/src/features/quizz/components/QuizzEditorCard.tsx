@@ -1,6 +1,7 @@
 import { MEDIA_TYPES } from "@razzia/common/constants"
 import type { QuestionMedia } from "@razzia/common/types/game"
 import AlertDialog from "@razzia/web/components/AlertDialog"
+import { ANSWER_IDENTITY } from "@razzia/web/features/game/utils/constants"
 import { type QuestionWithId } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
 import { Music, Trash2, Video } from "lucide-react"
@@ -59,7 +60,7 @@ const QuizzEditorCard = ({
       <span className="text-text-faint absolute top-2 left-2 text-xs font-semibold">
         {index + 1}
       </span>
-      <p className="text-text-body truncate text-center text-xs font-semibold">
+      <p className="text-text-body line-clamp-2 text-center text-xs font-semibold wrap-break-word">
         {question.question || t("quizz:noQuestionYet")}
       </p>
 
@@ -69,7 +70,10 @@ const QuizzEditorCard = ({
         {question.answers.map((_, i) => (
           <div
             key={i}
-            className="border-border rounded-rz-sm flex h-4 flex-1 items-center border px-0.5"
+            className={clsx(
+              "rounded-rz-sm flex h-4 flex-1 items-center border px-0.5",
+              ANSWER_IDENTITY[i],
+            )}
           >
             {question.solutions.includes(i) && (
               <div className="bg-success ml-auto size-1.5 rounded-full" />
@@ -81,9 +85,16 @@ const QuizzEditorCard = ({
       {canDelete && (
         <AlertDialog
           trigger={
+            // Hover-only reveal left touch screens with no way to delete; the
+            // button now also shows on the active card and on coarse pointers.
             <button
+              type="button"
+              aria-label={t("quizz:question.deleteQuestion")}
               onClick={(e) => e.stopPropagation()}
-              className="bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 hidden p-1 transition-colors group-hover:block"
+              className={clsx(
+                "bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 p-1 transition group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+                isActive ? "opacity-100" : "opacity-0",
+              )}
             >
               <Trash2 className="size-3.5" />
             </button>

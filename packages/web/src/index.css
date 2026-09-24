@@ -52,6 +52,14 @@
   --color-answer-d-tint: var(--rz-answer-d-tint);
   --color-answer-d-ink: var(--rz-answer-d-ink);
 
+  --color-medal-gold: var(--rz-medal-gold);
+  --color-medal-gold-border: var(--rz-medal-gold-border);
+  --color-medal-silver: var(--rz-medal-silver);
+  --color-medal-silver-border: var(--rz-medal-silver-border);
+  --color-medal-bronze: var(--rz-medal-bronze);
+  --color-medal-bronze-border: var(--rz-medal-bronze-border);
+  --color-on-medal: var(--rz-on-medal);
+
   --radius-rz-sm: var(--rz-radius-sm);
   --radius-rz-md: var(--rz-radius-md);
   --radius-rz-lg: var(--rz-radius-lg);
@@ -65,6 +73,7 @@
   --ease-calm: var(--rz-ease-calm);
   --animate-rz-enter: rz-enter var(--rz-dur-base) var(--rz-ease-calm) both;
   --animate-rz-bar-grow: rz-bar-grow var(--rz-dur-base) var(--rz-ease-calm) both;
+  --animate-rz-fade-in: rz-fade-in var(--rz-dur-fast) var(--rz-ease-calm) both;
 }
 
 :root {
@@ -121,6 +130,16 @@
   --rz-answer-d-border: #4a2f86;
   --rz-answer-d-tint: #151627;
   --rz-answer-d-ink: #9370e7;
+
+  /* Ranks 1–3 on the leaderboard and podium. Physical metal colours, so the
+     light register keeps them unchanged. */
+  --rz-medal-gold: #f5c542;
+  --rz-medal-gold-border: #9a7412;
+  --rz-medal-silver: #c7d0dc;
+  --rz-medal-silver-border: #6b7688;
+  --rz-medal-bronze: #d08a4c;
+  --rz-medal-bronze-border: #7a4a22;
+  --rz-on-medal: #06100e;
 
   --rz-radius-sm: 0.375rem;
   --rz-radius-md: 0.625rem;
@@ -217,6 +236,16 @@ button:not(:disabled),
   }
 }
 
+/* Opacity only, so it composes with the translate that centres a dialog. */
+@keyframes rz-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Reveal bars grow from their left edge; the width itself stays literal in the
    markup so the first paint already carries the vote share. */
 @keyframes rz-bar-grow {
@@ -236,6 +265,7 @@ button:not(:disabled),
 
   .animate-rz-enter,
   .animate-rz-bar-grow,
+  .animate-rz-fade-in,
   .anim-show,
   .anim-quizz,
   .anim-balanced,

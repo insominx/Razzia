@@ -1,6 +1,9 @@
+import AutoGrowTextarea from "@razzia/web/components/AutoGrowTextarea"
 import {
+  ANSWER_GRID_TRACKS,
   ANSWER_IDENTITY,
   ANSWERS_LABELS,
+  answerSlotPlacement,
 } from "@razzia/web/features/game/utils/constants"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
@@ -78,7 +81,7 @@ const QuestionEditorAnswers = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className={clsx("grid gap-3", ANSWER_GRID_TRACKS.container)}>
         {currentQuestion.answers.map((answer, i) => {
           const isSelected = currentQuestion.solutions.includes(i)
 
@@ -88,17 +91,22 @@ const QuestionEditorAnswers = () => {
               className={clsx(
                 "rounded-rz-xl flex items-center gap-3 border-2 px-4 py-6",
                 ANSWER_IDENTITY[i],
+                answerSlotPlacement(
+                  i,
+                  currentQuestion.answers.length,
+                  "container",
+                ),
               )}
             >
               <span className="rounded-rz-sm bg-canvas/25 flex size-8 shrink-0 items-center justify-center border-2 border-current font-mono text-base font-bold md:size-10 md:text-lg">
                 {ANSWERS_LABELS[i]}
               </span>
               <div className="flex flex-1 items-center justify-between gap-1.5">
-                <input
-                  className="text-text-primary placeholder:text-text-muted w-full bg-transparent font-semibold outline-none"
+                <AutoGrowTextarea
+                  className="text-text-primary placeholder:text-text-muted block w-full bg-transparent font-semibold outline-none"
                   placeholder={t("quizz:addAnswerPlaceholder")}
                   value={answer}
-                  onChange={(e) => updateAnswer(i, e.target.value)}
+                  onValueChange={(value) => updateAnswer(i, value)}
                 />
                 <button
                   type="button"

@@ -31,6 +31,7 @@ const QuestionEditorConfig = () => {
           <ConfigField.Label
             icon={<Clock className="size-4" />}
             label={t("quizz:question.config.questionDisplay")}
+            unit={t("common:seconds")}
           />
           <ConfigNumberInput
             value={currentQuestion.cooldown}
@@ -46,7 +47,7 @@ const QuestionEditorConfig = () => {
           <ConfigField.Label
             icon={<Timer className="size-4" />}
             label={t("quizz:question.config.answerTime")}
-            unit={isTimeLimitEnabled ? "sec" : undefined}
+            unit={isTimeLimitEnabled ? t("common:seconds") : undefined}
             action={
               <Switch.Root
                 checked={isTimeLimitEnabled}

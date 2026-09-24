@@ -39,7 +39,11 @@ const Room = () => {
   return (
     <Card>
       <p className="mb-2 text-lg font-semibold">{t("game:pinLabel")}</p>
-      <PinInput value={invitation} onChange={setInvitation} />
+      <PinInput
+        value={invitation}
+        onChange={setInvitation}
+        onSubmit={handleJoin}
+      />
       <Button className="mt-4" onClick={handleJoin}>
         {t("common:submit")}
       </Button>

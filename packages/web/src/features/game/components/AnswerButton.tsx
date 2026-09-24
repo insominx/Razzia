@@ -78,7 +78,7 @@ const AnswerButton = ({
   return (
     <button
       className={clsx(
-        "rounded-rz-lg ease-calm relative flex items-center gap-3 border-2 px-4 py-6 text-left transition-transform duration-[var(--rz-dur-fast)]",
+        "rounded-rz-lg ease-calm relative flex items-center gap-3 border-2 px-4 py-6 text-left transition-transform duration-[var(--rz-dur-fast)] 2xl:gap-4 2xl:px-6 2xl:py-7",
         hoverEffect === "lift" && "hover:-translate-y-0.5",
         surface && "border-transparent bg-transparent",
         className,
@@ -116,16 +116,18 @@ const AnswerButton = ({
         />
       )}
 
-      <span className="rounded-rz-sm bg-canvas/25 relative z-10 flex size-8 shrink-0 items-center justify-center border-2 border-current font-mono text-base font-bold md:size-10 md:text-lg">
+      <span className="rounded-rz-sm bg-canvas/25 relative z-10 flex size-8 shrink-0 items-center justify-center border-2 border-current font-mono text-base font-bold md:size-10 md:text-lg 2xl:size-12 2xl:text-2xl">
         {label}
       </span>
-      <p className="text-text-primary relative z-10 min-w-0 flex-1 text-sm wrap-break-word md:text-lg">
+      {/* Projection scale: hosts drive a 720p–1080p screen read from across a
+          room, so copy keeps growing past `md` instead of stopping at 18px. */}
+      <p className="text-text-primary relative z-10 min-w-0 flex-1 text-sm wrap-break-word md:text-lg xl:text-2xl 2xl:text-3xl">
         {children}
       </p>
       {correct !== undefined && (
         <CorrectIcon
           className={clsx(
-            "relative z-10 size-4 shrink-0 stroke-6 md:size-6",
+            "relative z-10 size-4 shrink-0 stroke-6 md:size-6 2xl:size-8",
             correct ? "text-success" : "text-danger",
           )}
         />

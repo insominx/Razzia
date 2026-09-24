@@ -3,7 +3,7 @@ import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
 import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import { useQuestionPrompt } from "@razzia/web/features/game/hooks/use-question-prompt"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
-import { SFX } from "@razzia/web/features/game/utils/constants"
+import { SFX, sfxVolume } from "@razzia/web/features/game/utils/constants"
 import { useEffect } from "react"
 import useSound from "use-sound"
 
@@ -15,7 +15,8 @@ const Question = ({ data }: Props) => {
   const { questionNumber, question, media, cooldown } = data
   const { visibleCount, barDelayMs, shouldLift } = useQuestionPrompt(data)
   const sfx = useSfx()
-  const [sfxShow] = useSound(sfx(SFX.SHOW_SOUND), { volume: 0.5 })
+  const showSrc = sfx(SFX.SHOW_SOUND)
+  const [sfxShow] = useSound(showSrc, { volume: sfxVolume(showSrc) })
 
   useEffect(() => {
     sfxShow()

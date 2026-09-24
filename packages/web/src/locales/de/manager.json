@@ -46,7 +46,8 @@
     "notFound": "Kein Quiz gefunden",
     "pleaseCreate": "Bitte erstelle zuerst ein Quiz",
     "pleaseSelect": "Bitte wähle ein Quiz aus",
-    "startGame": "Spiel starten"
+    "startGame": "Spiel starten",
+    "invalidJson": "Ungültige JSON-Datei"
   },
   "result": {
     "delete": "Ergebnis löschen",

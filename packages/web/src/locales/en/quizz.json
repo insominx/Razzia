@@ -24,9 +24,16 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "Enter URL...",
-    "placeholder": "Start typing your question..."
+    "placeholder": "Start typing your question...",
+    "mediaLoadFailed": "This media could not be loaded. Check the URL.",
+    "mediaAlt": "Question media"
   },
   "quizzSaved": "Quizz saved successfully",
   "quizzUpdated": "Quizz updated successfully",
-  "titleQuizzPlaceholder": "Quizz title..."
+  "titleQuizzPlaceholder": "Quizz title...",
+  "unsaved": {
+    "title": "Discard unsaved changes?",
+    "description": "Your edits to this quiz have not been saved.",
+    "discard": "Discard"
+  }
 }

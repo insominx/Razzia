@@ -7,7 +7,7 @@ interface LabelProps {
   action?: ReactNode
 }
 
-const Label = ({ icon, label, unit = "sec", action }: LabelProps) => (
+const Label = ({ icon, label, unit, action }: LabelProps) => (
   <div className="text-text-body flex items-center gap-2 text-sm font-semibold">
     {icon}
     {label}

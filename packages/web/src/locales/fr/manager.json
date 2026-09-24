@@ -46,7 +46,8 @@
     "notFound": "Aucun quizz trouvé",
     "pleaseCreate": "Veuillez d'abord créer un quizz",
     "pleaseSelect": "Veuillez sélectionner un quizz",
-    "startGame": "Démarrer la partie"
+    "startGame": "Démarrer la partie",
+    "invalidJson": "Fichier JSON invalide"
   },
   "result": {
     "delete": "Supprimer le résultat",
