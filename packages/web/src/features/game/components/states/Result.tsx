@@ -4,6 +4,7 @@ import CricleXmark from "@razzia/web/features/game/components/icons/CricleXmark"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { SFX } from "@razzia/web/features/game/utils/constants"
+import { formatRank } from "@razzia/web/features/game/utils/rank"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import useSound from "use-sound"
@@ -17,12 +18,6 @@ const Result = ({
 }: Props) => {
   const player = usePlayerStore()
   const { t } = useTranslation()
-  const rankKeyMap: Record<number, string> = {
-    1: "game:rank.1",
-    2: "game:rank.2",
-    3: "game:rank.3",
-  }
-  const rankKey = rankKeyMap[rank] ?? "rank.other"
 
   const sfx = useSfx()
 
@@ -49,7 +44,7 @@ const Result = ({
       </h2>
       <p className="text-text-primary mt-1 text-xl font-bold">
         {t("game:resultTop")}
-        {t(rankKey, { rank })}
+        {formatRank(t, rank)}
         {aheadOfMe ? `${t("game:resultBehind")}${aheadOfMe}` : ""}
       </p>
       {correct && (

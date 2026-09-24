@@ -7,7 +7,8 @@ const Background = ({ children }: PropsWithChildren) => (
   <section className="relative flex min-h-dvh flex-col items-center justify-center">
     <Atmosphere recipe="ambient" />
 
-    <img src={logo} className="mb-10 h-16" alt="logo" />
+    {/* Positioned so it paints above the absolute Atmosphere layer. */}
+    <img src={logo} className="relative z-10 mb-10 h-16" alt="logo" />
     {children}
 
     <a
