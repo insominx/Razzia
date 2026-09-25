@@ -24,9 +24,16 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "Introduce la URL...",
-    "placeholder": "Empieza a escribir tu pregunta..."
+    "placeholder": "Empieza a escribir tu pregunta...",
+    "mediaLoadFailed": "No se pudo cargar este contenido. Revisa la URL.",
+    "mediaAlt": "Contenido de la pregunta"
   },
   "quizzSaved": "Cuestionario guardado con éxito",
   "quizzUpdated": "Cuestionario actualizado con éxito",
-  "titleQuizzPlaceholder": "Título del cuestionario..."
+  "titleQuizzPlaceholder": "Título del cuestionario...",
+  "unsaved": {
+    "title": "¿Descartar los cambios sin guardar?",
+    "description": "Tus cambios en este cuestionario no se han guardado.",
+    "discard": "Descartar"
+  }
 }

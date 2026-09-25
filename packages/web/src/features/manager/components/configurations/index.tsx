@@ -55,7 +55,10 @@ const Configurations = ({ data }: Props) => {
 
   return (
     <ConfigProvider data={data}>
-      <Card className="border-border bg-surface text-text-body rounded-rz-xl max-h-[80svh] w-full max-w-md border shadow-none">
+      {/* Fixed height: a tab switch changing the card's height would re-centre
+          it (and the logo above it) on every click. Tall tabs scroll inside.
+          13rem leaves room for the logo above and the version link below. */}
+      <Card className="border-border bg-surface text-text-body rounded-rz-xl h-[min(42rem,calc(100svh-13rem))] w-full max-w-md border shadow-none">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-text-primary text-lg font-semibold">
             {t("manager:configurationsTitle")}
@@ -83,7 +86,7 @@ const Configurations = ({ data }: Props) => {
           ))}
         </div>
         <hr className="border-border my-4" />
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <TabComponent />
         </div>
       </Card>

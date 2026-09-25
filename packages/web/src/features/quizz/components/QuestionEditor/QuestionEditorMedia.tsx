@@ -46,7 +46,15 @@ const QuestionEditorMedia = () => {
 
   return (
     <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-3 p-4">
-      <QuestionMedia media={currentQuestion.media} alt="Question Media" />
+      <QuestionMedia
+        media={currentQuestion.media}
+        alt={t("quizz:question.mediaAlt")}
+        fallback={
+          <p className="bg-danger-tint border-danger-border text-danger rounded-rz-md border px-4 py-3 text-sm font-semibold">
+            {t("quizz:question.mediaLoadFailed")}
+          </p>
+        }
+      />
 
       {!questionMedia?.type && (
         <Card className="my-auto flex max-h-100 w-full max-w-xl flex-1 flex-col items-center justify-center gap-2">

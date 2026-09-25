@@ -9,11 +9,19 @@ import {
 interface Props {
   value: string
   onChange: (_value: string) => void
+  /** Called on Enter from any digit, like submitting a one-field form. */
+  onSubmit?: () => void
   length?: number
   className?: string
 }
 
-const PinInput = ({ value, onChange, length = 6, className }: Props) => {
+const PinInput = ({
+  value,
+  onChange,
+  onSubmit,
+  length = 6,
+  className,
+}: Props) => {
   const refs = useRef<Array<HTMLInputElement | null>>([])
 
   const padded = value.padEnd(length, " ").slice(0, length)
@@ -31,6 +39,13 @@ const PinInput = ({ value, onChange, length = 6, className }: Props) => {
 
   const handleKeyDown =
     (index: number) => (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault()
+        onSubmit?.()
+
+        return
+      }
+
       if (e.key === "Backspace") {
         e.preventDefault()
 

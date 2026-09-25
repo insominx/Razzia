@@ -24,9 +24,16 @@
       "video": "Vidéo"
     },
     "mediaUrlPlaceholder": "Entrez l'URL...",
-    "placeholder": "Commencez à écrire votre question..."
+    "placeholder": "Commencez à écrire votre question...",
+    "mediaLoadFailed": "Ce média n’a pas pu être chargé. Vérifie l’URL.",
+    "mediaAlt": "Média de la question"
   },
   "quizzSaved": "Quizz enregistré avec succès",
   "quizzUpdated": "Quizz mis à jour avec succès",
-  "titleQuizzPlaceholder": "Titre du quizz..."
+  "titleQuizzPlaceholder": "Titre du quizz...",
+  "unsaved": {
+    "title": "Abandonner les modifications non enregistrées ?",
+    "description": "Tes modifications de ce quiz n’ont pas été enregistrées.",
+    "discard": "Abandonner"
+  }
 }

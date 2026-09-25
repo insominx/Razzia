@@ -24,9 +24,16 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "URL eingeben...",
-    "placeholder": "Beginne deine Frage zu tippen..."
+    "placeholder": "Beginne deine Frage zu tippen...",
+    "mediaLoadFailed": "Dieses Medium konnte nicht geladen werden. Prüfe die URL.",
+    "mediaAlt": "Fragenmedium"
   },
   "quizzSaved": "Quiz erfolgreich gespeichert",
   "quizzUpdated": "Quiz erfolgreich aktualisiert",
-  "titleQuizzPlaceholder": "Quiz-Titel..."
+  "titleQuizzPlaceholder": "Quiz-Titel...",
+  "unsaved": {
+    "title": "Ungespeicherte Änderungen verwerfen?",
+    "description": "Deine Änderungen an diesem Quiz wurden nicht gespeichert.",
+    "discard": "Verwerfen"
+  }
 }

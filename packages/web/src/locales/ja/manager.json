@@ -46,7 +46,8 @@
     "notFound": "クイズが見つかりません",
     "pleaseCreate": "先にクイズを作成してください",
     "pleaseSelect": "クイズを選択してください",
-    "startGame": "ゲーム開始"
+    "startGame": "ゲーム開始",
+    "invalidJson": "無効なJSONファイルです"
   },
   "result": {
     "delete": "結果を削除",

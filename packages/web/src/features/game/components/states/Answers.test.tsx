@@ -26,6 +26,7 @@ vi.mock("@razzia/web/features/game/stores/player", () => ({
   usePlayerStore: () => ({
     player: { username: "Player" },
     gameId: "game-1",
+    setLastAnswer: vi.fn(),
   }),
 }))
 

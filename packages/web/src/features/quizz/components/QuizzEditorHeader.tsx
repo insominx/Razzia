@@ -1,4 +1,5 @@
 import { EVENTS } from "@razzia/common/constants"
+import ConfirmDialog from "@razzia/web/components/AlertDialog"
 import Button from "@razzia/web/components/Button"
 import Input from "@razzia/web/components/Input"
 import {
@@ -8,16 +9,38 @@ import {
 import QuizzBackgroundControl from "@razzia/web/features/quizz/components/QuizzBackgroundControl"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import { useNavigate } from "@tanstack/react-router"
-import type { ChangeEvent } from "react"
+import { type ChangeEvent, useEffect } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 const QuizzEditorHeader = () => {
-  const { quizzId, subject, setSubject, questions, background } =
+  const { quizzId, subject, setSubject, questions, background, isDirty } =
     useQuizzEditor()
   const { socket } = useSocket()
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  // Reloading or closing the tab with unsaved edits asks first; in-app exits
+  // go through the confirmation below instead.
+  useEffect(() => {
+    if (!isDirty) {
+      return
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    }
+  }, [isDirty])
+
+  const handleExit = () => {
+    navigate({ to: "/manager" })
+  }
 
   const handleChangeSubject = (e: ChangeEvent<HTMLInputElement>) => {
     setSubject(e.target.value)
@@ -66,12 +89,26 @@ const QuizzEditorHeader = () => {
       </div>
 
       <div className="flex gap-2">
-        <Button
-          className="bg-panel border-border text-text-body text-md border px-4 py-2 font-semibold"
-          onClick={() => navigate({ to: "/manager" })}
-        >
-          {t("common:exit")}
-        </Button>
+        {isDirty ? (
+          <ConfirmDialog
+            trigger={
+              <Button className="bg-panel border-border text-text-body text-md border px-4 py-2 font-semibold">
+                {t("common:exit")}
+              </Button>
+            }
+            title={t("quizz:unsaved.title")}
+            description={t("quizz:unsaved.description")}
+            confirmLabel={t("quizz:unsaved.discard")}
+            onConfirm={handleExit}
+          />
+        ) : (
+          <Button
+            className="bg-panel border-border text-text-body text-md border px-4 py-2 font-semibold"
+            onClick={handleExit}
+          >
+            {t("common:exit")}
+          </Button>
+        )}
         <Button className="text-md px-4 py-2" onClick={handleSave}>
           {t("common:save")}
         </Button>

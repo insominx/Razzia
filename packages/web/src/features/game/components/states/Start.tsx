@@ -2,7 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
 import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
 import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
-import { SFX } from "@razzia/web/features/game/utils/constants"
+import { SFX, sfxVolume } from "@razzia/web/features/game/utils/constants"
 import { useState } from "react"
 import useSound from "use-sound"
 
@@ -15,9 +15,8 @@ const Start = ({ data: { time, subject } }: Props) => {
   const [cooldown, setCooldown] = useState(time)
   const sfx = useSfx()
 
-  const [sfxBoump] = useSound(sfx(SFX.BOUMP_SOUND), {
-    volume: 0.2,
-  })
+  const boumpSrc = sfx(SFX.BOUMP_SOUND)
+  const [sfxBoump] = useSound(boumpSrc, { volume: sfxVolume(boumpSrc) })
 
   useEvent(EVENTS.GAME.START_COOLDOWN, () => {
     sfxBoump()

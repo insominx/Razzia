@@ -15,11 +15,16 @@ import { useSfx } from "@razzia/web/features/game/hooks/use-sfx"
 import { useAnswerReveal } from "@razzia/web/features/game/hooks/use-answer-reveal"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import {
+  ANSWER_GRID_TRACKS,
   ANSWER_IDENTITY,
   ANSWER_INK,
   ANSWERS_LABELS,
+  answerSlotPlacement,
+  FINAL_COUNTDOWN_SECONDS,
   SFX,
+  sfxVolume,
 } from "@razzia/web/features/game/utils/constants"
+import { HAPTIC, haptic } from "@razzia/web/features/game/utils/haptics"
 import clsx from "clsx"
 import { type CSSProperties, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -40,7 +45,7 @@ const Answers = ({ data }: Props) => {
     answeringOpen,
   } = data
   const { socket } = useSocket()
-  const { player, gameId } = usePlayerStore()
+  const { player, gameId, setLastAnswer } = usePlayerStore()
 
   const [cooldown, setCooldown] = useState(time)
   const [totalAnswer, setTotalAnswer] = useState(0)
@@ -48,15 +53,20 @@ const Answers = ({ data }: Props) => {
   const { t } = useTranslation()
   const sfx = useSfx()
 
-  const [sfxPop] = useSound(sfx(SFX.ANSWERS.SOUND), {
-    volume: 0.1,
-  })
+  const timed = time !== NO_TIME_LIMIT
+  const popSrc = sfx(SFX.ANSWERS.SOUND)
+  const musicSrc = sfx(SFX.ANSWERS.MUSIC)
+  const tickSrc = sfx(SFX.BOUMP_SOUND)
 
-  const [playMusic, { stop: stopMusic }] = useSound(sfx(SFX.ANSWERS.MUSIC), {
-    volume: 0.2,
+  const [sfxPop] = useSound(popSrc, { volume: sfxVolume(popSrc) })
+
+  const [playMusic, { stop: stopMusic }] = useSound(musicSrc, {
+    volume: sfxVolume(musicSrc),
     interrupt: true,
     loop: true,
   })
+
+  const [sfxTick] = useSound(tickSrc, { volume: sfxVolume(tickSrc) })
 
   const handleAnswer = (answerKey: number) => () => {
     if (!answeringOpen || !player || !gameId) {
@@ -69,7 +79,9 @@ const Answers = ({ data }: Props) => {
         answerKey,
       },
     })
+    setLastAnswer({ questionNumber, key: answerKey, text: answers[answerKey] })
     sfxPop()
+    haptic(HAPTIC.tap)
   }
 
   useEffect(() => {
@@ -91,14 +103,19 @@ const Answers = ({ data }: Props) => {
 
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
     setCooldown(sec)
+
+    // The countdown's last seconds tick like the start countdown. Players who
+    // already answered have moved on to the wait screen, so only the host and
+    // anyone still deciding hear it.
+    if (answeringOpen && timed && sec <= FINAL_COUNTDOWN_SECONDS) {
+      sfxTick()
+    }
   })
 
   useEvent(EVENTS.GAME.PLAYER_ANSWER, (count) => {
     setTotalAnswer(count)
     sfxPop()
   })
-
-  const timed = time !== NO_TIME_LIMIT
 
   return (
     // Full-bleed so the dot fields can sit in the gutter beside the content
@@ -133,7 +150,10 @@ const Answers = ({ data }: Props) => {
         </div>
 
         <div
-          className="mb-4 grid grid-cols-1 gap-3 text-lg font-bold sm:grid-cols-2 md:gap-4 md:text-xl"
+          className={clsx(
+            "mb-4 grid gap-3 text-lg font-bold md:gap-4 md:text-xl",
+            ANSWER_GRID_TRACKS.viewport,
+          )}
           style={
             {
               "--rz-answer-reveal-fade": `${ANSWER_REVEAL_FADE_MS}ms`,
@@ -145,6 +165,7 @@ const Answers = ({ data }: Props) => {
               key={key}
               className={clsx(
                 ANSWER_INK[key],
+                answerSlotPlacement(key, answers.length),
                 "rz-answer-slot",
                 key < visibleCount && "rz-answer-slot-visible",
               )}

@@ -14,7 +14,11 @@
     "1": "1st place",
     "2": "2nd place",
     "3": "3rd place",
-    "other": "{{rank}}th place"
+    "other": "{{rank}}th place",
+    "other_ordinal_few": "{{rank}}rd place",
+    "other_ordinal_one": "{{rank}}st place",
+    "other_ordinal_other": "{{rank}}th place",
+    "other_ordinal_two": "{{rank}}nd place"
   },
   "rankSuffix": " place",
   "resultBehind": ", behind ",
@@ -23,5 +27,13 @@
   "usernamePlaceholder": "Username here",
   "waitingForAnswers": "Waiting for the players to answer",
   "waitingForPlayers": "Waiting for players",
-  "wrong": "Too bad"
+  "wrong": "Too bad",
+  "pointsShort": "{{points}} pts",
+  "kick": {
+    "action": "Kick {{name}}",
+    "title": "Kick player?",
+    "description": "{{name}} will be removed from this game.",
+    "confirm": "Kick"
+  },
+  "yourAnswer": "Your answer"
 }

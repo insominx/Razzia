@@ -46,7 +46,8 @@
     "notFound": "No quizz found",
     "pleaseCreate": "Please create a quizz first",
     "pleaseSelect": "Please select a quizz",
-    "startGame": "Start game"
+    "startGame": "Start game",
+    "invalidJson": "Invalid JSON file"
   },
   "result": {
     "delete": "Delete result",

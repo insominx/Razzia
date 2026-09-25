@@ -24,9 +24,16 @@
       "video": "Video"
     },
     "mediaUrlPlaceholder": "Inserisci URL...",
-    "placeholder": "Inizia a scrivere la tua domanda..."
+    "placeholder": "Inizia a scrivere la tua domanda...",
+    "mediaLoadFailed": "Impossibile caricare questo contenuto. Controlla l’URL.",
+    "mediaAlt": "Contenuto della domanda"
   },
   "quizzSaved": "Quiz salvato con successo",
   "quizzUpdated": "Quiz aggiornato con successo",
-  "titleQuizzPlaceholder": "Titolo del quiz..."
+  "titleQuizzPlaceholder": "Titolo del quiz...",
+  "unsaved": {
+    "title": "Scartare le modifiche non salvate?",
+    "description": "Le modifiche a questo quiz non sono state salvate.",
+    "discard": "Scarta"
+  }
 }

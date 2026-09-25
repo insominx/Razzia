@@ -26,6 +26,8 @@ interface QuizzEditorContextType {
   updateQuestion: (_index: number, _updates: Partial<QuestionWithId>) => void
   background: BackgroundRef | undefined
   backgroundUrl: string | undefined
+  /** True once the saveable quiz differs from what the editor opened with. */
+  isDirty: boolean
   setBackground: (
     _ref: BackgroundRef | undefined,
     _url: string | undefined,
@@ -47,6 +49,19 @@ const toQuestionWithId = (q: Question): QuestionWithId => ({
   ...q,
   id: uuid(),
 })
+
+// What Save sends, minus the editor-only question ids, so reordering back or
+// retyping the original text reads as clean again.
+const snapshot = (
+  subject: string,
+  questions: QuestionWithId[],
+  background: BackgroundRef | undefined,
+) =>
+  JSON.stringify({
+    subject,
+    questions: questions.map((question) => ({ ...question, id: undefined })),
+    background: background ?? null,
+  })
 
 const boundQuestionIndex = (index: number, length: number) =>
   Math.min(Math.max(0, index), Math.max(0, length - 1))
@@ -76,6 +91,10 @@ export const QuizzEditorProvider = ({
   const [backgroundUrl, setBackgroundUrl] = useState<string | undefined>(
     initialBackgroundUrl,
   )
+  const [initialSnapshot] = useState(() =>
+    snapshot(subject, questions, background),
+  )
+  const isDirty = snapshot(subject, questions, background) !== initialSnapshot
   const activeIndex = boundQuestionIndex(currentIndex, questions.length)
   const currentQuestion = questions[activeIndex]
 
@@ -149,6 +168,7 @@ export const QuizzEditorProvider = ({
         background,
         backgroundUrl,
         setBackground,
+        isDirty,
       }}
     >
       {children}

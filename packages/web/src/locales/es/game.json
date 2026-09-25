@@ -23,5 +23,13 @@
   "usernamePlaceholder": "Nombre de usuario aquí",
   "waitingForAnswers": "Esperando que los jugadores respondan",
   "waitingForPlayers": "Esperando jugadores",
-  "wrong": "Mala suerte"
+  "wrong": "Mala suerte",
+  "pointsShort": "{{points}} pts",
+  "kick": {
+    "action": "Expulsar a {{name}}",
+    "title": "¿Expulsar al jugador?",
+    "description": "{{name}} será expulsado de esta partida.",
+    "confirm": "Expulsar"
+  },
+  "yourAnswer": "Tu respuesta"
 }

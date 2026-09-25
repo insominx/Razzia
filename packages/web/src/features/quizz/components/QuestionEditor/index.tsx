@@ -11,7 +11,7 @@ const QuestionEditor = () => {
   return (
     <div className="relative flex flex-1 overflow-hidden">
       <Atmosphere recipe="photo" backgroundUrl={backgroundUrl} />
-      <main className="relative z-10 mx-auto flex max-w-7xl flex-1 flex-col gap-4 overflow-y-auto p-6">
+      <main className="@container relative z-10 mx-auto flex max-w-7xl flex-1 flex-col gap-4 overflow-y-auto p-6">
         <QuestionEditorTitle />
         <QuestionEditorMedia />
         <QuestionEditorAnswers />

@@ -178,3 +178,43 @@ describe("QuizzEditorProvider removeQuestion", () => {
     expect(screen.getByDisplayValue("Second")).toBeInTheDocument()
   })
 })
+
+describe("QuizzEditorProvider unsaved changes", () => {
+  it("is clean on open, dirty after an edit, and clean again once reverted", () => {
+    const { result } = renderHook(() => useQuizzEditor(), {
+      wrapper: editorWrapper([question("Original")]),
+    })
+
+    expect(result.current.isDirty).toBe(false)
+
+    act(() => {
+      result.current.updateQuestion(0, { question: "Edited" })
+    })
+
+    expect(result.current.isDirty).toBe(true)
+
+    act(() => {
+      result.current.updateQuestion(0, { question: "Original" })
+    })
+
+    expect(result.current.isDirty).toBe(false)
+  })
+
+  it("treats a reorder that lands back in place as clean", () => {
+    const { result } = renderHook(() => useQuizzEditor(), {
+      wrapper: editorWrapper([question("One"), question("Two")]),
+    })
+
+    act(() => {
+      result.current.reorderQuestions(0, 1)
+    })
+
+    expect(result.current.isDirty).toBe(true)
+
+    act(() => {
+      result.current.reorderQuestions(1, 0)
+    })
+
+    expect(result.current.isDirty).toBe(false)
+  })
+})

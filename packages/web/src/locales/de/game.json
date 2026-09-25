@@ -23,5 +23,13 @@
   "usernamePlaceholder": "Benutzername hier",
   "waitingForAnswers": "Warten auf die Antworten der Spieler",
   "waitingForPlayers": "Warten auf Spieler",
-  "wrong": "Schade"
+  "wrong": "Schade",
+  "pointsShort": "{{points}} Pkt.",
+  "kick": {
+    "action": "{{name}} entfernen",
+    "title": "Spieler entfernen?",
+    "description": "{{name}} wird aus diesem Spiel entfernt.",
+    "confirm": "Entfernen"
+  },
+  "yourAnswer": "Deine Antwort"
 }

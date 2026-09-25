@@ -55,14 +55,20 @@ const ConfigSelectQuizz = () => {
         {quizzList.map((quizz) => (
           <button
             key={quizz.id}
-            className="border-border bg-surface hover:bg-panel rounded-rz-md ease-calm flex w-full items-center justify-between border p-3 transition-colors duration-[var(--rz-dur-fast)]"
+            aria-pressed={selected === quizz.id}
+            className={clsx(
+              "rounded-rz-md ease-calm flex w-full items-center justify-between gap-3 border p-3 text-left transition-colors duration-[var(--rz-dur-fast)]",
+              selected === quizz.id
+                ? "border-brand-border bg-brand-tint text-brand"
+                : "border-border bg-surface hover:bg-panel",
+            )}
             onClick={handleSelect(quizz.id)}
           >
             {quizz.subject}
 
             <div
               className={clsx(
-                "border-border text-text-muted rounded-rz-sm size-5 border p-0.5",
+                "border-border text-text-muted rounded-rz-sm size-5 shrink-0 border p-0.5",
                 selected === quizz.id &&
                   "border-brand-border bg-brand-tint text-brand",
               )}

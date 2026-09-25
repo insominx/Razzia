@@ -11,11 +11,19 @@ interface PlayerState {
   points?: number
 }
 
+/** The tile this client tapped, echoed back on the wait screen. */
+export interface LastAnswer {
+  questionNumber: number
+  key: number
+  text: string
+}
+
 interface PlayerStore<T> {
   gameId: string | null
   player: PlayerState | null
   status: Status<T> | null
   visuals: ResolvedVisuals
+  lastAnswer: LastAnswer | null
 
   setGameId: (_gameId: string | null) => void
   setVisuals: (_visuals: ResolvedVisuals) => void
@@ -24,6 +32,7 @@ interface PlayerStore<T> {
   login: (_gameId: string) => void
   join: (_username: string) => void
   updatePoints: (_points: number) => void
+  setLastAnswer: (_answer: LastAnswer) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
 
@@ -35,6 +44,7 @@ const initialState = {
   player: null,
   status: null,
   visuals: {},
+  lastAnswer: null,
 }
 
 export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
@@ -60,6 +70,8 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
     set((state) => ({
       player: { ...state.player, points },
     })),
+
+  setLastAnswer: (lastAnswer) => set({ lastAnswer }),
 
   setStatus: (name, data) => set({ status: createStatus(name, data) }),
 
