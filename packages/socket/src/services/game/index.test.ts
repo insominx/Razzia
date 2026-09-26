@@ -205,6 +205,45 @@ describe("Game while its manager is away", () => {
   })
 })
 
+describe("Game while a player is away", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stops addressing the player's socket and replays their result on return", async () => {
+    const { io, emitted, socketsLeave } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    game.join(createClient("p2", "bob-client").socket, "Bobby")
+    void game.start(manager.socket)
+
+    game.setPlayerDisconnected("p1")
+    expect(socketsLeave).toHaveBeenCalledWith("p1", game.gameId)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(emitted.filter(({ target }) => target === "p1")).toEqual([])
+    expect(emitted.some(({ target }) => target === "p2")).toBe(true)
+
+    const back = createClient("p1-again", "alice-client")
+    game.reconnect(back.socket)
+    const reconnect = back.emitted.find(
+      ({ event }) => event === EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )?.payload as { status: { name: string } } | undefined
+
+    expect(reconnect?.status.name).toBe(STATUS.SHOW_RESULT)
+  })
+})
+
 describe("Game player privacy", () => {
   it("announces new players to the manager without their clientId", () => {
     const { io, emitted } = createIo()

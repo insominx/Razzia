@@ -28,7 +28,7 @@ const mocks = vi.hoisted(() => {
       getManagerGame: vi.fn(),
       getGameByInviteCode: vi.fn(),
       getGamesByManagerSocketId: vi.fn((): unknown[] => []),
-      getGameByPlayerSocketId: vi.fn(),
+      getGamesByPlayerSocketId: vi.fn((): unknown[] => []),
     },
   }
 })
@@ -229,5 +229,25 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
 
     expect(hosted.setManagerDisconnected).toHaveBeenCalledTimes(1)
     expect(mocks.registry.removeGame).toHaveBeenCalledWith("hosted")
+  })
+
+  it("marks the player gone in every game that socket plays in", async () => {
+    const { handlers, socket } = await registerHandlers()
+    const left = {
+      gameId: "left",
+      started: true,
+      setPlayerDisconnected: vi.fn(),
+    }
+    const current = {
+      gameId: "current",
+      started: true,
+      setPlayerDisconnected: vi.fn(),
+    }
+    mocks.registry.getGamesByPlayerSocketId.mockReturnValueOnce([left, current])
+
+    handlers.get("disconnect")?.()
+
+    expect(left.setPlayerDisconnected).toHaveBeenCalledWith(socket.id)
+    expect(current.setPlayerDisconnected).toHaveBeenCalledWith(socket.id)
   })
 })

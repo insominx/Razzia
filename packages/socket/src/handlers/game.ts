@@ -157,21 +157,12 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   socket.on("disconnect", () => {
     console.log(`A user disconnected : ${socket.id}`)
 
-    const managerGames = registry.getGamesByManagerSocketId(socket.id)
+    registry.getGamesByManagerSocketId(socket.id).forEach((game) => {
+      console.log(`Manager disconnected from game ${game.inviteCode}`)
+      handleManagerLeave(game)
+    })
 
-    if (managerGames.length > 0) {
-      managerGames.forEach((game) => {
-        console.log(`Manager disconnected from game ${game.inviteCode}`)
-        handleManagerLeave(game)
-      })
-
-      return
-    }
-
-    const playerGame = registry.getGameByPlayerSocketId(socket.id)
-
-    if (playerGame) {
-      handlePlayerLeave(playerGame)
-    }
+    // A socket stays a (disconnected) player of any started game it left.
+    registry.getGamesByPlayerSocketId(socket.id).forEach(handlePlayerLeave)
   })
 }

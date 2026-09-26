@@ -175,6 +175,10 @@ class Game {
       }
     } else {
       this.playerStatus.set(target, statusData)
+
+      if (!this.playerManager.findById(target)?.connected) {
+        return
+      }
     }
 
     this.io.to(target).emit(EVENTS.GAME.STATUS, statusData)
@@ -309,6 +313,7 @@ class Game {
 
   setPlayerDisconnected(socketId: string) {
     this.playerManager.setDisconnected(socketId)
+    this.io.in(socketId).socketsLeave(this.gameId)
     this.playerManager.broadcastCount()
   }
 
