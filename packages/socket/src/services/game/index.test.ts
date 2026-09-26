@@ -371,3 +371,64 @@ describe("Game reconnect from an attached socket", () => {
     })
   })
 })
+
+describe("Game membership", () => {
+  it("takes a player who leaves the lobby out of the game's room", () => {
+    const { io, socketsLeave } = createIo()
+    const game = new Game({
+      io,
+      socket: createClient("manager", "manager-client").socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+
+    game.removePlayer("p1")
+
+    expect(socketsLeave).toHaveBeenCalledWith("p1", game.gameId)
+  })
+
+  it("does not reset the socket of a kicked player who already left", () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    game.setPlayerDisconnected("p1")
+    emitted.length = 0
+
+    game.kickPlayer(manager.socket, "p1")
+
+    expect(emitted.filter(({ target }) => target === "p1")).toEqual([])
+    expect(emitted).toContainEqual({
+      target: "manager",
+      event: EVENTS.MANAGER.PLAYER_KICKED,
+      payload: "p1",
+    })
+  })
+
+  it("only lets the attached manager socket run the game", () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    game.setManagerDisconnected()
+
+    void game.start(manager.socket)
+    expect(game.started).toBe(false)
+
+    game.reconnect(manager.socket)
+    void game.start(manager.socket)
+    expect(game.started).toBe(true)
+    expect(emitted.map(({ event }) => event)).toContain(EVENTS.GAME.STATUS)
+  })
+})

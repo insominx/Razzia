@@ -49,13 +49,20 @@ export interface RoundManagerOptions {
   io: Server
   gameId: string
   getManagerId: () => string
+  isManager: (_socket: Socket) => boolean
   broadcast: BroadcastFn
   send: SendFn
   onNewQuestion: () => void
   onGameFinished: (_result: GameResult) => void
 }
 
-type RoundPhase = "idle" | "prompt" | "revealing" | "answering" | "results"
+type RoundPhase =
+  | "idle"
+  | "prompt"
+  | "revealing"
+  | "answering"
+  | "results"
+  | "over"
 
 interface UnlockContext {
   generation: number
@@ -93,11 +100,11 @@ export class RoundManager {
   }
 
   async start(socket: Socket): Promise<void> {
-    if (this.opts.getManagerId() !== socket.id) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
-    if (this.started) {
+    if (this.started || this.phase !== "idle") {
       return
     }
 
@@ -340,7 +347,7 @@ export class RoundManager {
 
   stop(): void {
     this.started = false
-    this.phase = "idle"
+    this.phase = "over"
     this.revealWaiter?.interrupt()
     this.opts.cooldown.abort()
   }
@@ -399,7 +406,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
@@ -416,7 +423,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
@@ -428,7 +435,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
@@ -440,7 +447,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
@@ -449,7 +456,7 @@ export class RoundManager {
 
     if (isLastRound) {
       this.started = false
-      this.phase = "idle"
+      this.phase = "over"
 
       const top = this.leaderboard.slice(0, 3).map(toPublicPlayer)
 

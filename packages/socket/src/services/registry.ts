@@ -126,12 +126,16 @@ class Registry {
     const removed = this.emptyGames.filter((g) => !stillEmpty.includes(g))
     const removedGameIds = removed.map((r) => r.game.gameId)
 
-    removed.forEach(({ game }) => {
-      game.close("errors:game.managerDisconnected")
-    })
-
     this.games = this.games.filter((g) => !removedGameIds.includes(g.gameId))
     this.emptyGames = stillEmpty
+
+    removed.forEach(({ game }) => {
+      try {
+        game.close("errors:game.managerDisconnected")
+      } catch (error) {
+        console.error(`Failed to close expired game ${game.gameId}:`, error)
+      }
+    })
 
     console.log(
       `Removed ${removed.length} empty game(s). Remaining games: ${this.games.length}`,

@@ -156,7 +156,8 @@ const makeManagedGame = (
   gameId,
   inviteCode: `${gameId}-code`,
   started,
-  manager: { id: managerSocketId },
+  manager: { id: managerSocketId, connected: true },
+  announceTo: vi.fn(),
   setManagerDisconnected: vi.fn(),
   close: vi.fn(),
 })
@@ -193,20 +194,31 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     expect(lobby.close).toHaveBeenCalledWith("errors:game.managerDisconnected")
   })
 
-  it("releases the socket's previous lobby before creating a new game", async () => {
+  it("answers a repeated create with the lobby the socket already runs", async () => {
     const { handlers, socket } = await registerHandlers()
-    const previous = makeManagedGame("previous", false)
-    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([previous])
+    const lobby = makeManagedGame("lobby", false)
+    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([lobby])
     manager.login(socket)
 
     handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never)
 
-    expect(previous.setManagerDisconnected).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.removeGame).toHaveBeenCalledWith("previous")
+    expect(lobby.announceTo).toHaveBeenCalledWith(socket)
+    expect(lobby.close).not.toHaveBeenCalled()
+    expect(mocks.Game).not.toHaveBeenCalled()
+  })
+
+  it("releases a game the socket left before creating a new one", async () => {
+    const { handlers, socket } = await registerHandlers()
+    const left = makeManagedGame("left", true)
+    left.manager.connected = false
+    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([left])
+    manager.login(socket)
+
+    handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never)
+
+    expect(left.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(left)
     expect(mocks.Game).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.addGame).toHaveBeenCalledWith(
-      mocks.Game.mock.instances[0],
-    )
   })
 
   it("ignores a leave from a manager tab that is not running the game", async () => {

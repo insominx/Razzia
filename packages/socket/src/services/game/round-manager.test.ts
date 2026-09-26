@@ -76,6 +76,7 @@ const createHarness = (time = 10, question = "Pick one", questionCount = 1) => {
     io,
     gameId: "game-1",
     getManagerId: () => "manager",
+    isManager: (socket: Socket) => socket.id === "manager",
     broadcast,
     send,
     onNewQuestion: vi.fn(),
@@ -411,6 +412,22 @@ describe("RoundManager manager authority over round flow", () => {
     )
     expect(sentStatuses(harness, "manager", STATUS.FINISHED)).toHaveLength(1)
     expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toHaveLength(1)
+  })
+
+  it("does not replay a finished game", async () => {
+    const harness = createHarness()
+
+    await enterResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+    void harness.round.start(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(
+      harness.broadcast.mock.calls.filter(
+        ([status]) => status === STATUS.SHOW_START,
+      ),
+    ).toHaveLength(1)
+    expect(harness.onGameFinished).toHaveBeenCalledTimes(1)
   })
 
   it("advances one question at a time and only from the results", async () => {

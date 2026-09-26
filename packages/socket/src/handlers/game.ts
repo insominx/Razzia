@@ -72,9 +72,21 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
         return
       }
 
-      // A socket hosts one game at a time; a repeated create (e.g. a
-      // double-click) must not leave the earlier game orphaned.
-      registry.getGamesByManagerSocketId(socket.id).forEach(handleManagerLeave)
+      // A socket hosts one game at a time. A repeated create (e.g. a
+      // double-click) gets the lobby it already runs; games it left are
+      // released so they cannot reach this socket again.
+      const managed = registry.getGamesByManagerSocketId(socket.id)
+      const lobby = managed.find(
+        (game) => game.manager.connected && !game.started,
+      )
+
+      if (lobby) {
+        lobby.announceTo(socket)
+
+        return
+      }
+
+      managed.forEach(handleManagerLeave)
 
       const visuals = resolveVisuals(quizz, getGameConfig())
       const game = new Game({ io, socket, quizz, visuals })

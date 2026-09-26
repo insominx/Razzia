@@ -108,6 +108,7 @@ class Game {
       io,
       gameId: this.gameId,
       getManagerId: () => this._manager.id,
+      isManager: this.isManager.bind(this),
       getVisuals: () => this.visuals,
     })
 
@@ -118,6 +119,7 @@ class Game {
       io,
       gameId: this.gameId,
       getManagerId: () => this._manager.id,
+      isManager: this.isManager.bind(this),
       broadcast: this.broadcastStatus.bind(this),
       send: this.sendStatus.bind(this),
       onNewQuestion: () => {
@@ -128,11 +130,7 @@ class Game {
     })
 
     socket.join(this.gameId)
-    socket.emit(EVENTS.MANAGER.GAME_CREATED, {
-      gameId: this.gameId,
-      inviteCode: this.inviteCode,
-      visuals: this.visuals,
-    })
+    this.announceTo(socket)
 
     console.log(
       `New game created: ${this.inviteCode} subject: ${quizz.subject}`,
@@ -141,6 +139,20 @@ class Game {
 
   get manager() {
     return this._manager
+  }
+
+  announceTo(socket: Socket) {
+    socket.emit(EVENTS.MANAGER.GAME_CREATED, {
+      gameId: this.gameId,
+      inviteCode: this.inviteCode,
+      visuals: this.visuals,
+    })
+  }
+
+  // Only the socket attached as manager may run the game; one that left
+  // must reconnect first.
+  private isManager(socket: Socket): boolean {
+    return this._manager.connected && this._manager.id === socket.id
   }
 
   get players(): Player[] {
@@ -306,6 +318,7 @@ class Game {
     const player = this.playerManager.remove(socketId)
 
     if (player) {
+      this.io.in(socketId).socketsLeave(this.gameId)
       this.io.to(this._manager.id).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
       this.playerManager.broadcastCount()
     }

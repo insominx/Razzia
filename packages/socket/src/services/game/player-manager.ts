@@ -13,6 +13,7 @@ interface PlayerManagerOptions {
   io: Server
   gameId: string
   getManagerId: () => string
+  isManager: (_socket: Socket) => boolean
   getVisuals: () => ResolvedVisuals
 }
 
@@ -20,13 +21,21 @@ export class PlayerManager {
   private readonly io: Server
   private readonly gameId: string
   private readonly getManagerId: () => string
+  private readonly isManager: (_socket: Socket) => boolean
   private readonly getVisuals: () => ResolvedVisuals
   private players: Player[] = []
 
-  constructor({ io, gameId, getManagerId, getVisuals }: PlayerManagerOptions) {
+  constructor({
+    io,
+    gameId,
+    getManagerId,
+    isManager,
+    getVisuals,
+  }: PlayerManagerOptions) {
     this.io = io
     this.gameId = gameId
     this.getManagerId = getManagerId
+    this.isManager = isManager
     this.getVisuals = getVisuals
   }
 
@@ -72,7 +81,7 @@ export class PlayerManager {
   }
 
   kick(socket: Socket, playerId: string): boolean {
-    if (this.getManagerId() !== socket.id) {
+    if (!this.isManager(socket)) {
       return false
     }
 
@@ -85,7 +94,14 @@ export class PlayerManager {
     this.players = this.players.filter((p) => p.id !== playerId)
 
     this.io.in(playerId).socketsLeave(this.gameId)
-    this.io.to(player.id).emit(EVENTS.GAME.RESET, "errors:game.kickedByManager")
+
+    // A player who already left may be in another game on that socket now.
+    if (player.connected) {
+      this.io
+        .to(player.id)
+        .emit(EVENTS.GAME.RESET, "errors:game.kickedByManager")
+    }
+
     this.io
       .to(this.getManagerId())
       .emit(EVENTS.MANAGER.PLAYER_KICKED, player.id)
