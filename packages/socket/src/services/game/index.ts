@@ -217,7 +217,9 @@ class Game {
   }
 
   private reconnectManager(socket: Socket) {
-    if (this._manager.connected) {
+    // The attached socket asking again just resyncs; only another tab is
+    // refused.
+    if (this._manager.connected && this._manager.id !== socket.id) {
       socket.emit(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
 
       return
@@ -254,7 +256,7 @@ class Game {
       return
     }
 
-    if (player.connected) {
+    if (player.connected && player.id !== socket.id) {
       socket.emit(EVENTS.GAME.RESET, "errors:game.playerAlreadyConnected")
 
       return

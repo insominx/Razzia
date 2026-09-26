@@ -324,3 +324,50 @@ describe("Game closing", () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 })
+
+describe("Game reconnect from an attached socket", () => {
+  it("resyncs the attached manager and still refuses another tab", () => {
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    const otherTab = createClient("manager-tab-2", "manager-client")
+
+    game.reconnect(manager.socket)
+    game.reconnect(otherTab.socket)
+
+    expect(manager.emitted.map(({ event }) => event)).toContain(
+      EVENTS.MANAGER.SUCCESS_RECONNECT,
+    )
+    expect(otherTab.emitted).toContainEqual({
+      event: EVENTS.GAME.RESET,
+      payload: "errors:game.managerAlreadyConnected",
+    })
+  })
+
+  it("resyncs the attached player and still refuses another tab", () => {
+    const game = new Game({
+      io: createIo().io,
+      socket: createClient("manager", "manager-client").socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    const alice = createClient("p1", "alice-client")
+    const otherTab = createClient("p1-tab-2", "alice-client")
+    game.join(alice.socket, "Alice")
+
+    game.reconnect(alice.socket)
+    game.reconnect(otherTab.socket)
+
+    expect(alice.emitted.map(({ event }) => event)).toContain(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )
+    expect(otherTab.emitted).toContainEqual({
+      event: EVENTS.GAME.RESET,
+      payload: "errors:game.playerAlreadyConnected",
+    })
+  })
+})
