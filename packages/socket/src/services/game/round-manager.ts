@@ -385,7 +385,7 @@ export class RoundManager {
   }
 
   nextQuestion(socket: Socket): void {
-    if (!this.started) {
+    if (!this.started || this.phase !== "results") {
       return
     }
 
@@ -425,7 +425,15 @@ export class RoundManager {
     this.revealWaiter?.interrupt()
   }
 
-  showLeaderboard(): void {
+  showLeaderboard(socket: Socket): void {
+    if (!this.started || this.phase !== "results") {
+      return
+    }
+
+    if (socket.id !== this.opts.getManagerId()) {
+      return
+    }
+
     const isLastRound =
       this.currentQuestion + 1 === this.opts.quizz.questions.length
 

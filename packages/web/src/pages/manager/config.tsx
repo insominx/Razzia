@@ -20,6 +20,10 @@ const ManagerConfigPage = () => {
     setConfig(data)
   })
 
+  useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
+    navigate({ to: "/manager" })
+  })
+
   useEvent(EVENTS.MANAGER.GAME_CREATED, ({ gameId, inviteCode, visuals }) => {
     setGameId(gameId)
     setVisuals(visuals)
