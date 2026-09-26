@@ -58,6 +58,10 @@ vi.mock("@razzia/socket/services/visuals", () => ({
 
 const quiz: QuizzWithId = { id: "quiz-1", subject: "Quiz", questions: [] }
 
+const managerClient = {
+  handshake: { auth: { clientId: "manager-client" } },
+} as unknown as Socket
+
 const registerHandlers = async () => {
   const handlers = new Map<string, (...args: never[]) => void>()
   const emit = vi.fn()
@@ -114,9 +118,8 @@ describe("gameSocketHandlers game creation", () => {
     mocks.getQuizz.mockReturnValue([quiz])
   })
 
-  afterEach(async () => {
-    const { socket } = await registerHandlers()
-    manager.logout(socket)
+  afterEach(() => {
+    manager.logout(managerClient)
   })
 
   it("refuses to create a game for a client that has not logged in", async () => {
@@ -168,9 +171,8 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     mocks.getQuizz.mockReturnValue([quiz])
   })
 
-  afterEach(async () => {
-    const { socket } = await registerHandlers()
-    manager.logout(socket)
+  afterEach(() => {
+    manager.logout(managerClient)
   })
 
   it("releases every game the manager socket runs when it disconnects", async () => {

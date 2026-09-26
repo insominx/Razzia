@@ -267,6 +267,10 @@ describe("Game player privacy", () => {
 })
 
 describe("Game invite codes", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("never reuses the invite code of a live game", () => {
     const lookup = vi
       .spyOn(Registry.getInstance(), "getGameByInviteCode")
@@ -280,7 +284,6 @@ describe("Game invite codes", () => {
 
     expect(lookup).toHaveBeenCalledTimes(2)
     expect(lookup).toHaveBeenLastCalledWith(game.inviteCode)
-    lookup.mockRestore()
   })
 })
 

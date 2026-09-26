@@ -1,8 +1,7 @@
 import type { Socket } from "@razzia/common/types/game/socket"
 import Game from "@razzia/socket/services/game"
 import Registry from "@razzia/socket/services/registry"
-import { randomInt } from "crypto"
-import { nanoid } from "nanoid"
+import { customAlphabet, nanoid } from "nanoid"
 
 export const withGame = (
   gameId: string | undefined,
@@ -27,8 +26,7 @@ export const withGame = (
   callback(game)
 }
 
-const drawInviteCode = (length: number) =>
-  Array.from({ length }, () => randomInt(10)).join("")
+const drawInviteCode = customAlphabet("0123456789")
 
 export const createInviteCode = (
   isTaken: (_code: string) => boolean = () => false,
