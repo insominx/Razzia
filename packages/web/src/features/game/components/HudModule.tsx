@@ -30,8 +30,7 @@ const ROLE_STYLES: Record<HudRole, { label: string; box: string }> = {
   },
 }
 
-const VALUE_TEXT =
-  "font-mono text-xl font-bold tabular-nums md:text-2xl"
+const VALUE_TEXT = "font-mono text-xl font-bold tabular-nums md:text-2xl"
 
 const HudModule = ({ label, value, role, className, countdown }: Props) => {
   const styles = ROLE_STYLES[role]
@@ -84,7 +83,7 @@ const HudModule = ({ label, value, role, className, countdown }: Props) => {
           </svg>
           <span
             className={clsx(
-              "relative leading-none text-text-primary",
+              "text-text-primary relative leading-none",
               VALUE_TEXT,
             )}
           >

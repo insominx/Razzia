@@ -53,6 +53,7 @@ const QuestionCard = ({
   useLayoutEffect(() => {
     if (!reveal || reducedMotion || !shouldLift) {
       liftY.set(0)
+
       return
     }
 

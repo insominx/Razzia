@@ -111,7 +111,9 @@ describe("AnswerButton play surface", () => {
   })
 
   it("types surface as an optional object with required className and state", () => {
-    expectTypeOf<ComponentProps<typeof AnswerButton>["surface"]>().toEqualTypeOf<
+    expectTypeOf<
+      ComponentProps<typeof AnswerButton>["surface"]
+    >().toEqualTypeOf<
       { className: string; state: "locked" | "active" } | undefined
     >()
   })

@@ -24,7 +24,7 @@ interface GameOptions {
   visuals: ResolvedVisuals
 }
 
-type StatusSnapshot = {
+interface StatusSnapshot {
   name: Status
   data: StatusDataMap[Status]
 }
