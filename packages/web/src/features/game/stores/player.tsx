@@ -26,6 +26,7 @@ interface PlayerStore<T> {
   updatePoints: (_points: number) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
+  resetStatus: () => void
 
   reset: () => void
 }
@@ -62,6 +63,7 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
     })),
 
   setStatus: (name, data) => set({ status: createStatus(name, data) }),
+  resetStatus: () => set({ status: null }),
 
   reset: () => set(initialState),
 }))

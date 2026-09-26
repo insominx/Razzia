@@ -7,6 +7,7 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { useFollowCreatedGame } from "@razzia/web/features/manager/hooks/use-follow-created-game"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import {
   GAME_STATE_COMPONENTS_MANAGER,
@@ -73,8 +74,11 @@ const ManagerGamePage = () => {
     },
   )
 
+  useFollowCreatedGame()
+
+  // Replace, not push: Back must not return to a game that is gone.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    navigate({ to: "/manager/config" })
+    navigate({ to: "/manager/config", replace: true })
     reset()
     setQuestionStates(null)
     toast.error(t(message))

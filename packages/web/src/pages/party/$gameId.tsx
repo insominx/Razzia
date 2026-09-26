@@ -69,8 +69,9 @@ const PlayerGamePage = () => {
     }
   })
 
+  // Replace, not push: Back must not return to a game that is gone.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    navigate({ to: "/" })
+    navigate({ to: "/", replace: true })
     reset()
     setQuestionStates(null)
     toast.error(t(message))
@@ -101,6 +102,6 @@ export const Route = createFileRoute("/party/$gameId")({
   component: PlayerGamePage,
   onLeave: ({ params: { gameId } }) => {
     socketClient.emit(EVENTS.PLAYER.LEAVE, { gameId })
-    usePlayerStore.setState({ status: null })
+    usePlayerStore.getState().resetStatus()
   },
 })
