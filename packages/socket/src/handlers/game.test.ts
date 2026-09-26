@@ -69,14 +69,12 @@ const registerHandlers = async () => {
       handlers.set(event, handler)
     }),
   } as unknown as Socket
-  const roomEmit = vi.fn()
-  const to = vi.fn(() => ({ emit: roomEmit }))
-  const io = { to } as unknown as Server
+  const io = {} as Server
   const { gameSocketHandlers } = await import("@razzia/socket/handlers/game")
 
   gameSocketHandlers({ io, socket } as SocketContext)
 
-  return { handlers, socket, emit, io, to, roomEmit }
+  return { handlers, socket, emit, io }
 }
 
 describe("gameSocketHandlers manager answer unlock", () => {
@@ -160,7 +158,7 @@ const makeManagedGame = (
   started,
   manager: { id: managerSocketId },
   setManagerDisconnected: vi.fn(),
-  abortCooldown: vi.fn(),
+  close: vi.fn(),
 })
 
 describe("gameSocketHandlers manager socket lifecycle", () => {
@@ -175,7 +173,7 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
   })
 
   it("releases every game the manager socket runs when it disconnects", async () => {
-    const { handlers, to, roomEmit } = await registerHandlers()
+    const { handlers } = await registerHandlers()
     const lobby = makeManagedGame("lobby", false)
     const running = makeManagedGame("running", true)
     mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([
@@ -191,11 +189,8 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(lobby)
     expect(mocks.registry.removeGame).toHaveBeenCalledTimes(1)
     expect(mocks.registry.removeGame).toHaveBeenCalledWith("lobby")
-    expect(to).toHaveBeenCalledWith("lobby")
-    expect(roomEmit).toHaveBeenCalledWith(
-      EVENTS.GAME.RESET,
-      "errors:game.managerDisconnected",
-    )
+    expect(running.close).not.toHaveBeenCalled()
+    expect(lobby.close).toHaveBeenCalledWith("errors:game.managerDisconnected")
   })
 
   it("releases the socket's previous lobby before creating a new game", async () => {

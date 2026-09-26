@@ -17,11 +17,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     registry.markGameAsEmpty(game)
 
     if (!game.started) {
-      game.abortCooldown()
-      io.to(game.gameId).emit(
-        EVENTS.GAME.RESET,
-        "errors:game.managerDisconnected",
-      )
+      game.close("errors:game.managerDisconnected")
       registry.removeGame(game.gameId)
     }
   }

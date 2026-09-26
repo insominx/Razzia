@@ -1,4 +1,4 @@
-import { EVENTS } from "@razzia/common/constants"
+import { EVENTS, NO_TIME_LIMIT } from "@razzia/common/constants"
 import type { Quizz } from "@razzia/common/types/game"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
 import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
@@ -242,5 +242,46 @@ describe("Game invite codes", () => {
     expect(lookup).toHaveBeenCalledTimes(2)
     expect(lookup).toHaveBeenLastCalledWith(game.inviteCode)
     lookup.mockRestore()
+  })
+})
+
+describe("Game closing", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("resets everyone still in the game and stops its clock", async () => {
+    const { io, emitted, socketsLeave } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: {
+        subject: "Untimed",
+        questions: [{ ...awayQuizz.questions[0], time: NO_TIME_LIMIT }],
+      },
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+    await vi.advanceTimersByTimeAsync(60_000)
+    emitted.length = 0
+
+    game.close("errors:game.managerDisconnected")
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(emitted).toEqual([
+      {
+        target: game.gameId,
+        event: EVENTS.GAME.RESET,
+        payload: "errors:game.managerDisconnected",
+      },
+    ])
+    expect(socketsLeave).toHaveBeenCalledWith(game.gameId, game.gameId)
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

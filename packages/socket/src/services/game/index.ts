@@ -314,8 +314,12 @@ class Game {
 
   // Game flow
 
-  abortCooldown() {
-    this.cooldown.abort()
+  // Ends the game for everyone still in it; the caller drops it from the
+  // registry.
+  close(message: string) {
+    this.round.stop()
+    this.io.to(this.gameId).emit(EVENTS.GAME.RESET, message)
+    this.io.in(this.gameId).socketsLeave(this.gameId)
   }
 
   async start(socket: Socket) {

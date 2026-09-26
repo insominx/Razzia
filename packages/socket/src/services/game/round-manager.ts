@@ -338,6 +338,13 @@ export class RoundManager {
     this.playersAnswers = []
   }
 
+  stop(): void {
+    this.started = false
+    this.phase = "idle"
+    this.revealWaiter?.interrupt()
+    this.opts.cooldown.abort()
+  }
+
   selectAnswer(socket: Socket, answerId: number): void {
     const player = this.opts.players.findById(socket.id)
     const question = this.opts.quizz.questions[this.currentQuestion]

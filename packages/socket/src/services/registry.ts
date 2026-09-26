@@ -1,4 +1,4 @@
-import Game from "@razzia/socket/services/game"
+import type Game from "@razzia/socket/services/game"
 import dayjs from "dayjs"
 
 interface EmptyGame {
@@ -125,6 +125,10 @@ class Registry {
 
     const removed = this.emptyGames.filter((g) => !stillEmpty.includes(g))
     const removedGameIds = removed.map((r) => r.game.gameId)
+
+    removed.forEach(({ game }) => {
+      game.close("errors:game.managerDisconnected")
+    })
 
     this.games = this.games.filter((g) => !removedGameIds.includes(g.gameId))
     this.emptyGames = stillEmpty
