@@ -97,6 +97,10 @@ export class RoundManager {
     return this.started
   }
 
+  isLobby(): boolean {
+    return this.phase === "idle"
+  }
+
   getReconnectInfo() {
     return {
       current: this.currentQuestion + 1,

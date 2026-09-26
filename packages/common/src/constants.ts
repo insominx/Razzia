@@ -3,6 +3,7 @@ export const EVENTS = {
     STATUS: "game:status",
     SUCCESS_ROOM: "game:successRoom",
     SUCCESS_JOIN: "game:successJoin",
+    SUCCESS_REJOIN: "game:successRejoin",
     TOTAL_PLAYERS: "game:totalPlayers",
     ERROR_MESSAGE: "game:errorMessage",
     START_COOLDOWN: "game:startCooldown",

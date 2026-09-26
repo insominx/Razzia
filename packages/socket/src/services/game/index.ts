@@ -163,6 +163,12 @@ class Game {
     return this.round.isStarted()
   }
 
+  // Players can only join before the start; afterwards only those already
+  // in the game can come back, through a reconnect.
+  get inLobby(): boolean {
+    return this.round.isLobby()
+  }
+
   // ── Status broadcasting ──────────────────────────────────────────────────
 
   private broadcastStatus<T extends Status>(status: T, data: StatusDataMap[T]) {
@@ -201,6 +207,12 @@ class Game {
   // Player actions
 
   join(socket: Socket, username: string) {
+    if (!this.inLobby) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.alreadyStarted")
+
+      return
+    }
+
     const player = this.playerManager.join(socket, username)
 
     if (player && this._manager.connected) {
@@ -218,19 +230,7 @@ class Game {
 
   // Reconnect
 
-  reconnect(socket: Socket) {
-    const { clientId } = socket.handshake.auth
-
-    if (this._manager.clientId === clientId) {
-      this.reconnectManager(socket)
-
-      return
-    }
-
-    this.reconnectPlayer(socket)
-  }
-
-  private reconnectManager(socket: Socket) {
+  reconnectManager(socket: Socket) {
     // The attached socket asking again just resyncs; only another tab is
     // refused.
     if (this._manager.connected && this._manager.id !== socket.id) {
@@ -262,7 +262,9 @@ class Game {
     console.log(`Manager reconnected to game ${this.inviteCode}`)
   }
 
-  private reconnectPlayer(socket: Socket) {
+  // Routed by the event, not the clientId: a host may also play in the game
+  // from another tab of the same browser.
+  reconnectPlayer(socket: Socket) {
     const clientId = socket.handshake.auth.clientId as string
     const player = this.playerManager.findByClientId(clientId)
 

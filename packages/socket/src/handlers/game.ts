@@ -43,7 +43,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     const game = registry.getPlayerGame(gameId, clientId)
 
     if (game) {
-      game.reconnect(socket)
+      game.reconnectPlayer(socket)
 
       return
     }
@@ -55,7 +55,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     const game = registry.getManagerGame(gameId, clientId)
 
     if (game) {
-      game.reconnect(socket)
+      game.reconnectManager(socket)
 
       return
     }
@@ -94,6 +94,17 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
     if (!game) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.notFound")
+
+      return
+    }
+
+    if (!game.inLobby) {
+      // Once started, only players already in the game may come back.
+      if (registry.getPlayerGame(game.gameId, clientId)) {
+        socket.emit(EVENTS.GAME.SUCCESS_REJOIN, game.gameId)
+      } else {
+        socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.alreadyStarted")
+      }
 
       return
     }

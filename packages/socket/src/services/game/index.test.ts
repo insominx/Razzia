@@ -175,7 +175,6 @@ describe("Game while its manager is away", () => {
     expect(socketsLeave).toHaveBeenCalledWith("manager", game.gameId)
     emitted.length = 0
 
-    game.join(createClient("p2", "carol-client").socket, "Carol")
     await vi.advanceTimersByTimeAsync(60_000)
 
     expect(emitted.filter(({ target }) => target === "manager")).toEqual([])
@@ -189,7 +188,7 @@ describe("Game while its manager is away", () => {
     ).toContain(STATUS.SHOW_RESULT)
 
     const back = createClient("manager-2", "manager-client")
-    game.reconnect(back.socket)
+    game.reconnectManager(back.socket)
     const reconnect = back.emitted.find(
       ({ event }) => event === EVENTS.MANAGER.SUCCESS_RECONNECT,
     )?.payload as
@@ -200,7 +199,6 @@ describe("Game while its manager is away", () => {
     expect(reconnect?.status.name).toBe(STATUS.SHOW_RESPONSES)
     expect(reconnect?.players.map(({ username }) => username)).toEqual([
       "Alice",
-      "Carol",
     ])
   })
 })
@@ -235,7 +233,7 @@ describe("Game while a player is away", () => {
     expect(emitted.some(({ target }) => target === "p2")).toBe(true)
 
     const back = createClient("p1-again", "alice-client")
-    game.reconnect(back.socket)
+    game.reconnectPlayer(back.socket)
     const reconnect = back.emitted.find(
       ({ event }) => event === EVENTS.PLAYER.SUCCESS_RECONNECT,
     )?.payload as { status: { name: string } } | undefined
@@ -347,7 +345,7 @@ describe("Game reconnect from an attached socket", () => {
     })
     const statusOnResync = () => {
       manager.emitted.length = 0
-      game.reconnect(manager.socket)
+      game.reconnectManager(manager.socket)
 
       return (
         manager.emitted.find(
@@ -377,8 +375,8 @@ describe("Game reconnect from an attached socket", () => {
     })
     const otherTab = createClient("manager-tab-2", "manager-client")
 
-    game.reconnect(manager.socket)
-    game.reconnect(otherTab.socket)
+    game.reconnectManager(manager.socket)
+    game.reconnectManager(otherTab.socket)
 
     expect(manager.emitted.map(({ event }) => event)).toContain(
       EVENTS.MANAGER.SUCCESS_RECONNECT,
@@ -400,8 +398,8 @@ describe("Game reconnect from an attached socket", () => {
     const otherTab = createClient("p1-tab-2", "alice-client")
     game.join(alice.socket, "Alice")
 
-    game.reconnect(alice.socket)
-    game.reconnect(otherTab.socket)
+    game.reconnectPlayer(alice.socket)
+    game.reconnectPlayer(otherTab.socket)
 
     expect(alice.emitted.map(({ event }) => event)).toContain(
       EVENTS.PLAYER.SUCCESS_RECONNECT,
@@ -474,9 +472,62 @@ describe("Game membership", () => {
     void game.start(manager.socket)
     expect(game.started).toBe(false)
 
-    game.reconnect(manager.socket)
+    game.reconnectManager(manager.socket)
     void game.start(manager.socket)
     expect(game.started).toBe(true)
     expect(emitted.map(({ event }) => event)).toContain(EVENTS.GAME.STATUS)
+  })
+})
+
+describe("Game joining", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("turns away new players once the game has started", () => {
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+
+    const late = createClient("p2", "bob-client")
+    game.join(late.socket, "Bobby")
+
+    expect(late.emitted).toEqual([
+      {
+        event: EVENTS.GAME.ERROR_MESSAGE,
+        payload: "errors:game.alreadyStarted",
+      },
+    ])
+    expect(game.players.map(({ username }) => username)).toEqual(["Alice"])
+  })
+
+  it("lets a host who also plays from another tab rejoin as that player", () => {
+    const host = createClient("host", "host-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: host.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("host-tab", "host-client").socket, "Hosty")
+    void game.start(host.socket)
+    game.setPlayerDisconnected("host-tab")
+
+    const back = createClient("host-tab-2", "host-client")
+    game.reconnectPlayer(back.socket)
+
+    expect(back.emitted.map(({ event }) => event)).toContain(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )
   })
 })

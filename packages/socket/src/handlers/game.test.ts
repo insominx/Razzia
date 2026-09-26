@@ -242,3 +242,68 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     expect(current.setPlayerDisconnected).toHaveBeenCalledWith(socket.id)
   })
 })
+
+describe("gameSocketHandlers joining", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Vitest keeps queued one-shot values through clearAllMocks; drop leftovers.
+    mocks.registry.getGameByInviteCode.mockReset()
+    mocks.registry.getPlayerGame.mockReset()
+    mocks.registry.getManagerGame.mockReset()
+  })
+
+  const joinWithPin = async (game: { gameId: string; inLobby: boolean }) => {
+    const { handlers, emit, socket } = await registerHandlers()
+    mocks.registry.getGameByInviteCode.mockReturnValueOnce(game)
+
+    handlers.get(EVENTS.PLAYER.JOIN)?.("123456" as never)
+
+    return { emit, socket }
+  }
+
+  it("opens the lobby to anyone with the PIN", async () => {
+    const { emit } = await joinWithPin({ gameId: "lobby", inLobby: true })
+
+    expect(emit).toHaveBeenCalledWith(EVENTS.GAME.SUCCESS_ROOM, "lobby")
+  })
+
+  it("turns away a new player once the game has started", async () => {
+    mocks.registry.getPlayerGame.mockReturnValueOnce(undefined)
+    const { emit } = await joinWithPin({ gameId: "running", inLobby: false })
+
+    expect(emit).toHaveBeenCalledWith(
+      EVENTS.GAME.ERROR_MESSAGE,
+      "errors:game.alreadyStarted",
+    )
+    expect(emit).not.toHaveBeenCalledWith(
+      EVENTS.GAME.SUCCESS_ROOM,
+      expect.anything(),
+    )
+  })
+
+  it("sends a player who was already in the game straight back to it", async () => {
+    const running = { gameId: "running", inLobby: false }
+    mocks.registry.getPlayerGame.mockReturnValueOnce(running)
+    const { emit } = await joinWithPin(running)
+
+    expect(mocks.registry.getPlayerGame).toHaveBeenCalledWith(
+      "running",
+      MANAGER_CLIENT_ID,
+    )
+    expect(emit).toHaveBeenCalledWith(EVENTS.GAME.SUCCESS_REJOIN, "running")
+  })
+
+  it("reconnects as a player or as the manager by the event it came on", async () => {
+    const { handlers, socket } = await registerHandlers()
+    const game = { reconnectPlayer: vi.fn(), reconnectManager: vi.fn() }
+    mocks.registry.getPlayerGame.mockReturnValueOnce(game)
+    mocks.registry.getManagerGame.mockReturnValueOnce(game)
+
+    handlers.get(EVENTS.PLAYER.RECONNECT)?.({ gameId: "g" } as never)
+    expect(game.reconnectPlayer).toHaveBeenCalledWith(socket)
+    expect(game.reconnectManager).not.toHaveBeenCalled()
+
+    handlers.get(EVENTS.MANAGER.RECONNECT)?.({ gameId: "g" } as never)
+    expect(game.reconnectManager).toHaveBeenCalledWith(socket)
+  })
+})

@@ -46,6 +46,7 @@ export interface ServerToClientEvents {
     data: StatusDataMap[Status]
   }) => void
   [EVENTS.GAME.SUCCESS_ROOM]: (_data: string) => void
+  [EVENTS.GAME.SUCCESS_REJOIN]: (_gameId: string) => void
   [EVENTS.GAME.SUCCESS_JOIN]: (_data: {
     gameId: string
     visuals: ResolvedVisuals
