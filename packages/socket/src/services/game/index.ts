@@ -9,7 +9,10 @@ import {
 import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import { saveResult } from "@razzia/socket/services/config"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
-import { PlayerManager } from "@razzia/socket/services/game/player-manager"
+import {
+  PlayerManager,
+  toPublicPlayer,
+} from "@razzia/socket/services/game/player-manager"
 import { RoundManager } from "@razzia/socket/services/game/round-manager"
 import Registry from "@razzia/socket/services/registry"
 import { createInviteCode } from "@razzia/socket/utils/game"
@@ -181,7 +184,9 @@ class Game {
     const player = this.playerManager.join(socket, username)
 
     if (player && this._manager.connected) {
-      this.io.to(this._manager.id).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+      this.io
+        .to(this._manager.id)
+        .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
     }
   }
 
@@ -226,7 +231,7 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
-      players: this.playerManager.getAll(),
+      players: this.playerManager.getAll().map(toPublicPlayer),
       visuals: this.visuals,
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())

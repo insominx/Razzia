@@ -1,8 +1,13 @@
 import { EVENTS } from "@razzia/common/constants"
-import type { Player } from "@razzia/common/types/game"
+import type { Player, PublicPlayer } from "@razzia/common/types/game"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
 import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import { usernameValidator } from "@razzia/common/validators/auth"
+
+export const toPublicPlayer = ({
+  clientId: _clientId,
+  ...player
+}: Player): PublicPlayer => player
 
 interface PlayerManagerOptions {
   io: Server

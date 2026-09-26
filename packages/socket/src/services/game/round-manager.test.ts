@@ -430,3 +430,30 @@ describe("RoundManager manager authority over round flow", () => {
     expect(preparedQuestionNumbers(harness)).toEqual([1, 2])
   })
 })
+
+describe("RoundManager player privacy", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("keeps clientIds out of leaderboards and the podium", async () => {
+    const harness = createHarness(10, "Pick one", 2)
+
+    await enterResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+    harness.round.nextQuestion(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(20_000)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    expect(
+      sentStatuses(harness, "manager", STATUS.SHOW_LEADERBOARD),
+    ).toHaveLength(1)
+    expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toHaveLength(1)
+    expect(JSON.stringify(harness.send.mock.calls)).not.toContain("-client")
+  })
+})

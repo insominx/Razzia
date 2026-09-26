@@ -195,10 +195,33 @@ describe("Game while its manager is away", () => {
       | { status: { name: string }; players: Array<{ username: string }> }
       | undefined
 
+    expect(JSON.stringify(back.emitted)).not.toContain("alice-client")
     expect(reconnect?.status.name).toBe(STATUS.SHOW_RESPONSES)
     expect(reconnect?.players.map(({ username }) => username)).toEqual([
       "Alice",
       "Carol",
     ])
+  })
+})
+
+describe("Game player privacy", () => {
+  it("announces new players to the manager without their clientId", () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+
+    const announced = emitted.find(
+      ({ target, event }) =>
+        target === "manager" && event === EVENTS.MANAGER.NEW_PLAYER,
+    )
+    expect(announced?.payload).toMatchObject({ id: "p1", username: "Alice" })
+    expect(announced?.payload).not.toHaveProperty("clientId")
   })
 })

@@ -20,7 +20,10 @@ import {
   QUESTION_NUMBER_INTRO_MS,
 } from "@razzia/common/utils/question-transition"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
-import { PlayerManager } from "@razzia/socket/services/game/player-manager"
+import {
+  PlayerManager,
+  toPublicPlayer,
+} from "@razzia/socket/services/game/player-manager"
 import { orderToPoint, timeToPoint } from "@razzia/socket/utils/game"
 import {
   createInterruptibleDelay,
@@ -441,7 +444,7 @@ export class RoundManager {
       this.started = false
       this.phase = "idle"
 
-      const top = this.leaderboard.slice(0, 3)
+      const top = this.leaderboard.slice(0, 3).map(toPublicPlayer)
 
       this.opts.onGameFinished({
         id: `${Date.now()}-${nanoid(8)}`,
@@ -474,8 +477,8 @@ export class RoundManager {
     const oldLeaderboard = this.tempOldLeaderboard ?? this.leaderboard
 
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_LEADERBOARD, {
-      oldLeaderboard: oldLeaderboard.slice(0, 5),
-      leaderboard: this.leaderboard.slice(0, 5),
+      oldLeaderboard: oldLeaderboard.slice(0, 5).map(toPublicPlayer),
+      leaderboard: this.leaderboard.slice(0, 5).map(toPublicPlayer),
     })
 
     this.tempOldLeaderboard = null

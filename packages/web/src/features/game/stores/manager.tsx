@@ -1,4 +1,4 @@
-import type { Player } from "@razzia/common/types/game"
+import type { PublicPlayer } from "@razzia/common/types/game"
 import type { StatusDataMap } from "@razzia/common/types/game/status"
 import type { ManagerConfig } from "@razzia/common/types/manager"
 import type { ResolvedVisuals } from "@razzia/common/types/visuals"
@@ -13,7 +13,7 @@ interface ManagerStore<T> {
 
   gameId: string | null
   status: Status<T> | null
-  players: Player[]
+  players: PublicPlayer[]
   visuals: ResolvedVisuals
 
   setConfig: (_config: ManagerConfig) => void
@@ -21,7 +21,7 @@ interface ManagerStore<T> {
   setVisuals: (_visuals: ResolvedVisuals) => void
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
   resetStatus: () => void
-  setPlayers: (_players: Player[]) => void
+  setPlayers: (_players: PublicPlayer[]) => void
 
   reset: () => void
 }

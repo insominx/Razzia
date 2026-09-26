@@ -1,6 +1,6 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog"
 import { EVENTS } from "@razzia/common/constants"
-import type { Player } from "@razzia/common/types/game"
+import type { PublicPlayer } from "@razzia/common/types/game"
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import {
   useEvent,
@@ -22,7 +22,7 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   const { socket } = useSocket()
   const webUrl = window.location.origin
   const { players } = useManagerStore()
-  const [playerList, setPlayerList] = useState<Player[]>(players)
+  const [playerList, setPlayerList] = useState<PublicPlayer[]>(players)
   const [totalPlayers, setTotalPlayers] = useState(0)
   const [qrOpen, setQrOpen] = useState(false)
   const qrContentRef = useRef<HTMLDivElement>(null)
