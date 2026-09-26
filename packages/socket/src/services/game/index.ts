@@ -92,7 +92,9 @@ class Game {
 
     this.io = io
     this.gameId = uuid()
-    this.inviteCode = createInviteCode()
+    this.inviteCode = createInviteCode(
+      (code) => registry.getGameByInviteCode(code) !== undefined,
+    )
     this.visuals = visuals
     this._manager = {
       id: socket.id,

@@ -6,6 +6,7 @@ import Game, {
   restampReconnectStatus,
   selectReconnectStatus,
 } from "@razzia/socket/services/game"
+import Registry from "@razzia/socket/services/registry"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const selectAnswerStatus: {
@@ -223,5 +224,23 @@ describe("Game player privacy", () => {
     )
     expect(announced?.payload).toMatchObject({ id: "p1", username: "Alice" })
     expect(announced?.payload).not.toHaveProperty("clientId")
+  })
+})
+
+describe("Game invite codes", () => {
+  it("never reuses the invite code of a live game", () => {
+    const lookup = vi
+      .spyOn(Registry.getInstance(), "getGameByInviteCode")
+      .mockReturnValueOnce({} as Game)
+    const game = new Game({
+      io: createIo().io,
+      socket: createClient("manager", "manager-client").socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+
+    expect(lookup).toHaveBeenCalledTimes(2)
+    expect(lookup).toHaveBeenLastCalledWith(game.inviteCode)
+    lookup.mockRestore()
   })
 })
