@@ -16,7 +16,8 @@ export interface Player {
 export type PublicPlayer = Omit<Player, "clientId"> & { clientId?: never }
 
 export interface Answer {
-  playerId: string
+  // The socket id changes on reconnect; the clientId does not.
+  clientId: string
   answerId: number
   points: number
 }

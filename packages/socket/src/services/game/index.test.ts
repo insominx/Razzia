@@ -531,3 +531,58 @@ describe("Game joining", () => {
     )
   })
 })
+
+describe("Game with a player who drops out", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("ends the answers once the grace for a dropped player runs out", async () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: {
+        subject: "Dropout",
+        questions: [{ ...awayQuizz.questions[0], time: 60 }],
+      },
+      visuals: {},
+    })
+    const alice = createClient("p1", "alice-client")
+    const bobby = createClient("p2", "bob-client")
+    game.join(alice.socket, "Alice")
+    game.join(bobby.socket, "Bobby")
+    game.join(createClient("p3", "carol-client").socket, "Carol")
+    void game.start(manager.socket)
+    const answeringOpen = () =>
+      emitted.some(
+        ({ event, payload }) =>
+          event === EVENTS.GAME.STATUS &&
+          (payload as { data: { answeringOpen?: boolean } }).data
+            .answeringOpen === true,
+      )
+
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(answeringOpen()).toBe(true)
+    const responses = () =>
+      emitted.filter(
+        ({ target, payload }) =>
+          target === "manager" &&
+          (payload as { name: string }).name === STATUS.SHOW_RESPONSES,
+      )
+
+    game.setPlayerDisconnected("p3")
+    game.selectAnswer(alice.socket, 1)
+    game.selectAnswer(bobby.socket, 1)
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(responses()).toEqual([])
+
+    await vi.advanceTimersByTimeAsync(6_000)
+    expect(responses()).toHaveLength(1)
+  })
+})

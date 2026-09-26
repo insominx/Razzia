@@ -49,6 +49,7 @@ const createHarness = (time = 10, question = "Pick one", questionCount = 1) => {
     count: () => players.length,
     findById: (id: string) => players.find((player) => player.id === id),
     getAll: () => players,
+    getExpected: () => players.filter((player) => player.connected),
     broadcastCount,
     replace,
   } as unknown as PlayerManager
@@ -90,6 +91,7 @@ const createHarness = (time = 10, question = "Pick one", questionCount = 1) => {
     start,
     abort,
     broadcastCount,
+    players,
     onGameFinished,
     managerSocket: managerSocket.socket,
     playerOne,
@@ -486,5 +488,68 @@ describe("RoundManager player privacy", () => {
     ).toHaveLength(1)
     expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toHaveLength(1)
     expect(JSON.stringify(harness.send.mock.calls)).not.toContain("-client")
+  })
+})
+
+describe("RoundManager players who drop out", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stops waiting for a player who is no longer expected", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.players[1].connected = false
+
+    harness.round.selectAnswer(harness.playerOne.socket, 1)
+
+    expect(harness.abort).toHaveBeenCalledTimes(1)
+  })
+
+  it("rechecks when asked, once the last expected player has answered", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.round.selectAnswer(harness.playerOne.socket, 1)
+    expect(harness.abort).not.toHaveBeenCalled()
+
+    harness.players[1].connected = false
+    harness.round.endIfEveryoneAnswered()
+
+    expect(harness.abort).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps the timer running when nobody is left to answer", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.players[0].connected = false
+    harness.players[1].connected = false
+
+    harness.round.endIfEveryoneAnswered()
+
+    expect(harness.abort).not.toHaveBeenCalled()
+  })
+
+  it("keeps a player's answer when they reconnect on a new socket", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.round.selectAnswer(harness.playerOne.socket, 1)
+
+    harness.players[0].id = "p1-again"
+    const again = makeSocket("p1-again")
+    harness.round.selectAnswer(again.socket, 0)
+    harness.round.selectAnswer(harness.playerTwo.socket, 0)
+    await flushAsync()
+
+    expect(harness.send).toHaveBeenCalledWith(
+      "p1-again",
+      STATUS.SHOW_RESULT,
+      expect.objectContaining({ correct: true, points: 1_000 }),
+    )
+    expect(again.roomEmit).not.toHaveBeenCalled()
   })
 })

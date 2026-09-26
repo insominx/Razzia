@@ -9,6 +9,10 @@ export const toPublicPlayer = ({
   ...player
 }: Player): PublicPlayer => player
 
+// How long a round keeps waiting for a player who dropped, in case they are
+// only reloading or riding out a network blip.
+export const DROP_GRACE_MS = 10_000
+
 interface PlayerManagerOptions {
   io: Server
   gameId: string
@@ -22,6 +26,7 @@ export class PlayerManager {
   private readonly isManager: (_socket: Socket) => boolean
   private readonly getVisuals: () => ResolvedVisuals
   private players: Player[] = []
+  private readonly droppedAt = new Map<string, number>()
 
   constructor({ io, gameId, isManager, getVisuals }: PlayerManagerOptions) {
     this.io = io
@@ -116,7 +121,18 @@ export class PlayerManager {
 
     if (player) {
       player.connected = false
+      this.droppedAt.set(player.clientId, Date.now())
     }
+  }
+
+  // Players a round still waits for: everyone connected, plus anyone who
+  // dropped too recently to rule out a quick reconnect.
+  getExpected(now = Date.now()): Player[] {
+    return this.players.filter(
+      (player) =>
+        player.connected ||
+        now - (this.droppedAt.get(player.clientId) ?? 0) < DROP_GRACE_MS,
+    )
   }
 
   updateSocketId(oldId: string, newId: string): void {

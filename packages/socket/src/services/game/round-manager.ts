@@ -300,7 +300,7 @@ export class RoundManager {
     const sortedPlayers = currentPlayers
       .map((player) => {
         const playerAnswer = this.playersAnswers.find(
-          (a) => a.playerId === player.id,
+          (a) => a.clientId === player.clientId,
         )
 
         const isCorrect = playerAnswer
@@ -344,8 +344,8 @@ export class RoundManager {
       playerAnswers: currentPlayers.map((player) => ({
         playerName: player.username,
         answerId:
-          this.playersAnswers.find((a) => a.playerId === player.id)?.answerId ??
-          null,
+          this.playersAnswers.find((a) => a.clientId === player.clientId)
+            ?.answerId ?? null,
       })),
     })
 
@@ -374,7 +374,7 @@ export class RoundManager {
       return
     }
 
-    if (this.playersAnswers.find((a) => a.playerId === socket.id)) {
+    if (this.playersAnswers.find((a) => a.clientId === player.clientId)) {
       return
     }
 
@@ -390,7 +390,7 @@ export class RoundManager {
     })()
 
     this.playersAnswers.push({
-      playerId: player.id,
+      clientId: player.clientId,
       answerId,
       points,
     })
@@ -404,7 +404,27 @@ export class RoundManager {
       .emit(EVENTS.GAME.PLAYER_ANSWER, this.playersAnswers.length)
     this.opts.players.broadcastCount()
 
-    if (this.playersAnswers.length === this.opts.players.count()) {
+    this.endIfEveryoneAnswered()
+  }
+
+  // Answering ends early once every player the round still expects has
+  // answered; a player who dropped out stops being expected after a grace.
+  endIfEveryoneAnswered(): void {
+    if (this.phase !== "answering") {
+      return
+    }
+
+    const answered = new Set(
+      this.playersAnswers.map(({ clientId }) => clientId),
+    )
+    const expected = this.opts.players.getExpected()
+
+    // With nobody left (e.g. the venue Wi-Fi dropped), keep the timer: they
+    // may all be on their way back.
+    if (
+      expected.length > 0 &&
+      expected.every(({ clientId }) => answered.has(clientId))
+    ) {
       this.opts.cooldown.abort()
     }
   }

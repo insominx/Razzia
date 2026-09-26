@@ -10,6 +10,7 @@ import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import { saveResult } from "@razzia/socket/services/config"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
 import {
+  DROP_GRACE_MS,
   PlayerManager,
   toPublicPlayer,
 } from "@razzia/socket/services/game/player-manager"
@@ -225,6 +226,7 @@ class Game {
   kickPlayer(socket: Socket, playerId: string) {
     if (this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
+      this.round.endIfEveryoneAnswered()
     }
   }
 
@@ -340,6 +342,11 @@ class Game {
     this.playerManager.setDisconnected(socketId)
     this.io.in(socketId).socketsLeave(this.gameId)
     this.playerManager.broadcastCount()
+
+    // Unless they are back by then, stop holding the answers open for them.
+    setTimeout(() => {
+      this.round.endIfEveryoneAnswered()
+    }, DROP_GRACE_MS)
   }
 
   // Game flow
