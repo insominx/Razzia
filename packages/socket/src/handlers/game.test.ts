@@ -150,10 +150,15 @@ describe("gameSocketHandlers game creation", () => {
   })
 })
 
-const makeManagedGame = (gameId: string, started: boolean) => ({
+const makeManagedGame = (
+  gameId: string,
+  started: boolean,
+  managerSocketId = "manager",
+) => ({
   gameId,
   inviteCode: `${gameId}-code`,
   started,
+  manager: { id: managerSocketId },
   setManagerDisconnected: vi.fn(),
   abortCooldown: vi.fn(),
 })
@@ -207,5 +212,27 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     expect(mocks.registry.addGame).toHaveBeenCalledWith(
       mocks.Game.mock.instances[0],
     )
+  })
+
+  it("ignores a leave from a manager tab that is not running the game", async () => {
+    const { handlers } = await registerHandlers()
+    const hosted = makeManagedGame("hosted", false, "other-tab")
+    mocks.registry.getManagerGame.mockReturnValueOnce(hosted)
+
+    handlers.get(EVENTS.MANAGER.LEAVE)?.({ gameId: "hosted" } as never)
+
+    expect(hosted.setManagerDisconnected).not.toHaveBeenCalled()
+    expect(mocks.registry.removeGame).not.toHaveBeenCalled()
+  })
+
+  it("releases the game when its own manager tab leaves", async () => {
+    const { handlers } = await registerHandlers()
+    const hosted = makeManagedGame("hosted", false)
+    mocks.registry.getManagerGame.mockReturnValueOnce(hosted)
+
+    handlers.get(EVENTS.MANAGER.LEAVE)?.({ gameId: "hosted" } as never)
+
+    expect(hosted.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.removeGame).toHaveBeenCalledWith("hosted")
   })
 })

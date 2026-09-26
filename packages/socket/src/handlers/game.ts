@@ -143,7 +143,8 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   socket.on(EVENTS.MANAGER.LEAVE, ({ gameId }) => {
     const game = registry.getManagerGame(gameId, clientId)
 
-    if (game) {
+    // Another tab of the same manager may leave a game it never ran.
+    if (game?.manager.id === socket.id) {
       console.log(`Manager left game ${game.inviteCode}`)
       handleManagerLeave(game)
     }
