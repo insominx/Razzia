@@ -123,7 +123,6 @@ class Game {
       send: this.sendStatus.bind(this),
       onNewQuestion: () => {
         this.playerStatus.clear()
-        this.managerStatus = null
       },
       onGameFinished: saveResult,
     })
@@ -343,8 +342,7 @@ class Game {
 
   // Game flow
 
-  // Ends the game for everyone still in it; the caller drops it from the
-  // registry.
+  // Ends the game for everyone still in it, once the registry has dropped it.
   close(message: string) {
     this.round.stop()
     this.io.to(this.gameId).emit(EVENTS.GAME.RESET, message)

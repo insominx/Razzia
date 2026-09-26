@@ -14,11 +14,15 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   const handleManagerLeave = (game: Game) => {
     game.setManagerDisconnected()
-    registry.markGameAsEmpty(game)
 
     if (!game.started) {
       registry.closeGame(game, "errors:game.managerDisconnected")
+
+      return
     }
+
+    // A running game waits for its manager to reconnect before expiring.
+    registry.markGameAsEmpty(game)
   }
 
   const handlePlayerLeave = (game: Game) => {
@@ -70,10 +74,6 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
         return
       }
-
-      // A socket hosts one game at a time: release whatever it still runs
-      // (e.g. the lobby from a double-click) before creating the new one.
-      registry.getGamesByManagerSocketId(socket.id).forEach(handleManagerLeave)
 
       const visuals = resolveVisuals(quizz, getGameConfig())
       const game = new Game({ io, socket, quizz, visuals })

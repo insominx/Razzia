@@ -31,7 +31,7 @@ describe("Registry expiry", () => {
     vi.useRealTimers()
   })
 
-  it("closes a game its manager abandoned before dropping it", async () => {
+  it("drops a game its manager abandoned and resets its players", async () => {
     const registry = await freshRegistry()
     const close = vi.fn()
     const game = { gameId: "abandoned", close } as unknown as Game

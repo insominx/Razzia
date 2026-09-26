@@ -188,43 +188,13 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
 
     expect(running.setManagerDisconnected).toHaveBeenCalledTimes(1)
     expect(lobby.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledTimes(1)
     expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(running)
-    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(lobby)
     expect(mocks.registry.closeGame).toHaveBeenCalledTimes(1)
     expect(mocks.registry.closeGame).toHaveBeenCalledWith(
       lobby,
       "errors:game.managerDisconnected",
     )
-  })
-
-  it("replaces the lobby the socket already runs with the new game", async () => {
-    const { handlers, socket } = await registerHandlers()
-    const lobby = makeManagedGame("lobby", false)
-    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([lobby])
-    manager.login(socket)
-
-    handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never)
-
-    expect(lobby.setManagerDisconnected).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.closeGame).toHaveBeenCalledWith(
-      lobby,
-      "errors:game.managerDisconnected",
-    )
-    expect(mocks.Game).toHaveBeenCalledTimes(1)
-  })
-
-  it("releases a game the socket left before creating a new one", async () => {
-    const { handlers, socket } = await registerHandlers()
-    const left = makeManagedGame("left", true)
-    left.manager.connected = false
-    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([left])
-    manager.login(socket)
-
-    handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never)
-
-    expect(left.setManagerDisconnected).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(left)
-    expect(mocks.Game).toHaveBeenCalledTimes(1)
   })
 
   it("ignores a leave from a manager tab that is not running the game", async () => {

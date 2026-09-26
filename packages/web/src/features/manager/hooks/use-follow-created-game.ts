@@ -4,8 +4,8 @@ import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useNavigate } from "@tanstack/react-router"
 
-// The server answers every game:create with the game it made; follow it from
-// any manager page, so a create that lands late cannot leave the host behind.
+// Opens the lobby the server created for this host, starting from an empty
+// player list so a previous game's players cannot carry over.
 export const useFollowCreatedGame = () => {
   const navigate = useNavigate()
   const { setGameId, setVisuals, setStatus, setPlayers } = useManagerStore()
