@@ -25,7 +25,7 @@ export class PlayerManager {
     this.getVisuals = getVisuals
   }
 
-  join(socket: Socket, username: string): void {
+  join(socket: Socket, username: string): Player | undefined {
     const clientId = socket.handshake.auth.clientId as string
 
     if (this.findByClientId(clientId)) {
@@ -34,7 +34,7 @@ export class PlayerManager {
         "errors:game.playerAlreadyConnected",
       )
 
-      return
+      return undefined
     }
 
     const result = usernameValidator.safeParse(username)
@@ -42,7 +42,7 @@ export class PlayerManager {
     if (result.error) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, result.error.issues[0].message)
 
-      return
+      return undefined
     }
 
     socket.join(this.gameId)
@@ -57,12 +57,13 @@ export class PlayerManager {
     }
 
     this.players.push(player)
-    this.io.to(this.getManagerId()).emit(EVENTS.MANAGER.NEW_PLAYER, player)
     this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
     socket.emit(EVENTS.GAME.SUCCESS_JOIN, {
       gameId: this.gameId,
       visuals: this.getVisuals(),
     })
+
+    return player
   }
 
   kick(socket: Socket, playerId: string): boolean {

@@ -76,6 +76,10 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
         return
       }
 
+      // A socket hosts one game at a time; a repeated create (e.g. a
+      // double-click) must not leave the earlier game orphaned.
+      registry.getGamesByManagerSocketId(socket.id).forEach(handleManagerLeave)
+
       const visuals = resolveVisuals(quizz, getGameConfig())
       const game = new Game({ io, socket, quizz, visuals })
       registry.addGame(game)
@@ -156,11 +160,13 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   socket.on("disconnect", () => {
     console.log(`A user disconnected : ${socket.id}`)
 
-    const managerGame = registry.getGameByManagerSocketId(socket.id)
+    const managerGames = registry.getGamesByManagerSocketId(socket.id)
 
-    if (managerGame) {
-      console.log(`Manager disconnected from game ${managerGame.inviteCode}`)
-      handleManagerLeave(managerGame)
+    if (managerGames.length > 0) {
+      managerGames.forEach((game) => {
+        console.log(`Manager disconnected from game ${game.inviteCode}`)
+        handleManagerLeave(game)
+      })
 
       return
     }

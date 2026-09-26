@@ -22,10 +22,12 @@ const mocks = vi.hoisted(() => {
     getQuizz: vi.fn((): QuizzWithId[] => []),
     registry: {
       addGame: vi.fn(),
+      removeGame: vi.fn(),
+      markGameAsEmpty: vi.fn(),
       getPlayerGame: vi.fn(),
       getManagerGame: vi.fn(),
       getGameByInviteCode: vi.fn(),
-      getGameByManagerSocketId: vi.fn(),
+      getGamesByManagerSocketId: vi.fn((): unknown[] => []),
       getGameByPlayerSocketId: vi.fn(),
     },
   }
@@ -67,12 +69,14 @@ const registerHandlers = async () => {
       handlers.set(event, handler)
     }),
   } as unknown as Socket
-  const io = {} as Server
+  const roomEmit = vi.fn()
+  const to = vi.fn(() => ({ emit: roomEmit }))
+  const io = { to } as unknown as Server
   const { gameSocketHandlers } = await import("@razzia/socket/handlers/game")
 
   gameSocketHandlers({ io, socket } as SocketContext)
 
-  return { handlers, socket, emit, io }
+  return { handlers, socket, emit, io, to, roomEmit }
 }
 
 describe("gameSocketHandlers manager answer unlock", () => {
@@ -140,6 +144,66 @@ describe("gameSocketHandlers game creation", () => {
       quizz: quiz,
       visuals: undefined,
     })
+    expect(mocks.registry.addGame).toHaveBeenCalledWith(
+      mocks.Game.mock.instances[0],
+    )
+  })
+})
+
+const makeManagedGame = (gameId: string, started: boolean) => ({
+  gameId,
+  inviteCode: `${gameId}-code`,
+  started,
+  setManagerDisconnected: vi.fn(),
+  abortCooldown: vi.fn(),
+})
+
+describe("gameSocketHandlers manager socket lifecycle", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.getQuizz.mockReturnValue([quiz])
+  })
+
+  afterEach(async () => {
+    const { socket } = await registerHandlers()
+    manager.logout(socket)
+  })
+
+  it("releases every game the manager socket runs when it disconnects", async () => {
+    const { handlers, to, roomEmit } = await registerHandlers()
+    const lobby = makeManagedGame("lobby", false)
+    const running = makeManagedGame("running", true)
+    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([
+      running,
+      lobby,
+    ])
+
+    handlers.get("disconnect")?.()
+
+    expect(running.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(lobby.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(running)
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(lobby)
+    expect(mocks.registry.removeGame).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.removeGame).toHaveBeenCalledWith("lobby")
+    expect(to).toHaveBeenCalledWith("lobby")
+    expect(roomEmit).toHaveBeenCalledWith(
+      EVENTS.GAME.RESET,
+      "errors:game.managerDisconnected",
+    )
+  })
+
+  it("releases the socket's previous lobby before creating a new game", async () => {
+    const { handlers, socket } = await registerHandlers()
+    const previous = makeManagedGame("previous", false)
+    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([previous])
+    manager.login(socket)
+
+    handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never)
+
+    expect(previous.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.removeGame).toHaveBeenCalledWith("previous")
+    expect(mocks.Game).toHaveBeenCalledTimes(1)
     expect(mocks.registry.addGame).toHaveBeenCalledWith(
       mocks.Game.mock.instances[0],
     )

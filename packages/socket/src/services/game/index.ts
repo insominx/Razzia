@@ -163,6 +163,11 @@ class Game {
 
     if (this._manager.id === target) {
       this.managerStatus = statusData
+
+      // Kept for reconnect; the old socket may be hosting another game now.
+      if (!this._manager.connected) {
+        return
+      }
     } else {
       this.playerStatus.set(target, statusData)
     }
@@ -173,7 +178,11 @@ class Game {
   // Player actions
 
   join(socket: Socket, username: string) {
-    this.playerManager.join(socket, username)
+    const player = this.playerManager.join(socket, username)
+
+    if (player && this._manager.connected) {
+      this.io.to(this._manager.id).emit(EVENTS.MANAGER.NEW_PLAYER, player)
+    }
   }
 
   kickPlayer(socket: Socket, playerId: string) {
@@ -277,6 +286,7 @@ class Game {
 
   setManagerDisconnected() {
     this._manager.connected = false
+    this.io.in(this._manager.id).socketsLeave(this.gameId)
   }
 
   removePlayer(socketId: string): Player | undefined {
