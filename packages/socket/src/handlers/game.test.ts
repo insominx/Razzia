@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => {
     getQuizz: vi.fn((): QuizzWithId[] => []),
     registry: {
       addGame: vi.fn(),
-      removeGame: vi.fn(),
+      closeGame: vi.fn(),
       markGameAsEmpty: vi.fn(),
       getPlayerGame: vi.fn(),
       getManagerGame: vi.fn(),
@@ -58,8 +58,10 @@ vi.mock("@razzia/socket/services/visuals", () => ({
 
 const quiz: QuizzWithId = { id: "quiz-1", subject: "Quiz", questions: [] }
 
+const MANAGER_CLIENT_ID = "manager-client"
+
 const managerClient = {
-  handshake: { auth: { clientId: "manager-client" } },
+  handshake: { auth: { clientId: MANAGER_CLIENT_ID } },
 } as unknown as Socket
 
 const registerHandlers = async () => {
@@ -67,7 +69,7 @@ const registerHandlers = async () => {
   const emit = vi.fn()
   const socket = {
     id: "manager",
-    handshake: { auth: { clientId: "manager-client" } },
+    handshake: { auth: { clientId: MANAGER_CLIENT_ID } },
     emit,
     on: vi.fn((event: string, handler: (...args: never[]) => void) => {
       handlers.set(event, handler)
@@ -160,9 +162,7 @@ const makeManagedGame = (
   inviteCode: `${gameId}-code`,
   started,
   manager: { id: managerSocketId, connected: true },
-  announceTo: vi.fn(),
   setManagerDisconnected: vi.fn(),
-  close: vi.fn(),
 })
 
 describe("gameSocketHandlers manager socket lifecycle", () => {
@@ -190,13 +190,14 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     expect(lobby.setManagerDisconnected).toHaveBeenCalledTimes(1)
     expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(running)
     expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(lobby)
-    expect(mocks.registry.removeGame).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.removeGame).toHaveBeenCalledWith("lobby")
-    expect(running.close).not.toHaveBeenCalled()
-    expect(lobby.close).toHaveBeenCalledWith("errors:game.managerDisconnected")
+    expect(mocks.registry.closeGame).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.closeGame).toHaveBeenCalledWith(
+      lobby,
+      "errors:game.managerDisconnected",
+    )
   })
 
-  it("answers a repeated create with the lobby the socket already runs", async () => {
+  it("replaces the lobby the socket already runs with the new game", async () => {
     const { handlers, socket } = await registerHandlers()
     const lobby = makeManagedGame("lobby", false)
     mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([lobby])
@@ -204,9 +205,12 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
 
     handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never)
 
-    expect(lobby.announceTo).toHaveBeenCalledWith(socket)
-    expect(lobby.close).not.toHaveBeenCalled()
-    expect(mocks.Game).not.toHaveBeenCalled()
+    expect(lobby.setManagerDisconnected).toHaveBeenCalledTimes(1)
+    expect(mocks.registry.closeGame).toHaveBeenCalledWith(
+      lobby,
+      "errors:game.managerDisconnected",
+    )
+    expect(mocks.Game).toHaveBeenCalledTimes(1)
   })
 
   it("releases a game the socket left before creating a new one", async () => {
@@ -231,7 +235,7 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     handlers.get(EVENTS.MANAGER.LEAVE)?.({ gameId: "hosted" } as never)
 
     expect(hosted.setManagerDisconnected).not.toHaveBeenCalled()
-    expect(mocks.registry.removeGame).not.toHaveBeenCalled()
+    expect(mocks.registry.closeGame).not.toHaveBeenCalled()
   })
 
   it("releases the game when its own manager tab leaves", async () => {
@@ -242,7 +246,10 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
     handlers.get(EVENTS.MANAGER.LEAVE)?.({ gameId: "hosted" } as never)
 
     expect(hosted.setManagerDisconnected).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.removeGame).toHaveBeenCalledWith("hosted")
+    expect(mocks.registry.closeGame).toHaveBeenCalledWith(
+      hosted,
+      "errors:game.managerDisconnected",
+    )
   })
 
   it("marks the player gone in every game that socket plays in", async () => {

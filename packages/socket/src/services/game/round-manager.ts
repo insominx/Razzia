@@ -58,6 +58,7 @@ export interface RoundManagerOptions {
 
 type RoundPhase =
   | "idle"
+  | "starting"
   | "prompt"
   | "revealing"
   | "answering"
@@ -73,7 +74,6 @@ interface UnlockContext {
 
 export class RoundManager {
   private readonly opts: RoundManagerOptions
-  private started = false
   private currentQuestion = 0
   private playersAnswers: Answer[] = []
   private startTime = 0
@@ -86,6 +86,11 @@ export class RoundManager {
 
   constructor(opts: RoundManagerOptions) {
     this.opts = opts
+  }
+
+  // A round is live from the start countdown until the podium or a close.
+  private get started(): boolean {
+    return this.phase !== "idle" && this.phase !== "over"
   }
 
   isStarted(): boolean {
@@ -104,7 +109,7 @@ export class RoundManager {
       return
     }
 
-    if (this.started || this.phase !== "idle") {
+    if (this.phase !== "idle") {
       return
     }
 
@@ -114,7 +119,7 @@ export class RoundManager {
       return
     }
 
-    this.started = true
+    this.phase = "starting"
 
     this.opts.broadcast(STATUS.SHOW_START, {
       time: 3,
@@ -346,7 +351,6 @@ export class RoundManager {
   }
 
   stop(): void {
-    this.started = false
     this.phase = "over"
     this.revealWaiter?.interrupt()
     this.opts.cooldown.abort()
@@ -455,7 +459,6 @@ export class RoundManager {
       this.currentQuestion + 1 === this.opts.quizz.questions.length
 
     if (isLastRound) {
-      this.started = false
       this.phase = "over"
 
       const top = this.leaderboard.slice(0, 3).map(toPublicPlayer)

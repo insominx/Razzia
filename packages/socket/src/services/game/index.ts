@@ -107,7 +107,6 @@ class Game {
     this.playerManager = new PlayerManager({
       io,
       gameId: this.gameId,
-      getManagerId: () => this._manager.id,
       isManager: this.isManager.bind(this),
       getVisuals: () => this.visuals,
     })
@@ -129,8 +128,18 @@ class Game {
       onGameFinished: saveResult,
     })
 
+    // What a resyncing manager gets back while the game is still a lobby.
+    this.managerStatus = {
+      name: STATUS.SHOW_ROOM,
+      data: { text: "game:waitingForPlayers", inviteCode: this.inviteCode },
+    }
+
     socket.join(this.gameId)
-    this.announceTo(socket)
+    socket.emit(EVENTS.MANAGER.GAME_CREATED, {
+      gameId: this.gameId,
+      inviteCode: this.inviteCode,
+      visuals: this.visuals,
+    })
 
     console.log(
       `New game created: ${this.inviteCode} subject: ${quizz.subject}`,
@@ -139,14 +148,6 @@ class Game {
 
   get manager() {
     return this._manager
-  }
-
-  announceTo(socket: Socket) {
-    socket.emit(EVENTS.MANAGER.GAME_CREATED, {
-      gameId: this.gameId,
-      inviteCode: this.inviteCode,
-      visuals: this.visuals,
-    })
   }
 
   // Only the socket attached as manager may run the game; one that left
@@ -168,6 +169,8 @@ class Game {
   private broadcastStatus<T extends Status>(status: T, data: StatusDataMap[T]) {
     const statusData = { name: status, data }
     this.lastBroadcastStatus = statusData
+    // A room-wide status supersedes the manager's own (e.g. the lobby).
+    this.managerStatus = null
     this.io.to(this.gameId).emit(EVENTS.GAME.STATUS, statusData)
   }
 
@@ -319,7 +322,13 @@ class Game {
 
     if (player) {
       this.io.in(socketId).socketsLeave(this.gameId)
-      this.io.to(this._manager.id).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+
+      if (this._manager.connected) {
+        this.io
+          .to(this._manager.id)
+          .emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+      }
+
       this.playerManager.broadcastCount()
     }
 

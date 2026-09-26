@@ -414,6 +414,20 @@ describe("RoundManager manager authority over round flow", () => {
     expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toHaveLength(1)
   })
 
+  it("ignores a second start during the countdown", async () => {
+    const harness = createHarness()
+
+    void harness.round.start(harness.managerSocket)
+    void harness.round.start(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(
+      harness.broadcast.mock.calls.filter(
+        ([status]) => status === STATUS.SHOW_START,
+      ),
+    ).toHaveLength(1)
+  })
+
   it("does not replay a finished game", async () => {
     const harness = createHarness()
 

@@ -12,7 +12,6 @@ export const toPublicPlayer = ({
 interface PlayerManagerOptions {
   io: Server
   gameId: string
-  getManagerId: () => string
   isManager: (_socket: Socket) => boolean
   getVisuals: () => ResolvedVisuals
 }
@@ -20,21 +19,13 @@ interface PlayerManagerOptions {
 export class PlayerManager {
   private readonly io: Server
   private readonly gameId: string
-  private readonly getManagerId: () => string
   private readonly isManager: (_socket: Socket) => boolean
   private readonly getVisuals: () => ResolvedVisuals
   private players: Player[] = []
 
-  constructor({
-    io,
-    gameId,
-    getManagerId,
-    isManager,
-    getVisuals,
-  }: PlayerManagerOptions) {
+  constructor({ io, gameId, isManager, getVisuals }: PlayerManagerOptions) {
     this.io = io
     this.gameId = gameId
-    this.getManagerId = getManagerId
     this.isManager = isManager
     this.getVisuals = getVisuals
   }
@@ -71,7 +62,7 @@ export class PlayerManager {
     }
 
     this.players.push(player)
-    this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
+    this.broadcastCount()
     socket.emit(EVENTS.GAME.SUCCESS_JOIN, {
       gameId: this.gameId,
       visuals: this.getVisuals(),
@@ -102,10 +93,8 @@ export class PlayerManager {
         .emit(EVENTS.GAME.RESET, "errors:game.kickedByManager")
     }
 
-    this.io
-      .to(this.getManagerId())
-      .emit(EVENTS.MANAGER.PLAYER_KICKED, player.id)
-    this.io.to(this.gameId).emit(EVENTS.GAME.TOTAL_PLAYERS, this.players.length)
+    socket.emit(EVENTS.MANAGER.PLAYER_KICKED, player.id)
+    this.broadcastCount()
 
     return true
   }

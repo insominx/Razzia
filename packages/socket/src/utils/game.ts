@@ -26,16 +26,15 @@ export const withGame = (
   callback(game)
 }
 
-const drawInviteCode = customAlphabet("0123456789")
+const drawInviteCode = customAlphabet("0123456789", 6)
 
 export const createInviteCode = (
   isTaken: (_code: string) => boolean = () => false,
-  length = 6,
 ) => {
-  let code = drawInviteCode(length)
+  let code = drawInviteCode()
 
   while (isTaken(code)) {
-    code = drawInviteCode(length)
+    code = drawInviteCode()
   }
 
   return code

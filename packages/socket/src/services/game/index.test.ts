@@ -329,6 +329,44 @@ describe("Game closing", () => {
 })
 
 describe("Game reconnect from an attached socket", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("resyncs a lobby to its invite code, then to the running game", () => {
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    const statusOnResync = () => {
+      manager.emitted.length = 0
+      game.reconnect(manager.socket)
+
+      return (
+        manager.emitted.find(
+          ({ event }) => event === EVENTS.MANAGER.SUCCESS_RECONNECT,
+        )?.payload as { status: { name: string; data: unknown } } | undefined
+      )?.status
+    }
+
+    expect(statusOnResync()).toEqual({
+      name: STATUS.SHOW_ROOM,
+      data: { text: "game:waitingForPlayers", inviteCode: game.inviteCode },
+    })
+
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+
+    expect(statusOnResync()?.name).toBe(STATUS.SHOW_START)
+  })
+
   it("resyncs the attached manager and still refuses another tab", () => {
     const manager = createClient("manager", "manager-client")
     const game = new Game({
@@ -376,6 +414,14 @@ describe("Game reconnect from an attached socket", () => {
 })
 
 describe("Game membership", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it("takes a player who leaves the lobby out of the game's room", () => {
     const { io, socketsLeave } = createIo()
     const game = new Game({
@@ -407,8 +453,7 @@ describe("Game membership", () => {
     game.kickPlayer(manager.socket, "p1")
 
     expect(emitted.filter(({ target }) => target === "p1")).toEqual([])
-    expect(emitted).toContainEqual({
-      target: "manager",
+    expect(manager.emitted).toContainEqual({
       event: EVENTS.MANAGER.PLAYER_KICKED,
       payload: "p1",
     })

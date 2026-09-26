@@ -17,8 +17,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     registry.markGameAsEmpty(game)
 
     if (!game.started) {
-      game.close("errors:game.managerDisconnected")
-      registry.removeGame(game.gameId)
+      registry.closeGame(game, "errors:game.managerDisconnected")
     }
   }
 
@@ -72,21 +71,9 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
         return
       }
 
-      // A socket hosts one game at a time. A repeated create (e.g. a
-      // double-click) gets the lobby it already runs; games it left are
-      // released so they cannot reach this socket again.
-      const managed = registry.getGamesByManagerSocketId(socket.id)
-      const lobby = managed.find(
-        (game) => game.manager.connected && !game.started,
-      )
-
-      if (lobby) {
-        lobby.announceTo(socket)
-
-        return
-      }
-
-      managed.forEach(handleManagerLeave)
+      // A socket hosts one game at a time: release whatever it still runs
+      // (e.g. the lobby from a double-click) before creating the new one.
+      registry.getGamesByManagerSocketId(socket.id).forEach(handleManagerLeave)
 
       const visuals = resolveVisuals(quizz, getGameConfig())
       const game = new Game({ io, socket, quizz, visuals })

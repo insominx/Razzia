@@ -99,6 +99,18 @@ class Registry {
     return removed
   }
 
+  // Drops the game, then resets whoever is still in it. A failing close must
+  // not keep the game registered or escape into a timer or socket handler.
+  closeGame(game: Game, message: string): void {
+    this.removeGame(game.gameId)
+
+    try {
+      game.close(message)
+    } catch (error) {
+      console.error(`Failed to close game ${game.gameId}:`, error)
+    }
+  }
+
   getAllGames(): Game[] {
     return [...this.games]
   }
@@ -123,22 +135,14 @@ class Registry {
       return
     }
 
-    const removed = this.emptyGames.filter((g) => !stillEmpty.includes(g))
-    const removedGameIds = removed.map((r) => r.game.gameId)
+    const expired = this.emptyGames.filter((g) => !stillEmpty.includes(g))
 
-    this.games = this.games.filter((g) => !removedGameIds.includes(g.gameId))
-    this.emptyGames = stillEmpty
-
-    removed.forEach(({ game }) => {
-      try {
-        game.close("errors:game.managerDisconnected")
-      } catch (error) {
-        console.error(`Failed to close expired game ${game.gameId}:`, error)
-      }
+    expired.forEach(({ game }) => {
+      this.closeGame(game, "errors:game.managerDisconnected")
     })
 
     console.log(
-      `Removed ${removed.length} empty game(s). Remaining games: ${this.games.length}`,
+      `Removed ${expired.length} empty game(s). Remaining games: ${this.games.length}`,
     )
   }
 
