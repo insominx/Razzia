@@ -9,7 +9,11 @@ import {
 import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import { saveResult } from "@razzia/socket/services/config"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
-import { PlayerManager } from "@razzia/socket/services/game/player-manager"
+import {
+  DROP_GRACE_MS,
+  PlayerManager,
+  toPublicPlayer,
+} from "@razzia/socket/services/game/player-manager"
 import { RoundManager } from "@razzia/socket/services/game/round-manager"
 import Registry from "@razzia/socket/services/registry"
 import { createInviteCode } from "@razzia/socket/utils/game"
@@ -24,7 +28,7 @@ interface GameOptions {
   visuals: ResolvedVisuals
 }
 
-type StatusSnapshot = {
+interface StatusSnapshot {
   name: Status
   data: StatusDataMap[Status]
 }
@@ -89,7 +93,9 @@ class Game {
 
     this.io = io
     this.gameId = uuid()
-    this.inviteCode = createInviteCode()
+    this.inviteCode = createInviteCode(
+      (code) => registry.getGameByInviteCode(code) !== undefined,
+    )
     this.visuals = visuals
     this._manager = {
       id: socket.id,
@@ -102,7 +108,7 @@ class Game {
     this.playerManager = new PlayerManager({
       io,
       gameId: this.gameId,
-      getManagerId: () => this._manager.id,
+      isManager: this.isManager.bind(this),
       getVisuals: () => this.visuals,
     })
 
@@ -113,14 +119,20 @@ class Game {
       io,
       gameId: this.gameId,
       getManagerId: () => this._manager.id,
+      isManager: this.isManager.bind(this),
       broadcast: this.broadcastStatus.bind(this),
       send: this.sendStatus.bind(this),
       onNewQuestion: () => {
         this.playerStatus.clear()
-        this.managerStatus = null
       },
       onGameFinished: saveResult,
     })
+
+    // What a resyncing manager gets back while the game is still a lobby.
+    this.managerStatus = {
+      name: STATUS.SHOW_ROOM,
+      data: { text: "game:waitingForPlayers", inviteCode: this.inviteCode },
+    }
 
     socket.join(this.gameId)
     socket.emit(EVENTS.MANAGER.GAME_CREATED, {
@@ -138,6 +150,12 @@ class Game {
     return this._manager
   }
 
+  // Only the socket attached as manager may run the game; one that left
+  // must reconnect first.
+  private isManager(socket: Socket): boolean {
+    return this._manager.connected && this._manager.id === socket.id
+  }
+
   get players(): Player[] {
     return this.playerManager.getAll()
   }
@@ -146,11 +164,19 @@ class Game {
     return this.round.isStarted()
   }
 
+  // Players can only join before the start; afterwards only those already
+  // in the game can come back, through a reconnect.
+  get inLobby(): boolean {
+    return this.round.isLobby()
+  }
+
   // ── Status broadcasting ──────────────────────────────────────────────────
 
   private broadcastStatus<T extends Status>(status: T, data: StatusDataMap[T]) {
     const statusData = { name: status, data }
     this.lastBroadcastStatus = statusData
+    // A room-wide status supersedes the manager's own (e.g. the lobby).
+    this.managerStatus = null
     this.io.to(this.gameId).emit(EVENTS.GAME.STATUS, statusData)
   }
 
@@ -163,8 +189,17 @@ class Game {
 
     if (this._manager.id === target) {
       this.managerStatus = statusData
+
+      // Kept for reconnect; the old socket may be hosting another game now.
+      if (!this._manager.connected) {
+        return
+      }
     } else {
       this.playerStatus.set(target, statusData)
+
+      if (!this.playerManager.findById(target)?.connected) {
+        return
+      }
     }
 
     this.io.to(target).emit(EVENTS.GAME.STATUS, statusData)
@@ -173,31 +208,34 @@ class Game {
   // Player actions
 
   join(socket: Socket, username: string) {
-    this.playerManager.join(socket, username)
+    if (!this.inLobby) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.alreadyStarted")
+
+      return
+    }
+
+    const player = this.playerManager.join(socket, username)
+
+    if (player && this._manager.connected) {
+      this.io
+        .to(this._manager.id)
+        .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
+    }
   }
 
   kickPlayer(socket: Socket, playerId: string) {
     if (this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
+      this.round.endIfEveryoneAnswered()
     }
   }
 
   // Reconnect
 
-  reconnect(socket: Socket) {
-    const { clientId } = socket.handshake.auth
-
-    if (this._manager.clientId === clientId) {
-      this.reconnectManager(socket)
-
-      return
-    }
-
-    this.reconnectPlayer(socket)
-  }
-
-  private reconnectManager(socket: Socket) {
-    if (this._manager.connected) {
+  reconnectManager(socket: Socket) {
+    // The attached socket asking again just resyncs; only another tab is
+    // refused.
+    if (this._manager.connected && this._manager.id !== socket.id) {
       socket.emit(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
 
       return
@@ -217,7 +255,7 @@ class Game {
       gameId: this.gameId,
       currentQuestion: this.round.getReconnectInfo(),
       status,
-      players: this.playerManager.getAll(),
+      players: this.playerManager.getAll().map(toPublicPlayer),
       visuals: this.visuals,
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
@@ -226,7 +264,9 @@ class Game {
     console.log(`Manager reconnected to game ${this.inviteCode}`)
   }
 
-  private reconnectPlayer(socket: Socket) {
+  // Routed by the event, not the clientId: a host may also play in the game
+  // from another tab of the same browser.
+  reconnectPlayer(socket: Socket) {
     const clientId = socket.handshake.auth.clientId as string
     const player = this.playerManager.findByClientId(clientId)
 
@@ -234,7 +274,7 @@ class Game {
       return
     }
 
-    if (player.connected) {
+    if (player.connected && player.id !== socket.id) {
       socket.emit(EVENTS.GAME.RESET, "errors:game.playerAlreadyConnected")
 
       return
@@ -277,13 +317,21 @@ class Game {
 
   setManagerDisconnected() {
     this._manager.connected = false
+    this.io.in(this._manager.id).socketsLeave(this.gameId)
   }
 
   removePlayer(socketId: string): Player | undefined {
     const player = this.playerManager.remove(socketId)
 
     if (player) {
-      this.io.to(this._manager.id).emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+      this.io.in(socketId).socketsLeave(this.gameId)
+
+      if (this._manager.connected) {
+        this.io
+          .to(this._manager.id)
+          .emit(EVENTS.MANAGER.REMOVE_PLAYER, player.id)
+      }
+
       this.playerManager.broadcastCount()
     }
 
@@ -292,13 +340,22 @@ class Game {
 
   setPlayerDisconnected(socketId: string) {
     this.playerManager.setDisconnected(socketId)
+    this.io.in(socketId).socketsLeave(this.gameId)
     this.playerManager.broadcastCount()
+
+    // Unless they are back by then, stop holding the answers open for them.
+    setTimeout(() => {
+      this.round.endIfEveryoneAnswered()
+    }, DROP_GRACE_MS)
   }
 
   // Game flow
 
-  abortCooldown() {
-    this.cooldown.abort()
+  // Ends the game for everyone still in it, once the registry has dropped it.
+  close(message: string) {
+    this.round.stop()
+    this.io.to(this.gameId).emit(EVENTS.GAME.RESET, message)
+    this.io.in(this.gameId).socketsLeave(this.gameId)
   }
 
   async start(socket: Socket) {
@@ -321,8 +378,8 @@ class Game {
     this.round.unlockAnswers(socket)
   }
 
-  showLeaderboard() {
-    this.round.showLeaderboard()
+  showLeaderboard(socket: Socket) {
+    this.round.showLeaderboard(socket)
   }
 }
 

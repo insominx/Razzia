@@ -134,7 +134,7 @@ describe("VolumeControl", () => {
     fireEvent.pointerEnter(control(), { pointerType: "mouse" })
 
     const panel = document.getElementById(
-      trigger().getAttribute("aria-controls")!,
+      trigger().getAttribute("aria-controls") ?? "",
     )
     expect(panel).toHaveClass("pr-1")
     expect(panel).toHaveClass("right-full")

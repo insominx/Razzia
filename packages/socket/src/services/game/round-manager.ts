@@ -20,7 +20,10 @@ import {
   QUESTION_NUMBER_INTRO_MS,
 } from "@razzia/common/utils/question-transition"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
-import { PlayerManager } from "@razzia/socket/services/game/player-manager"
+import {
+  PlayerManager,
+  toPublicPlayer,
+} from "@razzia/socket/services/game/player-manager"
 import { orderToPoint, timeToPoint } from "@razzia/socket/utils/game"
 import {
   createInterruptibleDelay,
@@ -46,13 +49,21 @@ export interface RoundManagerOptions {
   io: Server
   gameId: string
   getManagerId: () => string
+  isManager: (_socket: Socket) => boolean
   broadcast: BroadcastFn
   send: SendFn
   onNewQuestion: () => void
   onGameFinished: (_result: GameResult) => void
 }
 
-type RoundPhase = "idle" | "prompt" | "revealing" | "answering" | "results"
+type RoundPhase =
+  | "idle"
+  | "starting"
+  | "prompt"
+  | "revealing"
+  | "answering"
+  | "results"
+  | "over"
 
 interface UnlockContext {
   generation: number
@@ -63,7 +74,6 @@ interface UnlockContext {
 
 export class RoundManager {
   private readonly opts: RoundManagerOptions
-  private started = false
   private currentQuestion = 0
   private playersAnswers: Answer[] = []
   private startTime = 0
@@ -78,8 +88,17 @@ export class RoundManager {
     this.opts = opts
   }
 
+  // A round is live from the start countdown until the podium or a close.
+  private get started(): boolean {
+    return this.phase !== "idle" && this.phase !== "over"
+  }
+
   isStarted(): boolean {
     return this.started
+  }
+
+  isLobby(): boolean {
+    return this.phase === "idle"
   }
 
   getReconnectInfo() {
@@ -90,11 +109,11 @@ export class RoundManager {
   }
 
   async start(socket: Socket): Promise<void> {
-    if (this.opts.getManagerId() !== socket.id) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
-    if (this.started) {
+    if (this.phase !== "idle") {
       return
     }
 
@@ -104,7 +123,7 @@ export class RoundManager {
       return
     }
 
-    this.started = true
+    this.phase = "starting"
 
     this.opts.broadcast(STATUS.SHOW_START, {
       time: 3,
@@ -281,7 +300,7 @@ export class RoundManager {
     const sortedPlayers = currentPlayers
       .map((player) => {
         const playerAnswer = this.playersAnswers.find(
-          (a) => a.playerId === player.id,
+          (a) => a.clientId === player.clientId,
         )
 
         const isCorrect = playerAnswer
@@ -325,14 +344,20 @@ export class RoundManager {
       playerAnswers: currentPlayers.map((player) => ({
         playerName: player.username,
         answerId:
-          this.playersAnswers.find((a) => a.playerId === player.id)?.answerId ??
-          null,
+          this.playersAnswers.find((a) => a.clientId === player.clientId)
+            ?.answerId ?? null,
       })),
     })
 
     this.leaderboard = sortedPlayers
     this.tempOldLeaderboard = oldLeaderboard
     this.playersAnswers = []
+  }
+
+  stop(): void {
+    this.phase = "over"
+    this.revealWaiter?.interrupt()
+    this.opts.cooldown.abort()
   }
 
   selectAnswer(socket: Socket, answerId: number): void {
@@ -349,7 +374,7 @@ export class RoundManager {
       return
     }
 
-    if (this.playersAnswers.find((a) => a.playerId === socket.id)) {
+    if (this.playersAnswers.find((a) => a.clientId === player.clientId)) {
       return
     }
 
@@ -365,7 +390,7 @@ export class RoundManager {
     })()
 
     this.playersAnswers.push({
-      playerId: player.id,
+      clientId: player.clientId,
       answerId,
       points,
     })
@@ -379,17 +404,37 @@ export class RoundManager {
       .emit(EVENTS.GAME.PLAYER_ANSWER, this.playersAnswers.length)
     this.opts.players.broadcastCount()
 
-    if (this.playersAnswers.length === this.opts.players.count()) {
+    this.endIfEveryoneAnswered()
+  }
+
+  // Answering ends early once every player the round still expects has
+  // answered; a player who dropped out stops being expected after a grace.
+  endIfEveryoneAnswered(): void {
+    if (this.phase !== "answering") {
+      return
+    }
+
+    const answered = new Set(
+      this.playersAnswers.map(({ clientId }) => clientId),
+    )
+    const expected = this.opts.players.getExpected()
+
+    // With nobody left (e.g. the venue Wi-Fi dropped), keep the timer: they
+    // may all be on their way back.
+    if (
+      expected.length > 0 &&
+      expected.every(({ clientId }) => answered.has(clientId))
+    ) {
       this.opts.cooldown.abort()
     }
   }
 
   nextQuestion(socket: Socket): void {
-    if (!this.started) {
+    if (!this.started || this.phase !== "results") {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
@@ -406,7 +451,7 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
@@ -418,22 +463,29 @@ export class RoundManager {
       return
     }
 
-    if (socket.id !== this.opts.getManagerId()) {
+    if (!this.opts.isManager(socket)) {
       return
     }
 
     this.revealWaiter?.interrupt()
   }
 
-  showLeaderboard(): void {
+  showLeaderboard(socket: Socket): void {
+    if (!this.started || this.phase !== "results") {
+      return
+    }
+
+    if (!this.opts.isManager(socket)) {
+      return
+    }
+
     const isLastRound =
       this.currentQuestion + 1 === this.opts.quizz.questions.length
 
     if (isLastRound) {
-      this.started = false
-      this.phase = "idle"
+      this.phase = "over"
 
-      const top = this.leaderboard.slice(0, 3)
+      const top = this.leaderboard.slice(0, 3).map(toPublicPlayer)
 
       this.opts.onGameFinished({
         id: `${Date.now()}-${nanoid(8)}`,
@@ -466,8 +518,8 @@ export class RoundManager {
     const oldLeaderboard = this.tempOldLeaderboard ?? this.leaderboard
 
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_LEADERBOARD, {
-      oldLeaderboard: oldLeaderboard.slice(0, 5),
-      leaderboard: this.leaderboard.slice(0, 5),
+      oldLeaderboard: oldLeaderboard.slice(0, 5).map(toPublicPlayer),
+      leaderboard: this.leaderboard.slice(0, 5).map(toPublicPlayer),
     })
 
     this.tempOldLeaderboard = null

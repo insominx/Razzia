@@ -1,7 +1,7 @@
 import type { Socket } from "@razzia/common/types/game/socket"
 import Game from "@razzia/socket/services/game"
 import Registry from "@razzia/socket/services/registry"
-import { nanoid } from "nanoid"
+import { customAlphabet, nanoid } from "nanoid"
 
 export const withGame = (
   gameId: string | undefined,
@@ -26,17 +26,18 @@ export const withGame = (
   callback(game)
 }
 
-export const createInviteCode = (length = 6) => {
-  let result = ""
-  const characters = "0123456789"
-  const charactersLength = characters.length
+const drawInviteCode = customAlphabet("0123456789", 6)
 
-  for (let i = 0; i < length; i += 1) {
-    const randomIndex = Math.floor(Math.random() * charactersLength)
-    result += characters.charAt(randomIndex)
+export const createInviteCode = (
+  isTaken: (_code: string) => boolean = () => false,
+) => {
+  let code = drawInviteCode()
+
+  while (isTaken(code)) {
+    code = drawInviteCode()
   }
 
-  return result
+  return code
 }
 
 export const normalizeFilename = (subject: string) => {

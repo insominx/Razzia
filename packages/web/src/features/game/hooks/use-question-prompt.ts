@@ -22,6 +22,8 @@ export const useQuestionPrompt = (
   const [reducedMotion, setReducedMotion] = useState(getPrefersReducedMotion)
   const received = useMemo(
     () => ({ localNow: Date.now(), serverNow: data.serverNow }),
+    // `promptStartedAt` is a reset key: a new round re-stamps the receipt time.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [data.serverNow, data.promptStartedAt],
   )
   const initialElapsed = Math.max(0, data.serverNow - data.promptStartedAt)

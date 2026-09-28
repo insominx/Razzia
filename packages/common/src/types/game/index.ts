@@ -10,8 +10,14 @@ export interface Player {
   streak: number
 }
 
+// A player's clientId is their reconnect credential, and a host's clientId is
+// also their manager login, so it never leaves the server. `never` makes the
+// compiler reject a full Player wherever a PublicPlayer is sent.
+export type PublicPlayer = Omit<Player, "clientId"> & { clientId?: never }
+
 export interface Answer {
-  playerId: string
+  // The socket id changes on reconnect; the clientId does not.
+  clientId: string
   answerId: number
   points: number
 }

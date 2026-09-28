@@ -34,7 +34,7 @@ export const getQuestionSentenceStartElapsed = (
   const last = Math.max(0, Math.min(Math.floor(index), sentences.length))
   let elapsed = 0
 
-  for (let i = 0; i < last; i++) {
+  for (let i = 0; i < last; i += 1) {
     elapsed += getQuestionSentenceIntervalMs(sentences[i])
   }
 
@@ -73,7 +73,7 @@ export const getVisibleSentenceCount = (
   let start = 0
   let visible = 1
 
-  for (let i = 0; i < sentences.length - 1; i++) {
+  for (let i = 0; i < sentences.length - 1; i += 1) {
     start += getQuestionSentenceIntervalMs(sentences[i])
 
     if (elapsed < start) {

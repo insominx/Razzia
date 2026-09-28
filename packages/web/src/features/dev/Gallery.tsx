@@ -25,7 +25,6 @@ import { useEffect, useState } from "react"
 const PLAYERS = [
   {
     id: "gallery-ada",
-    clientId: "gallery-client-ada",
     connected: true,
     username: "Ada",
     points: 9_640,
@@ -33,7 +32,6 @@ const PLAYERS = [
   },
   {
     id: "gallery-grace",
-    clientId: "gallery-client-grace",
     connected: true,
     username: "Grace",
     points: 8_920,
@@ -41,7 +39,6 @@ const PLAYERS = [
   },
   {
     id: "gallery-linus",
-    clientId: "gallery-client-linus",
     connected: true,
     username: "Linus",
     points: 7_880,

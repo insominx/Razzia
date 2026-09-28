@@ -7,13 +7,14 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
-import { useSearch } from "@tanstack/react-router"
+import { useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 const Room = () => {
   const { socket, isConnected } = useSocket()
-  const { join } = usePlayerStore()
+  const { join, resetStatus } = usePlayerStore()
+  const navigate = useNavigate()
   const [invitation, setInvitation] = useState("")
   const { pin } = useSearch({ from: "/(auth)/" })
   const hasJoinedRef = useRef(false)
@@ -25,6 +26,13 @@ const Room = () => {
 
   useEvent(EVENTS.GAME.SUCCESS_ROOM, (gameId) => {
     join(gameId)
+  })
+
+  // A player already in a started game goes straight back to it; the game
+  // page reconnects when it opens without a status.
+  useEvent(EVENTS.GAME.SUCCESS_REJOIN, (gameId) => {
+    resetStatus()
+    navigate({ to: "/party/$gameId", params: { gameId } })
   })
 
   useEffect(() => {

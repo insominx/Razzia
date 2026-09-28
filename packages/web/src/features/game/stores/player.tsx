@@ -35,6 +35,7 @@ interface PlayerStore<T> {
   setLastAnswer: (_answer: LastAnswer) => void
 
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
+  resetStatus: () => void
 
   reset: () => void
 }
@@ -74,6 +75,7 @@ export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
   setLastAnswer: (lastAnswer) => set({ lastAnswer }),
 
   setStatus: (name, data) => set({ status: createStatus(name, data) }),
+  resetStatus: () => set({ status: null }),
 
   reset: () => set(initialState),
 }))

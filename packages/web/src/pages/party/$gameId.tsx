@@ -12,6 +12,7 @@ import {
   isKeyOf,
 } from "@razzia/web/features/game/utils/constants"
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
+import { useEffect } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -37,6 +38,14 @@ const PlayerGamePage = () => {
     }
   })
 
+  // Leaving this page detaches the socket from the game and clears the
+  // status, so arriving without one (e.g. browser Forward) re-attaches.
+  useEffect(() => {
+    if (socketClient.connected && !usePlayerStore.getState().status) {
+      socketClient.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
+    }
+  }, [gameIdParam])
+
   useEvent(
     EVENTS.PLAYER.SUCCESS_RECONNECT,
     ({
@@ -60,8 +69,9 @@ const PlayerGamePage = () => {
     }
   })
 
+  // Replace, not push: Back must not return to a game that is gone.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    navigate({ to: "/" })
+    navigate({ to: "/", replace: true })
     reset()
     setQuestionStates(null)
     toast.error(t(message))
@@ -92,5 +102,6 @@ export const Route = createFileRoute("/party/$gameId")({
   component: PlayerGamePage,
   onLeave: ({ params: { gameId } }) => {
     socketClient.emit(EVENTS.PLAYER.LEAVE, { gameId })
+    usePlayerStore.getState().resetStatus()
   },
 })

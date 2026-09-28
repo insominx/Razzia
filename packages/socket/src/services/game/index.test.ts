@@ -1,9 +1,13 @@
+import { EVENTS, NO_TIME_LIMIT } from "@razzia/common/constants"
+import type { Quizz } from "@razzia/common/types/game"
+import type { Server, Socket } from "@razzia/common/types/game/socket"
 import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
-import {
+import Game, {
   restampReconnectStatus,
   selectReconnectStatus,
 } from "@razzia/socket/services/game"
-import { describe, expect, it } from "vitest"
+import Registry from "@razzia/socket/services/registry"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const selectAnswerStatus: {
   name: typeof STATUS.SELECT_ANSWER
@@ -90,5 +94,495 @@ describe("restampReconnectStatus", () => {
     } as const
 
     expect(restampReconnectStatus(wait, 1_800)).toBe(wait)
+  })
+})
+
+interface Emitted {
+  target: string
+  event: string
+  payload: unknown
+}
+
+const createIo = () => {
+  const emitted: Emitted[] = []
+  const socketsLeave = vi.fn()
+  const io = {
+    to: vi.fn((target: string) => ({
+      emit: (event: string, payload: unknown) => {
+        emitted.push({ target, event, payload })
+      },
+    })),
+    in: vi.fn((target: string) => ({
+      socketsLeave: (room: string) => {
+        socketsLeave(target, room)
+      },
+    })),
+  } as unknown as Server
+
+  return { io, emitted, socketsLeave }
+}
+
+const createClient = (id: string, clientId: string) => {
+  const emitted: Array<Omit<Emitted, "target">> = []
+  const socket = {
+    id,
+    handshake: { auth: { clientId } },
+    join: vi.fn(),
+    emit: vi.fn((event: string, payload: unknown) => {
+      emitted.push({ event, payload })
+    }),
+    to: vi.fn(() => ({ emit: vi.fn() })),
+  } as unknown as Socket
+
+  return { socket, emitted }
+}
+
+const awayQuizz: Quizz = {
+  subject: "Away",
+  questions: [
+    {
+      question: "Pick one",
+      answers: ["No", "Yes"],
+      solutions: [1],
+      cooldown: 1,
+      time: 5,
+    },
+  ],
+}
+
+describe("Game while its manager is away", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stops addressing the manager socket and replays the round on return", async () => {
+    const { io, emitted, socketsLeave } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+
+    game.setManagerDisconnected()
+    expect(socketsLeave).toHaveBeenCalledWith("manager", game.gameId)
+    emitted.length = 0
+
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(emitted.filter(({ target }) => target === "manager")).toEqual([])
+    expect(
+      emitted
+        .filter(
+          ({ target, event }) =>
+            target === "p1" && event === EVENTS.GAME.STATUS,
+        )
+        .map(({ payload }) => (payload as { name: string }).name),
+    ).toContain(STATUS.SHOW_RESULT)
+
+    const back = createClient("manager-2", "manager-client")
+    game.reconnectManager(back.socket)
+    const reconnect = back.emitted.find(
+      ({ event }) => event === EVENTS.MANAGER.SUCCESS_RECONNECT,
+    )?.payload as
+      | { status: { name: string }; players: Array<{ username: string }> }
+      | undefined
+
+    expect(JSON.stringify(back.emitted)).not.toContain("alice-client")
+    expect(reconnect?.status.name).toBe(STATUS.SHOW_RESPONSES)
+    expect(reconnect?.players.map(({ username }) => username)).toEqual([
+      "Alice",
+    ])
+  })
+})
+
+describe("Game while a player is away", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stops addressing the player's socket and replays their result on return", async () => {
+    const { io, emitted, socketsLeave } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    game.join(createClient("p2", "bob-client").socket, "Bobby")
+    void game.start(manager.socket)
+
+    game.setPlayerDisconnected("p1")
+    expect(socketsLeave).toHaveBeenCalledWith("p1", game.gameId)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(emitted.filter(({ target }) => target === "p1")).toEqual([])
+    expect(emitted.some(({ target }) => target === "p2")).toBe(true)
+
+    const back = createClient("p1-again", "alice-client")
+    game.reconnectPlayer(back.socket)
+    const reconnect = back.emitted.find(
+      ({ event }) => event === EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )?.payload as { status: { name: string } } | undefined
+
+    expect(reconnect?.status.name).toBe(STATUS.SHOW_RESULT)
+  })
+})
+
+describe("Game player privacy", () => {
+  it("announces new players to the manager without their clientId", () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+
+    const announced = emitted.find(
+      ({ target, event }) =>
+        target === "manager" && event === EVENTS.MANAGER.NEW_PLAYER,
+    )
+    expect(announced?.payload).toMatchObject({ id: "p1", username: "Alice" })
+    expect(announced?.payload).not.toHaveProperty("clientId")
+  })
+})
+
+describe("Game invite codes", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("never reuses the invite code of a live game", () => {
+    const lookup = vi
+      .spyOn(Registry.getInstance(), "getGameByInviteCode")
+      .mockReturnValueOnce({} as Game)
+    const game = new Game({
+      io: createIo().io,
+      socket: createClient("manager", "manager-client").socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+
+    expect(lookup).toHaveBeenCalledTimes(2)
+    expect(lookup).toHaveBeenLastCalledWith(game.inviteCode)
+  })
+})
+
+describe("Game closing", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("resets everyone still in the game and stops its clock", async () => {
+    const { io, emitted, socketsLeave } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: {
+        subject: "Untimed",
+        questions: [{ ...awayQuizz.questions[0], time: NO_TIME_LIMIT }],
+      },
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+    await vi.advanceTimersByTimeAsync(60_000)
+    emitted.length = 0
+
+    game.close("errors:game.managerDisconnected")
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(emitted).toEqual([
+      {
+        target: game.gameId,
+        event: EVENTS.GAME.RESET,
+        payload: "errors:game.managerDisconnected",
+      },
+    ])
+    expect(socketsLeave).toHaveBeenCalledWith(game.gameId, game.gameId)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
+describe("Game reconnect from an attached socket", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("resyncs a lobby to its invite code, then to the running game", () => {
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    const statusOnResync = () => {
+      manager.emitted.length = 0
+      game.reconnectManager(manager.socket)
+
+      return (
+        manager.emitted.find(
+          ({ event }) => event === EVENTS.MANAGER.SUCCESS_RECONNECT,
+        )?.payload as { status: { name: string; data: unknown } } | undefined
+      )?.status
+    }
+
+    expect(statusOnResync()).toEqual({
+      name: STATUS.SHOW_ROOM,
+      data: { text: "game:waitingForPlayers", inviteCode: game.inviteCode },
+    })
+
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+
+    expect(statusOnResync()?.name).toBe(STATUS.SHOW_START)
+  })
+
+  it("resyncs the attached manager and still refuses another tab", () => {
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    const otherTab = createClient("manager-tab-2", "manager-client")
+
+    game.reconnectManager(manager.socket)
+    game.reconnectManager(otherTab.socket)
+
+    expect(manager.emitted.map(({ event }) => event)).toContain(
+      EVENTS.MANAGER.SUCCESS_RECONNECT,
+    )
+    expect(otherTab.emitted).toContainEqual({
+      event: EVENTS.GAME.RESET,
+      payload: "errors:game.managerAlreadyConnected",
+    })
+  })
+
+  it("resyncs the attached player and still refuses another tab", () => {
+    const game = new Game({
+      io: createIo().io,
+      socket: createClient("manager", "manager-client").socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    const alice = createClient("p1", "alice-client")
+    const otherTab = createClient("p1-tab-2", "alice-client")
+    game.join(alice.socket, "Alice")
+
+    game.reconnectPlayer(alice.socket)
+    game.reconnectPlayer(otherTab.socket)
+
+    expect(alice.emitted.map(({ event }) => event)).toContain(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )
+    expect(otherTab.emitted).toContainEqual({
+      event: EVENTS.GAME.RESET,
+      payload: "errors:game.playerAlreadyConnected",
+    })
+  })
+})
+
+describe("Game membership", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("takes a player who leaves the lobby out of the game's room", () => {
+    const { io, socketsLeave } = createIo()
+    const game = new Game({
+      io,
+      socket: createClient("manager", "manager-client").socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+
+    game.removePlayer("p1")
+
+    expect(socketsLeave).toHaveBeenCalledWith("p1", game.gameId)
+  })
+
+  it("does not reset the socket of a kicked player who already left", () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    game.setPlayerDisconnected("p1")
+    emitted.length = 0
+
+    game.kickPlayer(manager.socket, "p1")
+
+    expect(emitted.filter(({ target }) => target === "p1")).toEqual([])
+    expect(manager.emitted).toContainEqual({
+      event: EVENTS.MANAGER.PLAYER_KICKED,
+      payload: "p1",
+    })
+  })
+
+  it("only lets the attached manager socket run the game", () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    game.setManagerDisconnected()
+
+    void game.start(manager.socket)
+    expect(game.started).toBe(false)
+
+    game.reconnectManager(manager.socket)
+    void game.start(manager.socket)
+    expect(game.started).toBe(true)
+    expect(emitted.map(({ event }) => event)).toContain(EVENTS.GAME.STATUS)
+  })
+})
+
+describe("Game joining", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("turns away new players once the game has started", () => {
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: manager.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    void game.start(manager.socket)
+
+    const late = createClient("p2", "bob-client")
+    game.join(late.socket, "Bobby")
+
+    expect(late.emitted).toEqual([
+      {
+        event: EVENTS.GAME.ERROR_MESSAGE,
+        payload: "errors:game.alreadyStarted",
+      },
+    ])
+    expect(game.players.map(({ username }) => username)).toEqual(["Alice"])
+  })
+
+  it("lets a host who also plays from another tab rejoin as that player", () => {
+    const host = createClient("host", "host-client")
+    const game = new Game({
+      io: createIo().io,
+      socket: host.socket,
+      quizz: awayQuizz,
+      visuals: {},
+    })
+    game.join(createClient("host-tab", "host-client").socket, "Hosty")
+    void game.start(host.socket)
+    game.setPlayerDisconnected("host-tab")
+
+    const back = createClient("host-tab-2", "host-client")
+    game.reconnectPlayer(back.socket)
+
+    expect(back.emitted.map(({ event }) => event)).toContain(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )
+  })
+})
+
+describe("Game with a player who drops out", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("ends the answers once the grace for a dropped player runs out", async () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: {
+        subject: "Dropout",
+        questions: [{ ...awayQuizz.questions[0], time: 60 }],
+      },
+      visuals: {},
+    })
+    const alice = createClient("p1", "alice-client")
+    const bobby = createClient("p2", "bob-client")
+    game.join(alice.socket, "Alice")
+    game.join(bobby.socket, "Bobby")
+    game.join(createClient("p3", "carol-client").socket, "Carol")
+    void game.start(manager.socket)
+    const answeringOpen = () =>
+      emitted.some(
+        ({ event, payload }) =>
+          event === EVENTS.GAME.STATUS &&
+          (payload as { data: { answeringOpen?: boolean } }).data
+            .answeringOpen === true,
+      )
+
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(answeringOpen()).toBe(true)
+    const responses = () =>
+      emitted.filter(
+        ({ target, payload }) =>
+          target === "manager" &&
+          (payload as { name: string }).name === STATUS.SHOW_RESPONSES,
+      )
+
+    game.setPlayerDisconnected("p3")
+    game.selectAnswer(alice.socket, 1)
+    game.selectAnswer(bobby.socket, 1)
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(responses()).toEqual([])
+
+    await vi.advanceTimersByTimeAsync(6_000)
+    expect(responses()).toHaveLength(1)
   })
 })

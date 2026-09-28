@@ -74,6 +74,8 @@ const VolumeControl = () => {
     event: ReactPointerEvent<HTMLInputElement>,
   ) => {
     dragging.current = true
+    // Pointer capture is missing in jsdom, so keep the optional calls.
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     event.currentTarget.setPointerCapture?.(event.pointerId)
   }
 
@@ -82,6 +84,7 @@ const VolumeControl = () => {
   ) => {
     dragging.current = false
 
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }

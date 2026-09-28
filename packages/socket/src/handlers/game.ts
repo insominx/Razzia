@@ -3,6 +3,7 @@ import { inviteCodeValidator } from "@razzia/common/validators/auth"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { getGameConfig, getQuizz } from "@razzia/socket/services/config"
 import Game from "@razzia/socket/services/game"
+import manager from "@razzia/socket/services/manager"
 import Registry from "@razzia/socket/services/registry"
 import { resolveVisuals } from "@razzia/socket/services/visuals"
 import { withGame } from "@razzia/socket/utils/game"
@@ -13,16 +14,15 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   const handleManagerLeave = (game: Game) => {
     game.setManagerDisconnected()
-    registry.markGameAsEmpty(game)
 
     if (!game.started) {
-      game.abortCooldown()
-      io.to(game.gameId).emit(
-        EVENTS.GAME.RESET,
-        "errors:game.managerDisconnected",
-      )
-      registry.removeGame(game.gameId)
+      registry.closeGame(game, "errors:game.managerDisconnected")
+
+      return
     }
+
+    // A running game waits for its manager to reconnect before expiring.
+    registry.markGameAsEmpty(game)
   }
 
   const handlePlayerLeave = (game: Game) => {
@@ -43,7 +43,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     const game = registry.getPlayerGame(gameId, clientId)
 
     if (game) {
-      game.reconnect(socket)
+      game.reconnectPlayer(socket)
 
       return
     }
@@ -55,7 +55,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     const game = registry.getManagerGame(gameId, clientId)
 
     if (game) {
-      game.reconnect(socket)
+      game.reconnectManager(socket)
 
       return
     }
@@ -63,20 +63,23 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     socket.emit(EVENTS.GAME.RESET, "errors:game.expired")
   })
 
-  socket.on(EVENTS.GAME.CREATE, (quizzId) => {
-    const quizzList = getQuizz()
-    const quizz = quizzList.find((q) => q.id === quizzId)
+  socket.on(
+    EVENTS.GAME.CREATE,
+    manager.withAuth(socket, (quizzId) => {
+      const quizzList = getQuizz()
+      const quizz = quizzList.find((q) => q.id === quizzId)
 
-    if (!quizz) {
-      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:quizz.notFound")
+      if (!quizz) {
+        socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:quizz.notFound")
 
-      return
-    }
+        return
+      }
 
-    const visuals = resolveVisuals(quizz, getGameConfig())
-    const game = new Game({ io, socket, quizz, visuals })
-    registry.addGame(game)
-  })
+      const visuals = resolveVisuals(quizz, getGameConfig())
+      const game = new Game({ io, socket, quizz, visuals })
+      registry.addGame(game)
+    }),
+  )
 
   socket.on(EVENTS.PLAYER.JOIN, (inviteCode) => {
     const result = inviteCodeValidator.safeParse(inviteCode)
@@ -91,6 +94,17 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
     if (!game) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.notFound")
+
+      return
+    }
+
+    if (!game.inLobby) {
+      // Once started, only players already in the game may come back.
+      if (registry.getPlayerGame(game.gameId, clientId)) {
+        socket.emit(EVENTS.GAME.SUCCESS_REJOIN, game.gameId)
+      } else {
+        socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.alreadyStarted")
+      }
 
       return
     }
@@ -129,13 +143,14 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   )
 
   socket.on(EVENTS.MANAGER.SHOW_LEADERBOARD, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.showLeaderboard()),
+    withGame(gameId, socket, (game) => game.showLeaderboard(socket)),
   )
 
   socket.on(EVENTS.MANAGER.LEAVE, ({ gameId }) => {
     const game = registry.getManagerGame(gameId, clientId)
 
-    if (game) {
+    // Another tab of the same manager may leave a game it never ran.
+    if (game?.manager.id === socket.id) {
       console.log(`Manager left game ${game.inviteCode}`)
       handleManagerLeave(game)
     }
@@ -152,19 +167,12 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   socket.on("disconnect", () => {
     console.log(`A user disconnected : ${socket.id}`)
 
-    const managerGame = registry.getGameByManagerSocketId(socket.id)
+    registry.getGamesByManagerSocketId(socket.id).forEach((game) => {
+      console.log(`Manager disconnected from game ${game.inviteCode}`)
+      handleManagerLeave(game)
+    })
 
-    if (managerGame) {
-      console.log(`Manager disconnected from game ${managerGame.inviteCode}`)
-      handleManagerLeave(managerGame)
-
-      return
-    }
-
-    const playerGame = registry.getGameByPlayerSocketId(socket.id)
-
-    if (playerGame) {
-      handlePlayerLeave(playerGame)
-    }
+    // A socket stays a (disconnected) player of any started game it left.
+    registry.getGamesByPlayerSocketId(socket.id).forEach(handlePlayerLeave)
   })
 }

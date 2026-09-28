@@ -22,9 +22,10 @@ const ManagerAuthPage = () => {
     // oxlint-disable-next-line
   }, [isConnected])
 
+  // Replace: Back from the config page must not land on this redirect.
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
     setConfig(data)
-    navigate({ to: "/manager/config" })
+    navigate({ to: "/manager/config", replace: true })
   })
 
   const handleAuth = (password: string) => {

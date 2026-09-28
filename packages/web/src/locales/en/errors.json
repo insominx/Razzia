@@ -5,6 +5,7 @@
     "usernameTooShort": "Username cannot be less than 4 characters"
   },
   "game": {
+    "alreadyStarted": "This game has already started",
     "expired": "Game expired",
     "kickedByManager": "You have been kicked by the manager",
     "managerAlreadyConnected": "Manager already connected",

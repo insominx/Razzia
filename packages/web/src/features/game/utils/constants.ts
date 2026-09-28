@@ -11,8 +11,7 @@ import Room from "@razzia/web/features/game/components/states/Room"
 import Start from "@razzia/web/features/game/components/states/Start"
 import Wait from "@razzia/web/features/game/components/states/Wait"
 
-import { STATUS } from "@razzia/common/types/game/status"
-import type { StatusDataMap } from "@razzia/common/types/game/status"
+import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
 import type { SoundTheme } from "@razzia/common/types/visuals"
 import type { Status as GameStatus } from "@razzia/web/features/game/utils/createStatus"
 

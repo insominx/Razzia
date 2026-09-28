@@ -30,8 +30,7 @@ const ROLE_STYLES: Record<HudRole, { label: string; box: string }> = {
   },
 }
 
-const VALUE_TEXT =
-  "font-mono text-xl font-bold tabular-nums md:text-2xl 2xl:text-4xl"
+const VALUE_TEXT = "font-mono text-xl font-bold tabular-nums md:text-2xl"
 
 // Both readouts sit in a slot the ring's size, so a ring module and a boxed
 // module side by side share one label baseline and one value centreline.

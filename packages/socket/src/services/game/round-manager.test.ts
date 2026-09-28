@@ -29,18 +29,16 @@ const makeSocket = (id: string) => {
   }
 }
 
-const createHarness = (time = 10, question = "Pick one") => {
+const createHarness = (time = 10, question = "Pick one", questionCount = 1) => {
   const quizz: Quizz = {
     subject: "Reveal",
-    questions: [
-      {
-        question,
-        answers: ["No", "Yes"],
-        solutions: [1],
-        cooldown: 1,
-        time,
-      },
-    ],
+    questions: Array.from({ length: questionCount }, () => ({
+      question,
+      answers: ["No", "Yes"],
+      solutions: [1],
+      cooldown: 1,
+      time,
+    })),
   }
   const players = [makePlayer("p1", "One"), makePlayer("p2", "Two")]
   const broadcast = vi.fn()
@@ -51,6 +49,7 @@ const createHarness = (time = 10, question = "Pick one") => {
     count: () => players.length,
     findById: (id: string) => players.find((player) => player.id === id),
     getAll: () => players,
+    getExpected: () => players.filter((player) => player.connected),
     broadcastCount,
     replace,
   } as unknown as PlayerManager
@@ -70,6 +69,7 @@ const createHarness = (time = 10, question = "Pick one") => {
   const managerSocket = makeSocket("manager")
   const playerOne = makeSocket("p1")
   const playerTwo = makeSocket("p2")
+  const onGameFinished = vi.fn()
   const round = new RoundManager({
     quizz,
     players: playerManager,
@@ -77,10 +77,11 @@ const createHarness = (time = 10, question = "Pick one") => {
     io,
     gameId: "game-1",
     getManagerId: () => "manager",
+    isManager: (socket: Socket) => socket.id === "manager",
     broadcast,
     send,
     onNewQuestion: vi.fn(),
-    onGameFinished: vi.fn(),
+    onGameFinished,
   })
 
   return {
@@ -90,6 +91,8 @@ const createHarness = (time = 10, question = "Pick one") => {
     start,
     abort,
     broadcastCount,
+    players,
+    onGameFinished,
     managerSocket: managerSocket.socket,
     playerOne,
     playerTwo,
@@ -110,6 +113,38 @@ const enterReveal = async (harness: ReturnType<typeof createHarness>) => {
   await enterQuestion(harness)
   await vi.advanceTimersByTimeAsync(1_950)
 }
+
+const flushAsync = async () => {
+  await Promise.resolve()
+  await Promise.resolve()
+}
+
+const enterAnswering = async (harness: ReturnType<typeof createHarness>) => {
+  await enterReveal(harness)
+  harness.round.unlockAnswers(harness.managerSocket)
+  await flushAsync()
+}
+
+const enterResults = async (harness: ReturnType<typeof createHarness>) => {
+  await enterAnswering(harness)
+  harness.round.abortQuestion(harness.managerSocket)
+  await flushAsync()
+}
+
+const sentStatuses = (
+  harness: ReturnType<typeof createHarness>,
+  target: string,
+  status: string,
+) =>
+  harness.send.mock.calls.filter(
+    ([sentTarget, sentStatus]) =>
+      sentTarget === target && sentStatus === status,
+  )
+
+const preparedQuestionNumbers = (harness: ReturnType<typeof createHarness>) =>
+  harness.broadcast.mock.calls
+    .filter(([status]) => status === STATUS.SHOW_PREPARED)
+    .map(([, data]) => (data as { questionNumber: number }).questionNumber)
 
 describe("RoundManager answer reveal authority", () => {
   beforeEach(() => {
@@ -310,5 +345,211 @@ describe("RoundManager answer reveal authority", () => {
         ([status]) => status === STATUS.SELECT_ANSWER,
       ),
     ).toHaveLength(1)
+  })
+})
+
+describe("RoundManager manager authority over round flow", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("shows the leaderboard only to a manager request after the results", async () => {
+    const harness = createHarness(10, "Pick one", 2)
+
+    harness.round.showLeaderboard(harness.playerOne.socket)
+    harness.round.showLeaderboard(harness.managerSocket)
+    await enterAnswering(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+    expect(sentStatuses(harness, "manager", STATUS.SHOW_LEADERBOARD)).toEqual(
+      [],
+    )
+
+    harness.round.abortQuestion(harness.managerSocket)
+    await flushAsync()
+    harness.round.showLeaderboard(harness.playerOne.socket)
+    expect(sentStatuses(harness, "manager", STATUS.SHOW_LEADERBOARD)).toEqual(
+      [],
+    )
+
+    harness.round.showLeaderboard(harness.managerSocket)
+    expect(
+      sentStatuses(harness, "manager", STATUS.SHOW_LEADERBOARD),
+    ).toHaveLength(1)
+  })
+
+  it("does not let a player end the game during the last question", async () => {
+    const harness = createHarness()
+
+    harness.round.showLeaderboard(harness.playerOne.socket)
+    await enterAnswering(harness)
+    harness.round.showLeaderboard(harness.playerOne.socket)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    expect(harness.onGameFinished).not.toHaveBeenCalled()
+    expect(sentStatuses(harness, "manager", STATUS.FINISHED)).toEqual([])
+    expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toEqual([])
+  })
+
+  it("finishes the game and saves its result exactly once", async () => {
+    const harness = createHarness()
+
+    await enterResults(harness)
+    harness.round.showLeaderboard(harness.playerOne.socket)
+    expect(harness.onGameFinished).not.toHaveBeenCalled()
+
+    harness.round.showLeaderboard(harness.managerSocket)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    expect(harness.onGameFinished).toHaveBeenCalledTimes(1)
+    expect(harness.onGameFinished).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: "Reveal",
+        questions: [expect.objectContaining({ question: "Pick one" })],
+      }),
+    )
+    expect(sentStatuses(harness, "manager", STATUS.FINISHED)).toHaveLength(1)
+    expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toHaveLength(1)
+  })
+
+  it("ignores a second start during the countdown", async () => {
+    const harness = createHarness()
+
+    void harness.round.start(harness.managerSocket)
+    void harness.round.start(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(
+      harness.broadcast.mock.calls.filter(
+        ([status]) => status === STATUS.SHOW_START,
+      ),
+    ).toHaveLength(1)
+  })
+
+  it("does not replay a finished game", async () => {
+    const harness = createHarness()
+
+    await enterResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+    void harness.round.start(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(
+      harness.broadcast.mock.calls.filter(
+        ([status]) => status === STATUS.SHOW_START,
+      ),
+    ).toHaveLength(1)
+    expect(harness.onGameFinished).toHaveBeenCalledTimes(1)
+  })
+
+  it("advances one question at a time and only from the results", async () => {
+    const harness = createHarness(10, "Pick one", 3)
+
+    await enterAnswering(harness)
+    harness.round.nextQuestion(harness.managerSocket)
+    expect(preparedQuestionNumbers(harness)).toEqual([1])
+
+    harness.round.abortQuestion(harness.managerSocket)
+    await flushAsync()
+    harness.round.nextQuestion(harness.playerOne.socket)
+    expect(preparedQuestionNumbers(harness)).toEqual([1])
+
+    harness.round.nextQuestion(harness.managerSocket)
+    harness.round.nextQuestion(harness.managerSocket)
+    expect(preparedQuestionNumbers(harness)).toEqual([1, 2])
+  })
+})
+
+describe("RoundManager player privacy", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("keeps clientIds out of leaderboards and the podium", async () => {
+    const harness = createHarness(10, "Pick one", 2)
+
+    await enterResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+    harness.round.nextQuestion(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(20_000)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    expect(
+      sentStatuses(harness, "manager", STATUS.SHOW_LEADERBOARD),
+    ).toHaveLength(1)
+    expect(sentStatuses(harness, "p1", STATUS.FINISHED)).toHaveLength(1)
+    expect(JSON.stringify(harness.send.mock.calls)).not.toContain("-client")
+  })
+})
+
+describe("RoundManager players who drop out", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stops waiting for a player who is no longer expected", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.players[1].connected = false
+
+    harness.round.selectAnswer(harness.playerOne.socket, 1)
+
+    expect(harness.abort).toHaveBeenCalledTimes(1)
+  })
+
+  it("rechecks when asked, once the last expected player has answered", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.round.selectAnswer(harness.playerOne.socket, 1)
+    expect(harness.abort).not.toHaveBeenCalled()
+
+    harness.players[1].connected = false
+    harness.round.endIfEveryoneAnswered()
+
+    expect(harness.abort).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps the timer running when nobody is left to answer", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.players[0].connected = false
+    harness.players[1].connected = false
+
+    harness.round.endIfEveryoneAnswered()
+
+    expect(harness.abort).not.toHaveBeenCalled()
+  })
+
+  it("keeps a player's answer when they reconnect on a new socket", async () => {
+    const harness = createHarness()
+    await enterAnswering(harness)
+    harness.round.selectAnswer(harness.playerOne.socket, 1)
+
+    harness.players[0].id = "p1-again"
+    const again = makeSocket("p1-again")
+    harness.round.selectAnswer(again.socket, 0)
+    harness.round.selectAnswer(harness.playerTwo.socket, 0)
+    await flushAsync()
+
+    expect(harness.send).toHaveBeenCalledWith(
+      "p1-again",
+      STATUS.SHOW_RESULT,
+      expect.objectContaining({ correct: true, points: 1_000 }),
+    )
+    expect(again.roomEmit).not.toHaveBeenCalled()
   })
 })

@@ -14,6 +14,7 @@ import {
   isKeyOf,
 } from "@razzia/web/features/game/utils/constants"
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
+import { useEffect } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -47,6 +48,14 @@ const ManagerGamePage = () => {
     }
   })
 
+  // Leaving this page detaches the socket from the game and clears the
+  // status, so arriving without one (e.g. browser Forward) re-attaches.
+  useEffect(() => {
+    if (socketClient.connected && !useManagerStore.getState().status) {
+      socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
+    }
+  }, [gameIdParam])
+
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
     ({
@@ -64,8 +73,9 @@ const ManagerGamePage = () => {
     },
   )
 
+  // Replace, not push: Back must not return to a game that is gone.
   useEvent(EVENTS.GAME.RESET, (message) => {
-    navigate({ to: "/manager/config" })
+    navigate({ to: "/manager/config", replace: true })
     reset()
     setQuestionStates(null)
     toast.error(t(message))
@@ -76,8 +86,9 @@ const ManagerGamePage = () => {
       return
     }
 
+    // Leaving closes the game, so replace: Back must not reopen it.
     if (status.name === STATUS.FINISHED) {
-      navigate({ to: "/manager/config" })
+      navigate({ to: "/manager/config", replace: true })
       reset()
       setQuestionStates(null)
 
@@ -94,7 +105,7 @@ const ManagerGamePage = () => {
   }
 
   const handleBack = () => {
-    navigate({ to: "/manager/config" })
+    navigate({ to: "/manager/config", replace: true })
     reset()
     setQuestionStates(null)
   }
@@ -124,5 +135,6 @@ export const Route = createFileRoute("/party/manager/$gameId")({
   component: ManagerGamePage,
   onLeave: ({ params: { gameId } }) => {
     socketClient.emit(EVENTS.MANAGER.LEAVE, { gameId })
+    useManagerStore.getState().resetStatus()
   },
 })

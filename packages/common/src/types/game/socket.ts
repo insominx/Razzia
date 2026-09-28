@@ -2,7 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import type {
   GameResult,
   GameUpdateQuestion,
-  Player,
+  PublicPlayer,
   QuizzWithId,
 } from "@razzia/common/types/game"
 import type { Status, StatusDataMap } from "@razzia/common/types/game/status"
@@ -46,6 +46,7 @@ export interface ServerToClientEvents {
     data: StatusDataMap[Status]
   }) => void
   [EVENTS.GAME.SUCCESS_ROOM]: (_data: string) => void
+  [EVENTS.GAME.SUCCESS_REJOIN]: (_gameId: string) => void
   [EVENTS.GAME.SUCCESS_JOIN]: (_data: {
     gameId: string
     visuals: ResolvedVisuals
@@ -69,13 +70,15 @@ export interface ServerToClientEvents {
     currentQuestion: GameUpdateQuestion
     visuals: ResolvedVisuals
   }) => void
-  [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: { leaderboard: Player[] }) => void
+  [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: {
+    leaderboard: PublicPlayer[]
+  }) => void
 
   // Manager events
   [EVENTS.MANAGER.SUCCESS_RECONNECT]: (_data: {
     gameId: string
     status: { name: Status; data: StatusDataMap[Status] }
-    players: Player[]
+    players: PublicPlayer[]
     currentQuestion: GameUpdateQuestion
     visuals: ResolvedVisuals
   }) => void
@@ -93,7 +96,7 @@ export interface ServerToClientEvents {
     status: Status
     data: StatusDataMap[Status]
   }) => void
-  [EVENTS.MANAGER.NEW_PLAYER]: (_player: Player) => void
+  [EVENTS.MANAGER.NEW_PLAYER]: (_player: PublicPlayer) => void
   [EVENTS.MANAGER.REMOVE_PLAYER]: (_playerId: string) => void
   [EVENTS.MANAGER.ERROR_MESSAGE]: (_message: string) => void
   [EVENTS.MANAGER.PLAYER_KICKED]: (_playerId: string) => void

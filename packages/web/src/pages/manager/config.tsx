@@ -1,5 +1,4 @@
 import { EVENTS } from "@razzia/common/constants"
-import { STATUS } from "@razzia/common/types/game/status"
 import Background from "@razzia/web/components/Background"
 import Loader from "@razzia/web/components/Loader"
 import {
@@ -8,27 +7,23 @@ import {
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import Configurations from "@razzia/web/features/manager/components/configurations"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useFollowCreatedGame } from "@razzia/web/features/manager/hooks/use-follow-created-game"
+import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router"
 
 const ManagerConfigPage = () => {
   const { isConnected } = useSocket()
-  const { setGameId, setStatus, setConfig, setVisuals, config } =
-    useManagerStore()
+  const { setConfig, config } = useManagerStore()
   const navigate = useNavigate()
 
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
     setConfig(data)
   })
 
-  useEvent(EVENTS.MANAGER.GAME_CREATED, ({ gameId, inviteCode, visuals }) => {
-    setGameId(gameId)
-    setVisuals(visuals)
-    setStatus(STATUS.SHOW_ROOM, {
-      text: "game:waitingForPlayers",
-      inviteCode,
-    })
-    navigate({ to: "/party/manager/$gameId", params: { gameId } })
+  useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
+    navigate({ to: "/manager" })
   })
+
+  useFollowCreatedGame()
 
   if (!isConnected) {
     return (
@@ -39,7 +34,7 @@ const ManagerConfigPage = () => {
   }
 
   if (!config) {
-    return navigate({ to: "/manager" })
+    return <Navigate to="/manager" replace />
   }
 
   return (

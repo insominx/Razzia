@@ -5,6 +5,7 @@
     "usernameTooShort": "Le pseudo doit faire au moins 4 caractères"
   },
   "game": {
+    "alreadyStarted": "Cette partie a déjà commencé",
     "expired": "La partie a expiré",
     "kickedByManager": "Vous avez été expulsé par le manager",
     "managerAlreadyConnected": "Un manager est déjà connecté",

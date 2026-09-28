@@ -1,6 +1,9 @@
 import { EVENTS } from "@razzia/common/constants"
 import Button from "@razzia/web/components/Button"
-import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
+import {
+  useEvent,
+  useSocket,
+} from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
 import clsx from "clsx"
 import { Check } from "lucide-react"
@@ -12,7 +15,13 @@ const ConfigSelectQuizz = () => {
   const { socket } = useSocket()
   const { quizz: quizzList } = useConfig()
   const [selected, setSelected] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
   const { t } = useTranslation()
+
+  useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
+    setCreating(false)
+    toast.error(t(message))
+  })
 
   const handleSelect = (id: string) => () => {
     if (selected === id) {
@@ -23,12 +32,18 @@ const ConfigSelectQuizz = () => {
   }
 
   const handleSubmit = () => {
+    if (creating) {
+      return
+    }
+
     if (!selected) {
       toast.error(t("manager:quizz.pleaseSelect"))
 
       return
     }
 
+    // Success navigates to the new game, so only an error unlocks this.
+    setCreating(true)
     socket.emit(EVENTS.GAME.CREATE, selected)
   }
 
@@ -44,7 +59,7 @@ const ConfigSelectQuizz = () => {
               "border-brand-border bg-brand-tint text-brand w-full border",
               !selected && "pointer-events-none",
             )}
-            disabled={!selected}
+            disabled={!selected || creating}
             onClick={handleSubmit}
           >
             {t("manager:quizz.startGame")}
