@@ -130,16 +130,18 @@ const Podium = ({ data: { subject, top } }: Props) => {
           <div className="spotlight"></div>
         </div>
       )}
-      <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-between">
+      <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-between overflow-x-clip">
         <h2 className="anim-show text-text-primary text-center text-3xl font-bold md:text-4xl lg:text-5xl">
           {subject}
         </h2>
 
+        {/* `clip`, not `hidden`: hiding one axis turns the other into `auto`,
+            and the swaying names then flash a scrollbar on every swing. */}
         <div
           style={{
             gridTemplateColumns: `repeat(${top.length}, minmax(0, 1fr))`,
           }}
-          className={`grid w-full max-w-200 flex-1 items-end justify-center justify-self-end overflow-x-visible overflow-y-hidden`}
+          className={`grid w-full max-w-200 flex-1 items-end justify-center justify-self-end overflow-y-clip`}
         >
           {top[1] && (
             <div

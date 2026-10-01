@@ -1,0 +1,103 @@
+{
+  "subject": "Splines & Camera Flythroughs",
+  "questions": [
+    {
+      "question": "Two Bézier segments share an endpoint, but the camera changes direction abruptly as it crosses the join. What should you adjust to remove the corner?",
+      "answers": [
+        "Make the two handles equal in length",
+        "Move the camera at constant speed",
+        "Align the two handles across the join",
+        "Use more samples in the distance table"
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A spline has segments numbered 0 and 1. At u = 1.4, which segment and local t should we evaluate?",
+      "answers": [
+        "Segment 1 at t = 0.4",
+        "Segment 0 at t = 0.4",
+        "Segment 1 at t = 0.6",
+        "Segment 0 at t = 0.6"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "Every frame, the camera adds rate × deltaTime to u. The joins are smooth, yet the camera still speeds up and slows down. Why?",
+      "answers": [
+        "It slows down where the path bends",
+        "Frame time varies from frame to frame",
+        "Local t restarts at 0 in each segment",
+        "Equal steps in u cover unequal distances"
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A curved path’s length is estimated by adding the straight lines between samples along the whole path. Measuring that same path with 4 lines instead of 32 makes each line longer. What happens to the estimated length?",
+      "answers": [
+        "It gets shorter",
+        "It gets longer",
+        "It stays the same",
+        "Either way, depending on the bends"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "The distance table contains these two rows:\n\nu = 0.4, distance = 2 m\nu = 0.8, distance = 6 m\n\nWhich u should we use at distance = 4 m?",
+      "answers": [
+        "0.4",
+        "0.6",
+        "0.67",
+        "0.8"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 30
+    },
+    {
+      "question": "The camera advances along the path by distance, using a (u, s) table, and aims at a statue. Which change forces us to rebuild the table?",
+      "answers": [
+        "Moving the statue it aims at",
+        "Raising the camera’s speed",
+        "Easing the camera’s start and stop",
+        "Dragging a handle on the path"
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "cameraPosition and statuePosition are world positions. Which vector should we normalize to aim the camera at the statue?",
+      "answers": [
+        "The spline tangent at the camera",
+        "statuePosition − cameraPosition",
+        "cameraPosition − statuePosition",
+        "statuePosition"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 25
+    }
+  ]
+}

@@ -100,7 +100,7 @@ const QuestionCard = ({
               ref={index === 0 ? firstSentenceRef : undefined}
               data-question-sentence=""
               data-question-sentence-state={visible ? "visible" : "reserved"}
-              className="block w-full text-center text-balance"
+              className="block w-full whitespace-pre-line text-center text-balance"
               initial={reveal && !reducedMotion ? { opacity: 0 } : false}
               animate={{ opacity: visible ? 1 : 0 }}
               transition={{

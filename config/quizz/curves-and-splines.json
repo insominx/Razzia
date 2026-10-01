@@ -1,0 +1,117 @@
+{
+  "subject": "Curves & Axe Recall",
+  "questions": [
+    {
+      "question": "A quadratic Bézier at t = 0.5: point A is halfway from P₀ to P₁, and point B is halfway from P₁ to P₂. Where is the curve point?",
+      "answers": [
+        "At P₁",
+        "Halfway between P₀ and P₂",
+        "Halfway between A and B",
+        "At A"
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "An axe returns along a quadratic Bézier curve. You move its middle handle upward but leave the start and hand positions fixed. What happens to the path?",
+      "answers": [
+        "It passes through the handle at t = 0.5",
+        "It bends toward the handle; its ends stay put",
+        "Its end moves up with the handle",
+        "It stays the same; handles only change speed"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A curve component computes power-basis coefficients C₀, C₁, C₂ once in Start() and draws its line from them. In Play mode you drag the middle handle. What does the line do?",
+      "answers": [
+        "Follows the handle; all three forms agree",
+        "Flattens into a straight line",
+        "Follows the handle with uneven spacing",
+        "Keeps its old shape until recomputed"
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A recall path starts at the stuck axe (P₀), bows out through a side handle (P₁), and ends at the hand (P₂). At t = 0, which way is the axe moving?",
+      "answers": [
+        "Toward the side handle",
+        "Straight toward the hand",
+        "Along its original throw direction",
+        "Directly away from the handle"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A follower takes equal steps in t at equal time intervals. Its sampled positions are crowded together in one part of the path. How does it move through that part?",
+      "answers": [
+        "It depends on frame rate, not spacing",
+        "Faster than where samples spread out",
+        "Slower than where samples spread out",
+        "Same speed; only the line looks uneven"
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You switch the recall from a quadratic to a cubic Bézier. What does the extra handle let you control?",
+      "answers": [
+        "Constant speed along the path",
+        "A point the path must pass through",
+        "How long the recall takes",
+        "Each end's direction, separately"
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "Recall begins while the axe is still flying under a dynamic Rigidbody. Before the recall loop starts setting its position along the curve, what should happen to the Rigidbody?",
+      "answers": [
+        "Make it kinematic",
+        "Add force toward the hand",
+        "Turn off its gravity",
+        "Nothing; setting position overrides physics"
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You spin the axe during recall. It reaches the hand, but it sits there at a crooked angle. What did the catch skip?",
+      "answers": [
+        "Letting t reach exactly 1",
+        "Restoring the held rotation",
+        "Making the Rigidbody kinematic",
+        "Reparenting the axe to the hand"
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 20
+    }
+  ]
+}

@@ -96,4 +96,28 @@ describe("Question shared layout", () => {
       ),
     ).toBeTruthy()
   })
+
+  it("keeps a distance table on its own lines without adding sentences", () => {
+    const question =
+      "The distance table contains these two rows:\n\nu = 0.4, distance = 2 m\nu = 0.8, distance = 6 m\n\nWhich u should we use at distance = 4 m?"
+    const { container } = render(
+      <Question
+        data={{
+          question,
+          questionNumber: 5,
+          cooldown: 5,
+          promptStartedAt: 0,
+          serverNow: 0,
+        }}
+      />,
+    )
+
+    const sentence = container.querySelector("[data-question-sentence]")
+    expect(container.querySelectorAll("[data-question-sentence]")).toHaveLength(
+      1,
+    )
+    expect(sentence).toHaveClass("whitespace-pre-line")
+    expect(sentence?.textContent).toBe(question)
+    expect(getQuestionPromptRevealMs(question)).toBe(QUESTION_CONTENT_ENTER_MS)
+  })
 })
