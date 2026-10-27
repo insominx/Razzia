@@ -144,12 +144,14 @@ const ManagerGamePage = () => {
       }
       manager
     >
-      {reviewed ? (
-        <Responses key={`review-${review}`} data={reviewed} />
-      ) : (
-        CurrentComponent &&
-        status && <CurrentComponent data={status.data as never} />
+      {CurrentComponent && status && (
+        // Hidden, not unmounted, under a review: its timer and answer count
+        // keep running, and nothing replays when the review ends.
+        <div data-live-screen className={reviewed ? "hidden" : "contents"}>
+          <CurrentComponent data={status.data as never} />
+        </div>
       )}
+      {reviewed && <Responses key={`review-${review}`} data={reviewed} />}
     </GameWrapper>
   )
 }
