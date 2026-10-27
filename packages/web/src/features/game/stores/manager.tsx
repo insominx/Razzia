@@ -59,6 +59,9 @@ interface ManagerStore<T> {
   // show one again; `review` is the one shown in place of the live screen.
   responses: Responses
   review: number | null
+  // Set when the deck drives the game on; the screen that brings ends the
+  // review, so another question's screens never interrupt one.
+  reviewEndsWithScreen: boolean
 
   setConfig: (_config: ManagerConfig) => void
   setGameId: (_gameId: string | null) => void
@@ -69,6 +72,7 @@ interface ManagerStore<T> {
   setLecture: (_lecture: LectureState | null) => void
   setHostControls: (_shown: boolean) => void
   setReview: (_question: number | null) => void
+  endReviewWithNextScreen: () => void
 
   reset: () => void
 }
@@ -82,6 +86,7 @@ const initialState = {
   lecture: null,
   responses: {},
   review: null,
+  reviewEndsWithScreen: false,
 }
 
 export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
@@ -99,13 +104,14 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
     ),
   setVisuals: (visuals) => set({ visuals }),
 
-  // A new screen from the game ends a review.
   setStatus: (name, data) =>
     set((state) => {
       const status = createStatus(name, data)
+      const ended = state.reviewEndsWithScreen
+      const review = ended ? null : state.review
 
       if (status.name !== STATUS.SHOW_RESPONSES) {
-        return { status, review: null }
+        return { status, review, reviewEndsWithScreen: false }
       }
 
       const responses = {
@@ -114,7 +120,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
       }
       saveResponses(state.gameId, responses)
 
-      return { status, review: null, responses }
+      return { status, review, reviewEndsWithScreen: false, responses }
     }),
   resetStatus: () => set({ status: null }),
 
@@ -122,6 +128,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
   setLecture: (lecture) => set({ lecture }),
   setHostControls: (hostControls) => set({ hostControls }),
   setReview: (review) => set({ review }),
+  endReviewWithNextScreen: () => set({ reviewEndsWithScreen: true }),
 
   reset: () => set(initialState),
 }))

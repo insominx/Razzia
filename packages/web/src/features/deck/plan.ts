@@ -130,15 +130,19 @@ export const buildBridgeState = ({
     pending,
     reattaching,
     gameId: attached ? gameId : null,
-    inviteCode: lecture?.inviteCode ?? data.inviteCode ?? null,
+    // Gated like gameId: after Restart quiz the old game's PIN and progress
+    // must not show until the new lobby is attached.
+    inviteCode: attached
+      ? (lecture?.inviteCode ?? data.inviteCode ?? null)
+      : null,
     lecture: lecture !== null,
     screen,
     answeringOpen:
       screen === STATUS.SELECT_ANSWER && data.answeringOpen === true,
-    question: lecture?.current ?? shownQuestion,
+    question: attached ? (lecture?.current ?? shownQuestion) : null,
     total: lecture?.total ?? null,
-    played: lecture?.played ?? [],
-    finished: lecture?.finished ?? screen === STATUS.FINISHED,
+    played: attached ? (lecture?.played ?? []) : [],
+    finished: attached && (lecture?.finished ?? screen === STATUS.FINISHED),
     players,
     visible,
     reviewing: attached ? review : null,

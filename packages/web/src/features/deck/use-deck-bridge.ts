@@ -37,6 +37,9 @@ const CREATE_TIMEOUT_MS = 10_000
 const REATTACH_EVERY_MS = 5_000
 // Longer than the server takes to drop a dead connection (25 s + 20 s pings).
 const REATTACH_FOR_MS = 90_000
+// A command queued longer than this would start a question wherever the deck
+// has moved on to since.
+const QUEUE_FOR_MS = 10_000
 
 const LOGIN_PATH = "/manager"
 const CONFIG_PATH = "/manager/config"
@@ -71,7 +74,7 @@ export const useDeckBridge = () => {
   const [reattaching, setReattaching] = useState(false)
 
   const quiz = useRef<string | null>(null)
-  const queued = useRef<RoundCommand | null>(null)
+  const queued = useRef<{ command: RoundCommand; at: number } | null>(null)
   const createSentAt = useRef<number | null>(null)
   const configRequested = useRef(false)
   const retryTimer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -167,6 +170,8 @@ export const useDeckBridge = () => {
   }
 
   const emitRound = (command: RoundCommand, target: string) => {
+    useManagerStore.getState().endReviewWithNextScreen()
+
     if (command.type === "leaderboard") {
       socket.emit(EVENTS.MANAGER.SHOW_LEADERBOARD, { gameId: target })
       post({ type: "result", command: command.type, outcome: "accepted" })
@@ -207,7 +212,7 @@ export const useDeckBridge = () => {
     })
 
     if (plan.kind === "queue") {
-      queued.current = command
+      queued.current = { command, at: Date.now() }
       post({ type: "result", command: command.type, outcome: "queued" })
 
       return
@@ -564,14 +569,26 @@ export const useDeckBridge = () => {
 
   // A command that arrived while this page was not yet the manager.
   useEffect(() => {
-    const command = queued.current
+    const entry = queued.current
 
-    if (!command || !attached || !status) {
+    if (!entry || !attached || !status) {
       return
     }
 
     queued.current = null
-    runRound(command)
+
+    if (Date.now() - entry.at > QUEUE_FOR_MS) {
+      post({
+        type: "result",
+        command: entry.command.type,
+        outcome: "ignored",
+        reason: "expired",
+      })
+
+      return
+    }
+
+    runRound(entry.command)
   })
 
   useEffect(() => {

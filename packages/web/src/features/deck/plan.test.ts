@@ -197,6 +197,22 @@ describe("buildBridgeState", () => {
     ).toMatchObject({ reviewing: null, reviewable: [] })
   })
 
+  it("shows no PIN or progress from a game this page is not attached to", () => {
+    expect(
+      buildBridgeState(
+        inputs({
+          attached: false,
+          lecture: lectureState({ played: [0, 1], current: 1, finished: true }),
+        }),
+      ),
+    ).toMatchObject({
+      inviteCode: null,
+      played: [],
+      question: null,
+      finished: false,
+    })
+  })
+
   it("reports a lecture's progress and its PIN", () => {
     const state = buildBridgeState(
       inputs({

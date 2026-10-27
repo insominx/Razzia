@@ -304,7 +304,7 @@ describe("useDeckBridge", () => {
     expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
   })
 
-  it("plays again when the game's next screen ends a review", () => {
+  it("plays again when the question the deck starts ends a review", () => {
     stubStorage()
     renderHook(() => {
       useDeckBridge()
@@ -323,6 +323,8 @@ describe("useDeckBridge", () => {
     sendCommand({ type: "visibility", visible: true })
     sendCommand({ type: "review", question: 1 })
     expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
+    sendCommand({ type: "play", question: 2 })
+    expect(useManagerStore.getState().review).toBe(1)
 
     act(() => {
       useManagerStore.getState().setStatus(STATUS.SHOW_PREPARED, {
@@ -335,7 +337,7 @@ describe("useDeckBridge", () => {
     expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
   })
 
-  it("does not review results it never saw, and a new screen ends a review", () => {
+  it("does not review results it never saw, and only the deck's next command ends a review", () => {
     stubStorage()
     renderHook(() => {
       useDeckBridge()
@@ -358,13 +360,44 @@ describe("useDeckBridge", () => {
     sendCommand({ type: "review", question: 3 })
     expect(useManagerStore.getState().review).toBe(3)
 
+    // Another question's screens (it runs while the deck shows this one).
     act(() => {
       useManagerStore.getState().setStatus(STATUS.SHOW_LEADERBOARD, {
         oldLeaderboard: [],
         leaderboard: [],
       })
     })
+    expect(useManagerStore.getState().review).toBe(3)
+
+    act(() => {
+      useManagerStore.getState().endReviewWithNextScreen()
+      useManagerStore.getState().setStatus(STATUS.SHOW_LEADERBOARD, {
+        oldLeaderboard: [],
+        leaderboard: [],
+      })
+    })
     expect(useManagerStore.getState().review).toBeNull()
+  })
+
+  it("drops a queued command that waited too long for the game", () => {
+    vi.useFakeTimers()
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    sendCommand({ type: "play", question: 0 })
+    expect(postedOf("result").at(-1)).toMatchObject({ outcome: "queued" })
+
+    vi.advanceTimersByTime(11_000)
+    attachTo({ name: STATUS.SHOW_ROOM, data: {} })
+
+    expect(mocks.ackEmit).not.toHaveBeenCalled()
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "play",
+      outcome: "ignored",
+      reason: "expired",
+    })
   })
 
   it("forgets one game's results when another game starts", () => {
