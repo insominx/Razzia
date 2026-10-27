@@ -12,7 +12,9 @@
     "managerDisconnected": "El administrador se ha desconectado",
     "noPlayersConnected": "No hay jugadores conectados",
     "notFound": "Partida no encontrada",
-    "playerAlreadyConnected": "El jugador ya está conectado"
+    "playerAlreadyConnected": "El jugador ya está conectado",
+    "questionInProgress": "Hay una pregunta en curso. Únete cuando termine.",
+    "openedElsewhere": "Este juego se abrió en otra conexión"
   },
   "manager": {
     "failedToReadConfig": "Error al leer la configuración del juego",

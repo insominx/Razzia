@@ -12,7 +12,9 @@
     "managerDisconnected": "Le manager s'est déconnecté",
     "noPlayersConnected": "Aucun joueur connecté",
     "notFound": "Partie introuvable",
-    "playerAlreadyConnected": "Ce joueur est déjà connecté"
+    "playerAlreadyConnected": "Ce joueur est déjà connecté",
+    "questionInProgress": "Une question est en cours. Rejoignez la partie quand elle sera finie.",
+    "openedElsewhere": "Cette partie a été ouverte sur une autre connexion"
   },
   "manager": {
     "failedToReadConfig": "Impossible de lire la configuration",

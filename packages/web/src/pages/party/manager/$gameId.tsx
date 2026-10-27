@@ -1,5 +1,6 @@
 import { EVENTS } from "@razzia/common/constants"
 import { STATUS } from "@razzia/common/types/game/status"
+import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
 import GameWrapper from "@razzia/web/features/game/components/GameWrapper"
 import {
   socketClient,
@@ -30,6 +31,7 @@ const ManagerGamePage = () => {
     setStatus,
     setVisuals,
     setPlayers,
+    setLecture,
     reset,
   } = useManagerStore()
   const { setQuestionStates } = useQuestionStore()
@@ -64,17 +66,27 @@ const ManagerGamePage = () => {
       players,
       currentQuestion,
       visuals: reconnectVisuals,
+      lecture,
     }) => {
       setGameId(reconnectGameId)
       setVisuals(reconnectVisuals)
       setStatus(reconnectStatus.name, reconnectStatus.data)
       setPlayers(players)
       setQuestionStates(currentQuestion)
+      setLecture(lecture ?? null)
     },
   )
 
+  useEvent(EVENTS.MANAGER.LECTURE_STATE, setLecture)
+
   // Replace, not push: Back must not return to a game that is gone.
   useEvent(EVENTS.GAME.RESET, (message) => {
+    // In a lecture deck the game is still there: the deck bridge keeps asking
+    // until the server lets this connection back in.
+    if (IS_DECK_EMBED && message === "errors:game.managerAlreadyConnected") {
+      return
+    }
+
     navigate({ to: "/manager/config", replace: true })
     reset()
     setQuestionStates(null)

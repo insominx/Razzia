@@ -35,5 +35,8 @@
     "description": "{{name}} will be removed from this game.",
     "confirm": "Kick"
   },
-  "yourAnswer": "Your answer"
+  "yourAnswer": "Your answer",
+  "lectureNextQuestion": "The next question comes up during the lecture.",
+  "lectureFinalStandings": "Final standings come up at the end of the lecture.",
+  "lectureJoinHint": "Join at {{url}} · PIN {{pin}}"
 }

@@ -12,7 +12,9 @@
     "managerDisconnected": "管理者が切断されました",
     "noPlayersConnected": "接続中のプレイヤーがいません",
     "notFound": "ゲームが見つかりません",
-    "playerAlreadyConnected": "プレイヤーはすでに接続されています"
+    "playerAlreadyConnected": "プレイヤーはすでに接続されています",
+    "questionInProgress": "問題の出題中です。終わってから参加してください。",
+    "openedElsewhere": "このゲームは別の接続で開かれました"
   },
   "manager": {
     "failedToReadConfig": "ゲーム設定の読み込みに失敗しました",

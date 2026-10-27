@@ -31,5 +31,8 @@
     "description": "{{name}} sera retiré de cette partie.",
     "confirm": "Exclure"
   },
-  "yourAnswer": "Ta réponse"
+  "yourAnswer": "Ta réponse",
+  "lectureNextQuestion": "La prochaine question arrive pendant le cours.",
+  "lectureFinalStandings": "Le classement final arrive à la fin du cours.",
+  "lectureJoinHint": "Rejoignez sur {{url}} · PIN {{pin}}"
 }

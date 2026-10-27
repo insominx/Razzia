@@ -3,8 +3,10 @@ import type { Status } from "@razzia/common/types/game/status"
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import Button from "@razzia/web/components/Button"
 import Loader from "@razzia/web/components/Loader"
+import LectureJoinHint from "@razzia/web/features/game/components/LectureJoinHint"
 import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
 import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import { useSoundStore } from "@razzia/web/features/game/stores/sound"
@@ -43,6 +45,8 @@ const GameWrapper = ({
   const { t } = useTranslation()
   const [isDisabled, setIsDisabled] = useState(false)
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
+  const hostControls = useManagerStore((state) => state.hostControls)
+  const controls = manager && hostControls
 
   useLayoutEffect(() => {
     useSoundStore.getState().bindSurface(manager ? "manager" : "player")
@@ -86,7 +90,7 @@ const GameWrapper = ({
           <>
             <div className="flex w-full items-center gap-2 p-4">
               <div className="flex flex-1 items-center justify-between">
-                {manager && next && (
+                {controls && next && (
                   <Button
                     className={clsx(
                       "bg-surface border-border text-text-primary hover:bg-panel border px-4",
@@ -100,7 +104,9 @@ const GameWrapper = ({
                   </Button>
                 )}
 
-                {manager && onBack && (
+                {controls && <LectureJoinHint statusName={statusName} />}
+
+                {controls && onBack && (
                   <Button
                     onClick={onBack}
                     className="bg-surface border-border text-text-primary hover:bg-panel border px-4"

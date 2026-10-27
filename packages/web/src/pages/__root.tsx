@@ -1,5 +1,7 @@
 import ErrorPage from "@razzia/web/components/ErrorPage"
 import NotFound from "@razzia/web/components/NotFound"
+import DeckBridge from "@razzia/web/features/deck/DeckBridge"
+import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
 import {
   SocketProvider,
   useSocket,
@@ -27,6 +29,7 @@ const GameLayout = () => {
 
   return (
     <SurfaceOverrideContext.Provider value={setSurfaceOverride}>
+      {IS_DECK_EMBED && <DeckBridge />}
       <div className="bg-canvas text-text-body antialiased">
         <Outlet />
       </div>

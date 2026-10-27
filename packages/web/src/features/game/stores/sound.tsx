@@ -82,10 +82,14 @@ interface SoundStore {
   volume: number
   muted: boolean
   surface: SoundSurface | null
+  // Silences everything while a lecture deck hides this page, without
+  // touching the saved preference.
+  suppressed: boolean
 
   bindSurface: (_surface: SoundSurface) => void
   setVolume: (_volume: number) => void
   toggleMute: () => void
+  setSuppressed: (_suppressed: boolean) => void
   unlock: () => void
 }
 
@@ -105,6 +109,7 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
   volume: initialVolume,
   muted: false,
   surface: null,
+  suppressed: false,
 
   bindSurface: (surface) => {
     const state = get()
@@ -115,7 +120,7 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
 
     const muted = getStoredMuted(surface)
 
-    applyToHowler(state.volume, muted)
+    applyToHowler(state.volume, muted || state.suppressed)
     set({ surface, muted })
   },
 
@@ -123,23 +128,30 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
   // move the thumb and stay silent, which reads as a broken control.
   setVolume: (volume) => {
     const clamped = clamp(volume)
-    const { surface } = get()
+    const { surface, suppressed } = get()
 
     persist(clamped, false, surface)
-    applyToHowler(clamped, false)
+    applyToHowler(clamped, suppressed)
     set({ volume: clamped, muted: false })
   },
 
   // Unmuting a slider sitting at zero restores the default, so the toggle is
   // never a no-op that looks broken.
   toggleMute: () => {
-    const { volume, muted, surface } = get()
+    const { volume, muted, surface, suppressed } = get()
     const nextMuted = !muted
     const nextVolume = !nextMuted && volume === 0 ? DEFAULT_VOLUME : volume
 
     persist(nextVolume, nextMuted, surface)
-    applyToHowler(nextVolume, nextMuted)
+    applyToHowler(nextVolume, nextMuted || suppressed)
     set({ volume: nextVolume, muted: nextMuted })
+  },
+
+  setSuppressed: (suppressed) => {
+    const { volume, muted } = get()
+
+    applyToHowler(volume, muted || suppressed)
+    set({ suppressed })
   },
 
   // `@types/howler` declares `ctx` as always present, but howler only assigns

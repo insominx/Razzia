@@ -35,7 +35,11 @@ export class PlayerManager {
     this.getVisuals = getVisuals
   }
 
-  join(socket: Socket, username: string): Player | undefined {
+  join(
+    socket: Socket,
+    username: string,
+    waitText?: string,
+  ): Player | undefined {
     const clientId = socket.handshake.auth.clientId as string
 
     if (this.findByClientId(clientId)) {
@@ -71,6 +75,7 @@ export class PlayerManager {
     socket.emit(EVENTS.GAME.SUCCESS_JOIN, {
       gameId: this.gameId,
       visuals: this.getVisuals(),
+      ...(waitText ? { waitText } : {}),
     })
 
     return player

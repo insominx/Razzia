@@ -15,7 +15,7 @@ interface Props {
 }
 
 const Result = ({
-  data: { correct, message, points, myPoints, rank, aheadOfMe },
+  data: { correct, message, points, myPoints, rank, aheadOfMe, note },
 }: Props) => {
   const player = usePlayerStore()
   const { t } = useTranslation()
@@ -55,6 +55,11 @@ const Result = ({
         <span className="bg-success-tint border-success-border text-success rounded-rz-md mt-2 border px-4 py-2 text-2xl font-bold">
           +{points}
         </span>
+      )}
+      {note && (
+        <p className="text-text-muted mt-6 max-w-md text-center text-lg font-semibold">
+          {t(note)}
+        </p>
       )}
     </section>
   )

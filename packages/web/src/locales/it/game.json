@@ -31,5 +31,8 @@
     "description": "{{name}} verrà rimosso da questa partita.",
     "confirm": "Espelli"
   },
-  "yourAnswer": "La tua risposta"
+  "yourAnswer": "La tua risposta",
+  "lectureNextQuestion": "La prossima domanda arriva durante la lezione.",
+  "lectureFinalStandings": "La classifica finale arriva alla fine della lezione.",
+  "lectureJoinHint": "Partecipa su {{url}} · PIN {{pin}}"
 }

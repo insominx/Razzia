@@ -31,5 +31,8 @@
     "description": "{{name}} será expulsado de esta partida.",
     "confirm": "Expulsar"
   },
-  "yourAnswer": "Tu respuesta"
+  "yourAnswer": "Tu respuesta",
+  "lectureNextQuestion": "La siguiente pregunta llega durante la clase.",
+  "lectureFinalStandings": "La clasificación final llega al final de la clase.",
+  "lectureJoinHint": "Únete en {{url}} · PIN {{pin}}"
 }

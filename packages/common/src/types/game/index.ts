@@ -79,7 +79,31 @@ export interface GameResult {
   date: string
   players: GameResultPlayer[]
   questions: QuestionResult[]
+  // A lecture game that closed before its final standings.
+  partial?: boolean
 }
+
+// A lecture game plays one question at a time, whenever the deck asks for it.
+export interface LectureState {
+  inviteCode: string
+  total: number
+  // 0-based indices of the questions that have started, ascending.
+  played: number[]
+  // The question started most recently, or null before the first.
+  current: number | null
+  finished: boolean
+}
+
+export type LectureOutcome =
+  | "accepted"
+  | "notLecture"
+  | "notManager"
+  | "invalidIndex"
+  | "alreadyPlayed"
+  | "busy"
+  | "noPlayers"
+  | "finished"
+  | "nothingPlayed"
 
 export interface GameResultMeta {
   id: string

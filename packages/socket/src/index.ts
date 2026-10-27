@@ -65,12 +65,17 @@ io.on("connection", (socket) => {
   })
 })
 
-process.on("SIGINT", () => {
-  Registry.getInstance().cleanup()
-  process.exit(0)
-})
+// A redeploy mid-lecture still keeps the questions a lecture game played.
+const shutdown = () => {
+  const registry = Registry.getInstance()
 
-process.on("SIGTERM", () => {
-  Registry.getInstance().cleanup()
+  registry.getAllGames().forEach((game) => {
+    game.saveUnfinishedLecture()
+  })
+  registry.cleanup()
   process.exit(0)
-})
+}
+
+process.on("SIGINT", shutdown)
+
+process.on("SIGTERM", shutdown)

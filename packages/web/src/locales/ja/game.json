@@ -31,5 +31,8 @@
     "description": "{{name}}はこのゲームから退出させられます。",
     "confirm": "退出させる"
   },
-  "yourAnswer": "あなたの回答"
+  "yourAnswer": "あなたの回答",
+  "lectureNextQuestion": "次の問題は講義の途中で出題されます。",
+  "lectureFinalStandings": "最終順位は講義の最後に発表されます。",
+  "lectureJoinHint": "{{url}} で参加 · PIN {{pin}}"
 }

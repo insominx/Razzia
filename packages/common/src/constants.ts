@@ -12,6 +12,7 @@ export const EVENTS = {
     UPDATE_QUESTION: "game:updateQuestion",
     PLAYER_ANSWER: "game:playerAnswer",
     CREATE: "game:create",
+    CREATE_LECTURE: "game:createLecture",
   },
   PLAYER: {
     SUCCESS_RECONNECT: "player:successReconnect",
@@ -47,6 +48,9 @@ export const EVENTS = {
     SOUND_THEME_SET: "manager:soundThemeSet",
     LOGOUT: "manager:logout",
     UNAUTHORIZED: "manager:unauthorized",
+    PLAY_QUESTION: "manager:playQuestion",
+    FINISH_GAME: "manager:finishGame",
+    LECTURE_STATE: "manager:lectureState",
   },
   QUIZZ: {
     GET: "quizz:get",
@@ -66,6 +70,13 @@ export const EVENTS = {
 } as const
 
 export const NO_TIME_LIMIT = -1
+
+// What a lecture game's players read while the lecture goes on between
+// questions (i18n keys).
+export const LECTURE_TEXT = {
+  NEXT_QUESTION: "game:lectureNextQuestion",
+  FINAL_STANDINGS: "game:lectureFinalStandings",
+} as const
 
 export const MEDIA_TYPES = {
   IMAGE: "image",

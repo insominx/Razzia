@@ -12,7 +12,9 @@
     "managerDisconnected": "Manager disconnected",
     "noPlayersConnected": "No players connected",
     "notFound": "Game not found",
-    "playerAlreadyConnected": "Player already connected"
+    "playerAlreadyConnected": "Player already connected",
+    "questionInProgress": "A question is in progress. Join again when it ends.",
+    "openedElsewhere": "This game was opened on another connection"
   },
   "manager": {
     "failedToReadConfig": "Failed to read game config",

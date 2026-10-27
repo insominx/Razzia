@@ -31,5 +31,8 @@
     "description": "{{name}} wird aus diesem Spiel entfernt.",
     "confirm": "Entfernen"
   },
-  "yourAnswer": "Deine Antwort"
+  "yourAnswer": "Deine Antwort",
+  "lectureNextQuestion": "Die nächste Frage kommt im Lauf der Vorlesung.",
+  "lectureFinalStandings": "Der Endstand kommt am Ende der Vorlesung.",
+  "lectureJoinHint": "Mitmachen unter {{url}} · PIN {{pin}}"
 }

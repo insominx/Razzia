@@ -34,13 +34,16 @@ const Username = () => {
     }
   }
 
-  useEvent(EVENTS.GAME.SUCCESS_JOIN, ({ gameId: joinedGameId, visuals }) => {
-    setVisuals(visuals)
-    setStatus(STATUS.WAIT, { text: "game:waitingForPlayers" })
-    login(username)
+  useEvent(
+    EVENTS.GAME.SUCCESS_JOIN,
+    ({ gameId: joinedGameId, visuals, waitText }) => {
+      setVisuals(visuals)
+      setStatus(STATUS.WAIT, { text: waitText ?? "game:waitingForPlayers" })
+      login(username)
 
-    navigate({ to: "/party/$gameId", params: { gameId: joinedGameId } })
-  })
+      navigate({ to: "/party/$gameId", params: { gameId: joinedGameId } })
+    },
+  )
 
   return (
     <Card>

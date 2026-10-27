@@ -4,6 +4,7 @@ import dayjs from "dayjs"
 interface EmptyGame {
   since: number
   game: Game
+  timeoutMinutes: number
 }
 
 class Registry {
@@ -12,6 +13,9 @@ class Registry {
   private emptyGames: EmptyGame[] = []
   private cleanupInterval: ReturnType<typeof setTimeout> | null = null
   private readonly EMPTY_GAME_TIMEOUT_MINUTES = 5
+  // A lecture game holds through a whole lecture; its host may be gone for a
+  // laptop sleep or a deck reload.
+  private readonly LECTURE_EMPTY_GAME_TIMEOUT_MINUTES = 30
   private readonly CLEANUP_INTERVAL_MS = 60_000
 
   private constructor() {
@@ -67,6 +71,9 @@ class Registry {
       this.emptyGames.push({
         since: dayjs().unix(),
         game,
+        timeoutMinutes: game.lecture
+          ? this.LECTURE_EMPTY_GAME_TIMEOUT_MINUTES
+          : this.EMPTY_GAME_TIMEOUT_MINUTES,
       })
       console.log(
         `Game ${game.gameId} marked as empty. Total empty games: ${this.emptyGames.length}`,
@@ -126,9 +133,7 @@ class Registry {
   private cleanupEmptyGames(): void {
     const now = dayjs()
     const stillEmpty = this.emptyGames.filter(
-      (g) =>
-        now.diff(dayjs.unix(g.since), "minute") <
-        this.EMPTY_GAME_TIMEOUT_MINUTES,
+      (g) => now.diff(dayjs.unix(g.since), "minute") < g.timeoutMinutes,
     )
 
     if (stillEmpty.length === this.emptyGames.length) {

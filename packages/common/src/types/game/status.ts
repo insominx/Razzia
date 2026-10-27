@@ -45,6 +45,8 @@ export interface CommonStatusDataMap {
     myPoints: number
     rank: number
     aheadOfMe: string | null
+    // Lecture games: an i18n key saying what comes next.
+    note?: string
   }
   WAIT: { text: string }
   FINISHED: { subject: string; top: PublicPlayer[]; rank?: number }

@@ -1,5 +1,11 @@
-import { EVENTS } from "@razzia/common/constants"
-import type { Player, Quizz } from "@razzia/common/types/game"
+import { EVENTS, LECTURE_TEXT } from "@razzia/common/constants"
+import type {
+  GameResult,
+  LectureOutcome,
+  LectureState,
+  Player,
+  Quizz,
+} from "@razzia/common/types/game"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
 import {
   STATUS,
@@ -26,6 +32,9 @@ interface GameOptions {
   socket: Socket
   quizz: Quizz
   visuals: ResolvedVisuals
+  // Played from a lecture deck: one question at a time, with the room
+  // holding between them.
+  lecture?: boolean
 }
 
 interface StatusSnapshot {
@@ -64,6 +73,7 @@ class Game {
   readonly gameId: string
   readonly inviteCode: string
   readonly visuals: ResolvedVisuals
+  readonly lecture: boolean
 
   private readonly io: Server
   private readonly _manager: {
@@ -87,8 +97,9 @@ class Game {
     string,
     { name: Status; data: StatusDataMap[Status] }
   >()
+  private resultSaved = false
 
-  constructor({ io, socket, quizz, visuals }: GameOptions) {
+  constructor({ io, socket, quizz, visuals, lecture = false }: GameOptions) {
     const clientId = socket.handshake.auth.clientId as string
 
     this.io = io
@@ -97,6 +108,7 @@ class Game {
       (code) => registry.getGameByInviteCode(code) !== undefined,
     )
     this.visuals = visuals
+    this.lecture = lecture
     this._manager = {
       id: socket.id,
       clientId,
@@ -124,8 +136,13 @@ class Game {
       send: this.sendStatus.bind(this),
       onNewQuestion: () => {
         this.playerStatus.clear()
+        this.emitLectureState()
       },
-      onGameFinished: saveResult,
+      onGameFinished: (result) => {
+        this.recordResult(result)
+        this.emitLectureState()
+      },
+      lecture,
     })
 
     // What a resyncing manager gets back while the game is still a lobby.
@@ -139,6 +156,7 @@ class Game {
       gameId: this.gameId,
       inviteCode: this.inviteCode,
       visuals: this.visuals,
+      ...this.lecturePayload(),
     })
 
     console.log(
@@ -168,6 +186,52 @@ class Game {
   // in the game can come back, through a reconnect.
   get inLobby(): boolean {
     return this.round.isLobby()
+  }
+
+  // A lecture game also takes newcomers between questions.
+  get acceptsNewPlayers(): boolean {
+    return this.round.acceptsNewPlayers()
+  }
+
+  // ── Lecture state ────────────────────────────────────────────────────────
+
+  private lectureState(): LectureState {
+    return { inviteCode: this.inviteCode, ...this.round.getLectureProgress() }
+  }
+
+  // Only a lecture game tells its host which questions have run.
+  private lecturePayload(): { lecture?: LectureState } {
+    return this.lecture ? { lecture: this.lectureState() } : {}
+  }
+
+  private emitLectureState() {
+    if (!this.lecture || !this._manager.connected) {
+      return
+    }
+
+    this.io
+      .to(this._manager.id)
+      .emit(EVENTS.MANAGER.LECTURE_STATE, this.lectureState())
+  }
+
+  // A game's result is written once, however it ends.
+  private recordResult(result: GameResult) {
+    if (this.resultSaved) {
+      return
+    }
+
+    this.resultSaved = true
+    saveResult(result)
+  }
+
+  // Keeps the questions a lecture game played when it closes before its
+  // final standings.
+  saveUnfinishedLecture() {
+    const result = this.round.getUnfinishedResult()
+
+    if (result) {
+      this.recordResult(result)
+    }
   }
 
   // ── Status broadcasting ──────────────────────────────────────────────────
@@ -208,15 +272,33 @@ class Game {
   // Player actions
 
   join(socket: Socket, username: string) {
-    if (!this.inLobby) {
-      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.alreadyStarted")
+    const lateToLecture = this.lecture && this.started
+
+    if (!this.acceptsNewPlayers) {
+      socket.emit(
+        EVENTS.GAME.ERROR_MESSAGE,
+        lateToLecture
+          ? "errors:game.questionInProgress"
+          : "errors:game.alreadyStarted",
+      )
 
       return
     }
 
-    const player = this.playerManager.join(socket, username)
+    // A latecomer waits for the next question, not for players.
+    const waitText = lateToLecture ? LECTURE_TEXT.NEXT_QUESTION : undefined
+    const player = this.playerManager.join(socket, username, waitText)
 
-    if (player && this._manager.connected) {
+    if (!player) {
+      return
+    }
+
+    // Stored too, so a reconnect does not replay the last question's screen.
+    if (waitText) {
+      this.sendStatus(player.id, STATUS.WAIT, { text: waitText })
+    }
+
+    if (this._manager.connected) {
       this.io
         .to(this._manager.id)
         .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
@@ -257,6 +339,7 @@ class Game {
       status,
       players: this.playerManager.getAll().map(toPublicPlayer),
       visuals: this.visuals,
+      ...this.lecturePayload(),
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
@@ -275,9 +358,18 @@ class Game {
     }
 
     if (player.connected && player.id !== socket.id) {
-      socket.emit(EVENTS.GAME.RESET, "errors:game.playerAlreadyConnected")
+      if (!this.lecture) {
+        socket.emit(EVENTS.GAME.RESET, "errors:game.playerAlreadyConnected")
 
-      return
+        return
+      }
+
+      // A phone that changed networks is back before the server has noticed
+      // its old connection died. In a lecture the newest connection wins.
+      this.io
+        .to(player.id)
+        .emit(EVENTS.GAME.RESET, "errors:game.openedElsewhere")
+      this.io.in(player.id).socketsLeave(this.gameId)
     }
 
     socket.join(this.gameId)
@@ -353,6 +445,8 @@ class Game {
 
   // Ends the game for everyone still in it, once the registry has dropped it.
   close(message: string) {
+    // Before stop(): a stopped round no longer reports what was played.
+    this.saveUnfinishedLecture()
     this.round.stop()
     this.io.to(this.gameId).emit(EVENTS.GAME.RESET, message)
     this.io.in(this.gameId).socketsLeave(this.gameId)
@@ -380,6 +474,22 @@ class Game {
 
   showLeaderboard(socket: Socket) {
     this.round.showLeaderboard(socket)
+  }
+
+  playQuestion(socket: Socket, index: number): LectureOutcome {
+    const outcome = this.round.playQuestion(socket, index)
+
+    // From the lobby the countdown runs first; the host learns the question
+    // now rather than when it appears.
+    if (outcome === "accepted") {
+      this.emitLectureState()
+    }
+
+    return outcome
+  }
+
+  finish(socket: Socket): LectureOutcome {
+    return this.round.finish(socket)
   }
 }
 

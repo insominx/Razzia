@@ -2,6 +2,8 @@ import { EVENTS } from "@razzia/common/constants"
 import type {
   GameResult,
   GameUpdateQuestion,
+  LectureOutcome,
+  LectureState,
   PublicPlayer,
   QuizzWithId,
 } from "@razzia/common/types/game"
@@ -50,6 +52,8 @@ export interface ServerToClientEvents {
   [EVENTS.GAME.SUCCESS_JOIN]: (_data: {
     gameId: string
     visuals: ResolvedVisuals
+    // A lecture's latecomer waits for the next question, not for players.
+    waitText?: string
   }) => void
   [EVENTS.GAME.TOTAL_PLAYERS]: (_count: number) => void
   [EVENTS.GAME.ERROR_MESSAGE]: (_message: string) => void
@@ -81,6 +85,7 @@ export interface ServerToClientEvents {
     players: PublicPlayer[]
     currentQuestion: GameUpdateQuestion
     visuals: ResolvedVisuals
+    lecture?: LectureState
   }) => void
   [EVENTS.MANAGER.CONFIG]: (_config: ManagerConfig) => void
   [EVENTS.QUIZZ.DATA]: (_data: {
@@ -91,7 +96,9 @@ export interface ServerToClientEvents {
     gameId: string
     inviteCode: string
     visuals: ResolvedVisuals
+    lecture?: LectureState
   }) => void
+  [EVENTS.MANAGER.LECTURE_STATE]: (_state: LectureState) => void
   [EVENTS.MANAGER.STATUS_UPDATE]: (_data: {
     status: Status
     data: StatusDataMap[Status]
@@ -114,6 +121,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   // Manager actions
   [EVENTS.GAME.CREATE]: (_quizzId: string) => void
+  [EVENTS.GAME.CREATE_LECTURE]: (_quizzId: string) => void
   [EVENTS.MANAGER.AUTH]: (_password: string) => void
   [EVENTS.MANAGER.RECONNECT]: (_message: { gameId: string }) => void
   [EVENTS.MANAGER.LEAVE]: (_message: { gameId: string }) => void
@@ -126,6 +134,14 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.ABORT_QUIZ]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.NEXT_QUESTION]: (_message: MessageGameId) => void
   [EVENTS.MANAGER.SHOW_LEADERBOARD]: (_message: MessageGameId) => void
+  [EVENTS.MANAGER.PLAY_QUESTION]: (
+    _message: MessageGameId & { index: number },
+    _ack: (_outcome: LectureOutcome) => void,
+  ) => void
+  [EVENTS.MANAGER.FINISH_GAME]: (
+    _message: MessageGameId,
+    _ack: (_outcome: LectureOutcome) => void,
+  ) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
   [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET]: (
     _request: {
