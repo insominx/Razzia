@@ -151,6 +151,11 @@ export const useDeckBridge = () => {
     error: Error | null,
     outcome?: LectureOutcome,
   ) => {
+    // A command that did not run brings no screen to end a review with.
+    if (error || outcome !== "accepted") {
+      useManagerStore.setState({ reviewEndsWithScreen: false })
+    }
+
     if (error || !outcome) {
       post({ type: "error", code: "noAck", command: command.type })
 

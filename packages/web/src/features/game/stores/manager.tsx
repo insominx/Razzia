@@ -127,7 +127,8 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
   setPlayers: (players) => set({ players }),
   setLecture: (lecture) => set({ lecture }),
   setHostControls: (hostControls) => set({ hostControls }),
-  setReview: (review) => set({ review }),
+  // A review asked for after a command stays up through that command's screen.
+  setReview: (review) => set({ review, reviewEndsWithScreen: false }),
   endReviewWithNextScreen: () => set({ reviewEndsWithScreen: true }),
 
   reset: () => set(initialState),

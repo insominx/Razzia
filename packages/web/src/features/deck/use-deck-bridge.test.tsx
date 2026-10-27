@@ -379,6 +379,59 @@ describe("useDeckBridge", () => {
     expect(useManagerStore.getState().review).toBeNull()
   })
 
+  it("keeps a review asked for after a play, and after a refused play", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    attachTo({ name: STATUS.SHOW_LEADERBOARD, data: {} })
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, {
+        questionNumber: 2,
+        question: "Q2",
+        responses: {},
+        solutions: [0],
+        answers: ["a", "b"],
+      })
+    })
+
+    // The presenter steps back onto question 2 before question 3's first screen.
+    sendCommand({ type: "play", question: 2 })
+    sendCommand({ type: "review", question: 1 })
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_PREPARED, {
+        totalAnswers: 4,
+        questionNumber: 3,
+      })
+    })
+    expect(useManagerStore.getState().review).toBe(1)
+
+    // A play the server refuses brings no screen, so a later one cannot end the review.
+    mocks.ackEmit.mockImplementation(
+      (
+        _event: string,
+        _payload: unknown,
+        ack: (_e: null, _o: string) => void,
+      ) => {
+        ack(null, "noPlayers")
+      },
+    )
+    sendCommand({ type: "review", question: null })
+    sendCommand({ type: "review", question: 1 })
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, {
+        questionNumber: 2,
+        question: "Q2",
+        responses: {},
+        solutions: [0],
+        answers: ["a", "b"],
+      })
+    })
+    sendCommand({ type: "play", question: 3 })
+    expect(useManagerStore.getState().reviewEndsWithScreen).toBe(false)
+  })
+
   it("drops a queued command that waited too long for the game", () => {
     vi.useFakeTimers()
     stubStorage()
