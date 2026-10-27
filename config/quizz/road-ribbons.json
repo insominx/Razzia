@@ -1,0 +1,89 @@
+{
+  "subject": "Road Ribbons",
+  "questions": [
+    {
+      "question": "A road mesh uses the usual back-face culling. It is visible from underneath but invisible from above. Which change to the mesh makes its triangles face upward?",
+      "answers": [
+        "Point the vertex normals upward.",
+        "Swap two vertex indices within every triangle.",
+        "Reverse the order of the triangles, keeping each triangle’s vertex order.",
+        "Reverse the path, so the rungs run from its end back to its start."
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "In Unity, a road’s tangent points in the direction of travel. Which calculation gives a direction toward the driver’s right?",
+      "answers": [
+        "Cross world up with the tangent.",
+        "Cross the tangent with world up.",
+        "Use world right, the positive X axis.",
+        "Normalize the tangent."
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "The generator adds two vertices per rung, left first, starting at rung 0. Quad i joins rung i to rung i + 1. Which vertex index is the quad’s top-left corner, the left vertex of rung i + 1?",
+      "answers": [
+        "i + 1",
+        "i·2 + 1",
+        "(i+1)·2",
+        "(i+1)·2 + 1"
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "On a road that climbs a hill, what goes wrong if every vertex normal is set to Vector3.up instead of being recalculated from the triangles?",
+      "answers": [
+        "The slope is lit as if it were flat ground.",
+        "The road becomes invisible from above.",
+        "The texture stretches along the slope.",
+        "Nothing; up is correct on any road."
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A road’s rungs are placed at equal steps of the spline parameter u, and each rung moves the vertical texture coordinate v forward by the same amount. The road texture comes out squashed in some places and stretched in others. Which change makes it even?",
+      "answers": [
+        "Use twice as many rungs.",
+        "Place the rungs at equal meters along the road, using the distance table.",
+        "Make the texture repeat less often.",
+        "Add extra rungs where the road bends."
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "The generator uses Cross(world up, tangent).normalized for its sideways direction, with no fallback. The road stays full width on a 70-degree climb. At one rung, the tangent points exactly straight up. What happens to the width there?",
+      "answers": [
+        "It stays full, because normalizing restores a unit sideways vector.",
+        "It stays full, but the left and right edges swap places.",
+        "It narrows, but the two edges stay apart.",
+        "It becomes zero: both edges meet at the centerline."
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 25
+    }
+  ]
+}

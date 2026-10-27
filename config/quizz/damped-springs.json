@@ -1,0 +1,103 @@
+{
+  "subject": "Damped Springs",
+  "questions": [
+    {
+      "question": "Your restoring force is written restoringForce = stiffness * displacement, with no minus sign. There is no damping. You release the mass from rest 1 m to the right of equilibrium. What happens?",
+      "answers": [
+        "It swings back and forth around equilibrium.",
+        "It swings, wider each time.",
+        "It speeds away from equilibrium and never comes back.",
+        "It returns to equilibrium and stops there."
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A damped spring’s mass is to the right of equilibrium and moving left, back toward it. Which describes the damping force right now?",
+      "answers": [
+        "Pushes left, stronger the farther the mass is from equilibrium.",
+        "Pushes left, stronger the faster the mass moves.",
+        "Pushes right, stronger the farther the mass is from equilibrium.",
+        "Pushes right, stronger the faster the mass moves."
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A 1 Hz spring has no damping and should keep swinging at roughly the same size. At a steady 60 fps, each swing grows. SimulateSpring ends with:\n\ncurrentPos += _velocity * deltaTime;\n_velocity += acceleration * deltaTime;\n\nWhat is the fix?",
+      "answers": [
+        "Add a little damping.",
+        "Swap the two lines.",
+        "Clamp deltaTime to at most 1/30 s.",
+        "Lower the stiffness."
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A crate’s spring computes stiffness and damping from mass, frequency, and damping ratio. It uses 2 Hz and damping ratio 0.5. You change the mass from 1 to 3 and repeat the same release. Which settings preserve its motion?",
+      "answers": [
+        "2 Hz and damping ratio 0.5.",
+        "2 Hz and damping ratio 1.5.",
+        "6 Hz and damping ratio 0.5.",
+        "6 Hz and damping ratio 1.5."
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "A menu panel starts from rest and springs toward a fixed equilibrium at 2 Hz with damping ratio 1. The spring is simulated accurately at all four settings. Which change makes it settle sooner without overshooting?",
+      "answers": [
+        "Raise the damping ratio to 1.5.",
+        "Lower the frequency to 1 Hz.",
+        "Raise the frequency to 4 Hz.",
+        "Lower the damping ratio to 0.5."
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A button’s scale starts at rest at 1.0 and is controlled by a damped spring. When pressed, it should animate to 0.9, then settle there while held. Which change produces this behavior?",
+      "answers": [
+        "Set the spring’s current value to 0.9.",
+        "Add velocity toward 0.9.",
+        "Set the button’s scale to 0.9.",
+        "Set the spring’s equilibrium to 0.9."
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A 6 Hz spring with damping ratio 0.3 uses semi-implicit Euler and the raw frame time. It behaves at 60 fps but flies off at 15 fps. Which change fixes this while keeping the frequency setting at 6 Hz?",
+      "answers": [
+        "Clamp deltaTime to at most 1/30 s.",
+        "Clamp deltaTime to at most 1/10 s.",
+        "Raise the damping ratio to 1.",
+        "Raise the mass."
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 30
+    }
+  ]
+}

@@ -84,20 +84,6 @@
       ],
       "cooldown": 5,
       "time": 20
-    },
-    {
-      "question": "cameraPosition and statuePosition are world positions. Which vector should we normalize to aim the camera at the statue?",
-      "answers": [
-        "The spline tangent at the camera",
-        "statuePosition − cameraPosition",
-        "cameraPosition − statuePosition",
-        "statuePosition"
-      ],
-      "solutions": [
-        1
-      ],
-      "cooldown": 5,
-      "time": 25
     }
   ]
 }
