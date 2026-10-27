@@ -9,6 +9,40 @@ import {
 } from "@razzia/web/features/game/utils/createStatus"
 import { create } from "zustand"
 
+type Responses = Record<number, StatusDataMap["SHOW_RESPONSES"]>
+
+// A deck reload also reloads this frame; the results it can show again
+// survive in the tab, for the one game it hosts.
+const RESPONSES_KEY = "razzia_deck_responses"
+
+const loadResponses = (gameId: string | null): Responses => {
+  if (!IS_DECK_EMBED || !gameId) {
+    return {}
+  }
+
+  try {
+    const saved = JSON.parse(
+      sessionStorage.getItem(RESPONSES_KEY) ?? "null",
+    ) as { gameId?: unknown; responses?: Responses } | null
+
+    return saved?.gameId === gameId && saved.responses ? saved.responses : {}
+  } catch {
+    return {}
+  }
+}
+
+const saveResponses = (gameId: string | null, responses: Responses) => {
+  if (!IS_DECK_EMBED || !gameId) {
+    return
+  }
+
+  try {
+    sessionStorage.setItem(RESPONSES_KEY, JSON.stringify({ gameId, responses }))
+  } catch {
+    // Without storage, a reload only loses the reviews.
+  }
+}
+
 interface ManagerStore<T> {
   config: ManagerConfig | null
 
@@ -23,7 +57,7 @@ interface ManagerStore<T> {
   hostControls: boolean
   // This game's results screens by 0-based question, so a lecture deck can
   // show one again; `review` is the one shown in place of the live screen.
-  responses: Record<number, StatusDataMap["SHOW_RESPONSES"]>
+  responses: Responses
   review: number | null
 
   setConfig: (_config: ManagerConfig) => void
@@ -61,7 +95,7 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
     set((state) =>
       state.gameId === gameId
         ? { gameId }
-        : { gameId, responses: {}, review: null },
+        : { gameId, responses: loadResponses(gameId), review: null },
     ),
   setVisuals: (visuals) => set({ visuals }),
 
@@ -74,14 +108,13 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
         return { status, review: null }
       }
 
-      return {
-        status,
-        review: null,
-        responses: {
-          ...state.responses,
-          [status.data.questionNumber - 1]: status.data,
-        },
+      const responses = {
+        ...state.responses,
+        [status.data.questionNumber - 1]: status.data,
       }
+      saveResponses(state.gameId, responses)
+
+      return { status, review: null, responses }
     }),
   resetStatus: () => set({ status: null }),
 
