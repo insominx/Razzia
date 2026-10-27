@@ -255,6 +255,11 @@ export const useDeckBridge = () => {
     }
 
     if (command.type === "ensureGame") {
+      // Restart quiz: a reconnect loop for the old game would take it back.
+      if (command.restart === "always") {
+        stopRetry()
+      }
+
       quiz.current = command.quiz
       setEnsure({ quiz: command.quiz, restart: command.restart })
 
@@ -262,7 +267,9 @@ export const useDeckBridge = () => {
     }
 
     if (command.type === "close") {
-      // Leaving the game's page closes a lecture game.
+      // Leaving the game's page closes a lecture game. A reconnect loop still
+      // running would bring the old game back later.
+      stopRetry()
       forgetGame({ storage: localStorageOrNull(), quiz: command.quiz })
       queued.current = null
       createSentAt.current = null

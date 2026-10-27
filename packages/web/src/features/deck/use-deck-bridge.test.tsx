@@ -599,6 +599,33 @@ describe("useDeckBridge", () => {
     )
   })
 
+  it.each([
+    ["End quiz", { type: "close", quiz: QUIZ }],
+    ["Restart quiz", { type: "ensureGame", quiz: QUIZ, restart: "always" }],
+  ])("stops asking for the old game after %s", (_label, command) => {
+    vi.useFakeTimers()
+    stubStorage()
+    mocks.router.pathname = "/party/manager/g-1"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+
+    sendCommand(command)
+    mocks.socket.emit.mockClear()
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+
+    expect(mocks.socket.emit).not.toHaveBeenCalledWith(
+      EVENTS.MANAGER.RECONNECT,
+      {
+        gameId: "g-1",
+      },
+    )
+  })
+
   it("gives up after a minute and a half", () => {
     vi.useFakeTimers()
     stubStorage()
