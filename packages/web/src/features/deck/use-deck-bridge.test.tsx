@@ -265,6 +265,76 @@ describe("useDeckBridge", () => {
     expect(lastState()).toMatchObject({ reviewing: null })
   })
 
+  it("stays quiet when the deck hides the page and ends a review in one go", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    attachTo({ name: STATUS.SHOW_LEADERBOARD, data: {} })
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, {
+        questionNumber: 1,
+        question: "Q1",
+        responses: {},
+        solutions: [0],
+        answers: ["a", "b"],
+      })
+    })
+    sendCommand({ type: "review", question: 0 })
+    sendCommand({ type: "visibility", visible: true })
+
+    // Both messages before any render, as the deck sends them on leaving a face.
+    act(() => {
+      for (const body of [
+        { type: "visibility", visible: false },
+        { type: "review", question: null },
+      ]) {
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: { source: "cst426-deck", v: 1, ...body },
+            origin: DECK,
+            source: window,
+          }),
+        )
+      }
+    })
+
+    expect(useManagerStore.getState().review).toBeNull()
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
+  })
+
+  it("plays again when the game's next screen ends a review", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    attachTo({ name: STATUS.SHOW_LEADERBOARD, data: {} })
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, {
+        questionNumber: 2,
+        question: "Q2",
+        responses: {},
+        solutions: [0],
+        answers: ["a", "b"],
+      })
+    })
+    sendCommand({ type: "visibility", visible: true })
+    sendCommand({ type: "review", question: 1 })
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
+
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_PREPARED, {
+        totalAnswers: 4,
+        questionNumber: 3,
+      })
+    })
+
+    expect(useManagerStore.getState().review).toBeNull()
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
+  })
+
   it("does not review results it never saw, and a new screen ends a review", () => {
     stubStorage()
     renderHook(() => {

@@ -64,6 +64,8 @@ export const useDeckBridge = () => {
   const [attached, setAttached] = useState(false)
   const [players, setPlayers] = useState(0)
   const [visible, setVisible] = useState(false)
+  // Read by the next message before a render catches up.
+  const visibleNow = useRef(false)
   const [ensure, setEnsure] = useState<EnsureRequest | null>(null)
   const [pending, setPending] = useState<BridgeState["pending"]>(null)
   const [reattaching, setReattaching] = useState(false)
@@ -269,6 +271,7 @@ export const useDeckBridge = () => {
     }
 
     if (command.type === "visibility") {
+      visibleNow.current = command.visible
       setVisible(command.visible)
       useSoundStore
         .getState()
@@ -289,7 +292,9 @@ export const useDeckBridge = () => {
           : null
 
       store.setReview(question)
-      useSoundStore.getState().setSuppressed(!visible || question !== null)
+      useSoundStore
+        .getState()
+        .setSuppressed(!visibleNow.current || question !== null)
 
       return
     }
@@ -341,6 +346,12 @@ export const useDeckBridge = () => {
       useSoundStore.getState().setSuppressed(false)
     }
   }, [])
+
+  // The handlers above mute at once; this also catches a review that the
+  // game's next screen ended, which no deck message reports.
+  useEffect(() => {
+    useSoundStore.getState().setSuppressed(!visible || review !== null)
+  }, [visible, review])
 
   useEffect(() => {
     if (isConnected) {
