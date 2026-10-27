@@ -451,7 +451,10 @@ export const useDeckBridge = () => {
       return
     }
 
-    // The game is gone; the next ensureGame starts a new one.
+    // The game is gone; the next ensureGame starts a new one. A reconnect loop
+    // for it would only block that for a minute and a half.
+    stopRetry()
+
     if (quiz.current) {
       forgetGame({ storage: localStorageOrNull(), quiz: quiz.current })
     }

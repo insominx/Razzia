@@ -626,6 +626,33 @@ describe("useDeckBridge", () => {
     )
   })
 
+  it("stops asking for a game the server says is gone", () => {
+    vi.useFakeTimers()
+    stubStorage()
+    mocks.router.pathname = "/party/manager/g-1"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+    expect(lastState()).toMatchObject({ reattaching: true })
+
+    fire(EVENTS.GAME.RESET, "errors:game.expired")
+    mocks.socket.emit.mockClear()
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+
+    expect(mocks.socket.emit).not.toHaveBeenCalledWith(
+      EVENTS.MANAGER.RECONNECT,
+      {
+        gameId: "g-1",
+      },
+    )
+    expect(lastState()).toMatchObject({ reattaching: false })
+    expect(errorCodes()).toContain("gameExpired")
+  })
+
   it("gives up after a minute and a half", () => {
     vi.useFakeTimers()
     stubStorage()
