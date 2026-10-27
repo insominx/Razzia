@@ -2,7 +2,7 @@
   "subject": "Vehicle Physics",
   "questions": [
     {
-      "question": "The car is parked and still. One hub's ray hits the road at 0.92 m, and suspensionRestDist is 1.00 m. What is that hub's displacement in the code?",
+      "question": "The car is parked and still. One hub's ray hits the road 0.92 m from the hub, and the rest distance is 1.00 m. What displacement goes into that hub's spring force?",
       "answers": [
         "0 m: the car is at rest, so the spring is at equilibrium.",
         "−0.08 m: the hit is 8 cm short of the rest distance.",
@@ -16,7 +16,7 @@
       "time": 20
     },
     {
-      "question": "Driving over a bump, a front wheel model rides 5 cm up under the body. Where does that corner's suspension push land on the car?",
+      "question": "Driving over a bump, a front wheel rides 5 cm up under the body. Where does that corner's suspension push land on the car?",
       "answers": [
         "At the wheel's center, now 5 cm higher.",
         "Where the ray hit the road.",
@@ -30,12 +30,12 @@
       "time": 20
     },
     {
-      "question": "In the previous module on springs, one end of the spring was fixed and the mass on the other end moved. Under the car, a squashed spring sits between the hub and the road. Which end is the fixed one?",
+      "question": "In the previous module on springs, one end of the spring was fixed in place and the mass on the other end was free to move. Under the car, a squashed spring sits between the hub and the road. Which end is fixed in place?",
       "answers": [
-        "The road end, so the push lifts the car at the hub.",
-        "The hub end, so the push presses the road down.",
-        "Neither: half the push moves the car, half the road.",
-        "The wheel model's end, so the wheel pushes the hub up."
+        "The road end: it's pushed as hard as the hub, but it doesn't move.",
+        "The hub end: the ray starts there, so the road end moves.",
+        "Neither: both ends move, each with half the push.",
+        "Both: once the car settles, neither end moves."
       ],
       "solutions": [
         0
@@ -46,10 +46,10 @@
     {
       "question": "The car's body can tilt and turn, so each hub moves differently. Which velocity does a hub's damper start from?",
       "answers": [
-        "The car's velocity, carRigidBody.linearVelocity.",
-        "The car's angularVelocity, since the body tilts.",
-        "GetPointVelocity at the hub.",
-        "GetPointVelocity where the ray hit the road."
+        "The car's velocity at its center of mass.",
+        "How fast the body turns, since it tilts.",
+        "The velocity of the body at the hub.",
+        "The velocity of the body where the ray hits the road."
       ],
       "solutions": [
         2
@@ -58,12 +58,12 @@
       "time": 20
     },
     {
-      "question": "One wheel climbs a curb and the body tilts 10°; the road under it stays flat. Each hub's damper pushes against how fast that hub moves in one direction. Which direction is that, and which direction does the spring push along?",
+      "question": "One wheel is up on a curb, so the car's body is tilted 10° on flat ground. A hub's damper measures how fast the hub is moving, then pushes back. Which way does it measure, and which way does it push?",
       "answers": [
-        "World up, for both.",
-        "The hub's own up, for both.",
-        "The road's normal for the motion, the hub's up for the push.",
-        "The hub's up for the motion, the road's normal for the push."
+        "Measures straight up, pushes straight up.",
+        "Measures along the hub's up, pushes along the hub's up.",
+        "Measures straight up, pushes along the hub's up.",
+        "Measures along the hub's up, pushes straight up."
       ],
       "solutions": [
         1
