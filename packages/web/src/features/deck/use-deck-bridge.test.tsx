@@ -225,6 +225,98 @@ describe("useDeckBridge", () => {
     expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
   })
 
+  it("shows a played question's results again, silently, until told to stop", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    attachTo({ name: STATUS.SHOW_LEADERBOARD, data: {} })
+    const results = {
+      questionNumber: 1,
+      question: "Q1",
+      responses: { 0: 3 },
+      solutions: [0],
+      answers: ["a", "b"],
+    }
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, results)
+      useManagerStore.getState().setStatus(STATUS.SHOW_LEADERBOARD, {
+        oldLeaderboard: [],
+        leaderboard: [],
+      })
+    })
+    sendCommand({ type: "visibility", visible: true })
+
+    sendCommand({ type: "review", question: 0 })
+
+    expect(useManagerStore.getState().review).toBe(0)
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
+    expect(lastState()).toMatchObject({ reviewing: 0, reviewable: [0] })
+    expect(mocks.socket.emit).not.toHaveBeenCalledWith(
+      EVENTS.MANAGER.SHOW_LEADERBOARD,
+      expect.anything(),
+    )
+
+    sendCommand({ type: "review", question: null })
+
+    expect(useManagerStore.getState().review).toBeNull()
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
+    expect(lastState()).toMatchObject({ reviewing: null })
+  })
+
+  it("does not review results it never saw, and a new screen ends a review", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    attachTo({ name: STATUS.SHOW_LEADERBOARD, data: {} })
+
+    sendCommand({ type: "review", question: 3 })
+    expect(useManagerStore.getState().review).toBeNull()
+
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, {
+        questionNumber: 4,
+        question: "Q4",
+        responses: {},
+        solutions: [1],
+        answers: ["a", "b"],
+      })
+    })
+    sendCommand({ type: "review", question: 3 })
+    expect(useManagerStore.getState().review).toBe(3)
+
+    act(() => {
+      useManagerStore.getState().setStatus(STATUS.SHOW_LEADERBOARD, {
+        oldLeaderboard: [],
+        leaderboard: [],
+      })
+    })
+    expect(useManagerStore.getState().review).toBeNull()
+  })
+
+  it("forgets one game's results when another game starts", () => {
+    act(() => {
+      useManagerStore.getState().setGameId("g-1")
+      useManagerStore.getState().setStatus(STATUS.SHOW_RESPONSES, {
+        questionNumber: 1,
+        question: "Q1",
+        responses: {},
+        solutions: [0],
+        answers: ["a", "b"],
+      })
+      useManagerStore.getState().setGameId("g-1")
+    })
+    expect(Object.keys(useManagerStore.getState().responses)).toEqual(["0"])
+
+    act(() => {
+      useManagerStore.getState().setGameId("g-2")
+    })
+    expect(useManagerStore.getState().responses).toEqual({})
+  })
+
   it("resumes the game this frame remembers", () => {
     const storage = stubStorage()
     rememberInStorage(storage, "g-1")
@@ -367,6 +459,69 @@ describe("useDeckBridge", () => {
 
     expect(postedOf("error")).toContainEqual(
       expect.objectContaining({ code: "reattachFailed" }),
+    )
+  })
+
+  it("restarts on request: leaves the game once, then opens a new lobby", () => {
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    attachTo({ name: STATUS.SELECT_ANSWER, data: {} })
+    fire(EVENTS.GAME.TOTAL_PLAYERS, 3)
+
+    sendCommand({ type: "ensureGame", quiz: QUIZ, restart: "always" })
+
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(lastState()?.gameId).toBeNull()
+    expect(lastState()?.players).toBe(0)
+
+    mocks.router.pathname = "/manager/config"
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toEqual([[EVENTS.GAME.CREATE_LECTURE, QUIZ]])
+  })
+
+  it("closes the game on request and opens nothing new", () => {
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    attachTo({ name: STATUS.SHOW_ROOM, data: { inviteCode: "123456" } })
+
+    sendCommand({ type: "close", quiz: QUIZ })
+    mocks.router.pathname = "/manager/config"
+    rerender()
+
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(lastState()?.gameId).toBeNull()
+    expect(postedOf("result")).toContainEqual(
+      expect.objectContaining({ command: "close", outcome: "accepted" }),
+    )
+    expect(mocks.socket.emit).not.toHaveBeenCalledWith(
+      EVENTS.GAME.CREATE_LECTURE,
+      expect.anything(),
     )
   })
 

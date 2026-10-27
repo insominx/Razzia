@@ -2,6 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import { STATUS } from "@razzia/common/types/game/status"
 import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
 import GameWrapper from "@razzia/web/features/game/components/GameWrapper"
+import Responses from "@razzia/web/features/game/components/states/Responses"
 import {
   socketClient,
   useEvent,
@@ -33,10 +34,15 @@ const ManagerGamePage = () => {
     setPlayers,
     setLecture,
     reset,
+    responses,
+    review,
   } = useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
-  const nextAction = status ? getManagerSkipEvent(status) : null
+  // A lecture deck showing a played question's results again, over the live
+  // screen; the game's own controls wait until the review ends.
+  const reviewed = review === null ? undefined : responses[review]
+  const nextAction = status && !reviewed ? getManagerSkipEvent(status) : null
 
   useEvent(EVENTS.GAME.STATUS, ({ name, data }) => {
     if (name in GAME_STATE_COMPONENTS_MANAGER) {
@@ -129,15 +135,20 @@ const ManagerGamePage = () => {
 
   return (
     <GameWrapper
-      statusName={status?.name}
+      statusName={reviewed ? STATUS.SHOW_RESPONSES : status?.name}
       backgroundUrl={visuals.backgroundUrl}
-      onNext={status ? handleSkip : undefined}
+      onNext={status && !reviewed ? handleSkip : undefined}
       nextActionKey={nextAction}
-      onBack={status?.name === STATUS.SHOW_ROOM ? handleBack : undefined}
+      onBack={
+        status?.name === STATUS.SHOW_ROOM && !reviewed ? handleBack : undefined
+      }
       manager
     >
-      {CurrentComponent && status && (
-        <CurrentComponent data={status.data as never} />
+      {reviewed ? (
+        <Responses key={`review-${review}`} data={reviewed} />
+      ) : (
+        CurrentComponent &&
+        status && <CurrentComponent data={status.data as never} />
       )}
     </GameWrapper>
   )

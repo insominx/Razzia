@@ -44,7 +44,7 @@ const GAME_PATH = /^\/party\/manager\/([^/]+)$/
 
 interface EnsureRequest {
   quiz: string
-  restart?: "ifFinished"
+  restart?: "ifFinished" | "always"
 }
 
 // Lets a lecture deck that frames this page run a lecture game: it creates or
@@ -56,7 +56,8 @@ export const useDeckBridge = () => {
   const pathname = useRouterState({
     select: (routerState) => routerState.location.pathname,
   })
-  const { gameId, status, config, lecture, setConfig } = useManagerStore()
+  const { gameId, status, config, lecture, setConfig, responses, review } =
+    useManagerStore()
 
   const [deckOrigin, setDeckOrigin] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
@@ -85,6 +86,10 @@ export const useDeckBridge = () => {
     status,
     players,
     visible,
+    review,
+    reviewable: Object.keys(responses)
+      .map(Number)
+      .sort((a, b) => a - b),
   })
   const stateRef = useRef(state)
 
@@ -244,9 +249,47 @@ export const useDeckBridge = () => {
       return
     }
 
+    if (command.type === "close") {
+      // Leaving the game's page closes a lecture game.
+      forgetGame({ storage: localStorageOrNull(), quiz: command.quiz })
+      queued.current = null
+      createSentAt.current = null
+      setEnsure(null)
+      setPending(null)
+      setAttached(false)
+      setPlayers(0)
+
+      if (pathname !== CONFIG_PATH) {
+        navigate({ to: CONFIG_PATH, replace: true })
+      }
+
+      post({ type: "result", command: "close", outcome: "accepted" }, origin)
+
+      return
+    }
+
     if (command.type === "visibility") {
       setVisible(command.visible)
-      useSoundStore.getState().setSuppressed(!command.visible)
+      useSoundStore
+        .getState()
+        .setSuppressed(
+          !command.visible || useManagerStore.getState().review !== null,
+        )
+
+      return
+    }
+
+    // A review is silent: the results sound and music belong to the round.
+    // Results this page never saw (a reload since) are not shown.
+    if (command.type === "review") {
+      const store = useManagerStore.getState()
+      const question =
+        command.question !== null && command.question in store.responses
+          ? command.question
+          : null
+
+      store.setReview(question)
+      useSoundStore.getState().setSuppressed(!visible || question !== null)
 
       return
     }
@@ -344,6 +387,7 @@ export const useDeckBridge = () => {
     }
 
     createSentAt.current = null
+    setPlayers(0)
     setAttached(true)
   })
 
@@ -405,6 +449,23 @@ export const useDeckBridge = () => {
     }
 
     const storage = localStorageOrNull()
+
+    // A restart on request: leave the game (which closes it) once, then fall
+    // through to creating a new one on the next pass.
+    if (ensure.restart === "always") {
+      forgetGame({ storage, quiz: ensure.quiz })
+      queued.current = null
+      setEnsure({ quiz: ensure.quiz })
+      setAttached(false)
+      setPlayers(0)
+
+      if (pathname !== CONFIG_PATH) {
+        navigate({ to: CONFIG_PATH, replace: true })
+      }
+
+      return
+    }
+
     const remembered = recallGame({ storage, quiz: ensure.quiz })
     const finished =
       lecture?.finished === true || status?.name === STATUS.FINISHED

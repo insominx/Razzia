@@ -19,10 +19,14 @@ describe("parseDeckCommand", () => {
       restart: "ifFinished",
     }),
     command({ type: "ensureGame", quiz: "vehicle-physics" }),
+    command({ type: "ensureGame", quiz: "vehicle-physics", restart: "always" }),
+    command({ type: "close", quiz: "vehicle-physics" }),
     command({ type: "play", question: 0 }),
     command({ type: "leaderboard" }),
     command({ type: "finish" }),
     command({ type: "visibility", visible: false }),
+    command({ type: "review", question: 2 }),
+    command({ type: "review", question: null }),
   ])("accepts %o", (data) => {
     expect(parseDeckCommand(data)).toEqual(data)
   })
@@ -37,6 +41,9 @@ describe("parseDeckCommand", () => {
     ["a negative question", command({ type: "play", question: -1 })],
     ["a fractional question", command({ type: "play", question: 1.5 })],
     ["an empty quiz", command({ type: "ensureGame", quiz: "" })],
+    ["a close without its quiz", command({ type: "close" })],
+    ["a review without its question", command({ type: "review" })],
+    ["a negative review", command({ type: "review", question: -1 })],
     ["a plain string", "hello"],
   ])("refuses %s", (_label, data) => {
     expect(parseDeckCommand(data)).toBeNull()

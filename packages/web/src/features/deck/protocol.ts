@@ -21,7 +21,14 @@ const deckCommandSchema = z.discriminatedUnion("type", [
     ...envelope,
     type: z.literal("ensureGame"),
     quiz: z.string().min(1).max(200),
-    restart: z.literal("ifFinished").optional(),
+    // "always" closes the game it hosts and opens a fresh lobby.
+    restart: z.enum(["ifFinished", "always"]).optional(),
+  }),
+  // Closes the lecture game; nothing opens again until the next ensureGame.
+  z.object({
+    ...envelope,
+    type: z.literal("close"),
+    quiz: z.string().min(1).max(200),
   }),
   z.object({
     ...envelope,
@@ -30,6 +37,13 @@ const deckCommandSchema = z.discriminatedUnion("type", [
   }),
   z.object({ ...envelope, type: z.literal("leaderboard") }),
   z.object({ ...envelope, type: z.literal("finish") }),
+  // Shows a played question's results again in place of the game's own
+  // screen, or (null) goes back to it. The game itself does not change.
+  z.object({
+    ...envelope,
+    type: z.literal("review"),
+    question: z.number().int().min(0).nullable(),
+  }),
   z.object({
     ...envelope,
     type: z.literal("visibility"),
@@ -78,6 +92,10 @@ export interface BridgeState {
   finished: boolean
   players: number
   visible: boolean
+  // The question whose results are on screen for a review, and the questions
+  // whose results this page has seen and can show again.
+  reviewing: number | null
+  reviewable: number[]
 }
 
 export type BridgeErrorCode =

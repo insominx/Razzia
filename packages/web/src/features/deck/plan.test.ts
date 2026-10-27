@@ -180,10 +180,23 @@ const inputs = (overrides: Partial<StateInputs> = {}): StateInputs => ({
   status: null,
   players: 0,
   visible: false,
+  review: null,
+  reviewable: [],
   ...overrides,
 })
 
 describe("buildBridgeState", () => {
+  it("reports a review and the results it can show again", () => {
+    expect(
+      buildBridgeState(inputs({ review: 1, reviewable: [0, 1] })),
+    ).toMatchObject({ reviewing: 1, reviewable: [0, 1] })
+    expect(
+      buildBridgeState(
+        inputs({ attached: false, review: 1, reviewable: [0, 1] }),
+      ),
+    ).toMatchObject({ reviewing: null, reviewable: [] })
+  })
+
   it("reports a lecture's progress and its PIN", () => {
     const state = buildBridgeState(
       inputs({
