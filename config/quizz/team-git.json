@@ -1,0 +1,103 @@
+{
+  "subject": "How a Team Shares One Unity Project",
+  "questions": [
+    {
+      "question": "You push a new texture and the material that uses it, but the texture's .meta stays behind. What happens when your teammate pulls and opens Unity?",
+      "answers": [
+        "Unity stops and asks for the missing .meta.",
+        "Unity makes a new .meta with the same ID, so nothing breaks.",
+        "Unity makes a new .meta with a new ID, so the material loses its texture.",
+        "Git stops the pull with a conflict on the texture."
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "You rename a method. On another branch, your teammate's new script calls the old name. Git merges the two with no conflict. What happens when you open Unity and press Play?",
+      "answers": [
+        "It plays fine, because Git found no conflict.",
+        "It plays fine, because the merge changed the call to the new name.",
+        "It plays until that script makes the call, then it stops with an error.",
+        "It won't play: a red compile error says that method doesn't exist."
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "You built a new ramp for the game scene. You aren't the Lead Designer. How should the ramp get into the scene?",
+      "answers": [
+        "Hand the owner a prefab, and the owner places it.",
+        "Save a copy of the scene with the ramp in it, and the owner merges the two.",
+        "Save it into the scene on your branch, and resolve any conflict at the merge.",
+        "Put it in your own test scene, and add that scene to the build list."
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "Your branch is a week old, and your trick scripts are half done. They compile, they sit in your folder, and only your test scene runs them. What do you do?",
+      "answers": [
+        "Keep the branch open until the scripts are finished.",
+        "Start a new branch from this one, and finish them there.",
+        "Merge it now, half done as it is.",
+        "Merge it now, and add them to the game scene so others can try them."
+      ],
+      "solutions": [
+        2
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "You're reviewing Sam's pull request. The description says code only, and Git shows no conflict. The changed files are two new scripts, their .meta files and the game scene. What do you do?",
+      "answers": [
+        "Approve it, because there's no conflict.",
+        "Ask Sam to take out the .meta files, then review it again.",
+        "Approve it, and tell the scene's owner to check it after the merge.",
+        "Ask Sam to take out the scene change, then review it again."
+      ],
+      "solutions": [
+        3
+      ],
+      "cooldown": 5,
+      "time": 25
+    },
+    {
+      "question": "You clone main into an empty folder, open the game scene and press Play. The ramp is gone, but your own copy, on the same commit, still shows it. What's the likely cause?",
+      "answers": [
+        "The ramp's file was ignored, so it never reached the repo.",
+        "A fresh clone has no Library yet, so Unity can't show it.",
+        "A teammate's merge removed it from main.",
+        "The scene isn't in the build list."
+      ],
+      "solutions": [
+        0
+      ],
+      "cooldown": 5,
+      "time": 20
+    },
+    {
+      "question": "A bad pull request landed on main, and two teammates' pull requests have landed since. You want the bad work out of main and theirs kept. What do you do?",
+      "answers": [
+        "Force-push main back to the last good commit.",
+        "Revert the merged pull request.",
+        "Delete your copy and clone it again.",
+        "Start a new branch at the last good commit."
+      ],
+      "solutions": [
+        1
+      ],
+      "cooldown": 5,
+      "time": 20
+    }
+  ]
+}
