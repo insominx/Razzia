@@ -79,5 +79,6 @@
   "go": "GO",
   "seatsMore": "+{{count}} more",
   "youreIn": "You're in, {{name}}",
-  "playersHere": "{{count}} here"
+  "playersHere": "{{count}} here",
+  "standingLevel": "Level with {{name}}. One more fast answer and you pass them."
 }

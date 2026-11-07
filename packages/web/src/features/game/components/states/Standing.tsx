@@ -1,6 +1,7 @@
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
 import { formatRank } from "@razzia/web/features/game/utils/rank"
 import clsx from "clsx"
+import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
 
 interface Props {
@@ -8,6 +9,25 @@ interface Props {
 }
 
 const format = (points: number) => points.toLocaleString("en-US")
+
+/** What it takes to pass the next player. Level on points is a tie, not "0 behind". */
+const gapLine = (
+  t: TFunction,
+  behind: CommonStatusDataMap["SHOW_STANDING"]["behind"],
+): string => {
+  if (!behind) {
+    return t("game:standingLeader")
+  }
+
+  if (behind.points === 0) {
+    return t("game:standingLevel", { name: behind.username })
+  }
+
+  return t("game:standingGap", {
+    points: format(behind.points),
+    name: behind.username,
+  })
+}
 
 /**
  * A phone's own place after a question, shown while the room looks at the
@@ -76,12 +96,7 @@ const Standing = ({
         data-standing-line
         className="text-text-muted text-center text-base font-semibold"
       >
-        {behind
-          ? t("game:standingGap", {
-              points: format(behind.points),
-              name: behind.username,
-            })
-          : t("game:standingLeader")}
+        {gapLine(t, behind)}
       </p>
 
       <p className="sr-only">{t("game:pointsShort", { points })}</p>

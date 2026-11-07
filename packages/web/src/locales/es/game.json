@@ -75,5 +75,6 @@
   "go": "YA",
   "seatsMore": "+{{count}} más",
   "youreIn": "Estás dentro, {{name}}",
-  "playersHere": "{{count}} aquí"
+  "playersHere": "{{count}} aquí",
+  "standingLevel": "Empatado con {{name}}. Una respuesta rápida más y lo pasas."
 }

@@ -75,5 +75,6 @@
   "go": "GO",
   "seatsMore": "+{{count}} de plus",
   "youreIn": "Vous y êtes, {{name}}",
-  "playersHere": "{{count}} présents"
+  "playersHere": "{{count}} présents",
+  "standingLevel": "À égalité avec {{name}}. Encore une réponse rapide et vous le dépassez."
 }

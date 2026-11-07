@@ -81,6 +81,16 @@ describe("Standing", () => {
     )
   })
 
+  it("calls a tie a tie, not a gap of nothing", () => {
+    const { container } = render(
+      <Standing data={{ ...base, behind: { username: "Lin", points: 0 } }} />,
+    )
+
+    expect(container.querySelector("[data-standing-line]")?.textContent).toBe(
+      'game:standingLevel:{"name":"Lin"}',
+    )
+  })
+
   it("congratulates the leader instead", () => {
     const { container } = render(
       <Standing

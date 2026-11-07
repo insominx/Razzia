@@ -75,5 +75,6 @@
   "go": "LOS",
   "seatsMore": "+{{count}} weitere",
   "youreIn": "Du bist dabei, {{name}}",
-  "playersHere": "{{count}} dabei"
+  "playersHere": "{{count}} dabei",
+  "standingLevel": "Gleichauf mit {{name}}. Noch eine schnelle Antwort und du ziehst vorbei."
 }

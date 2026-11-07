@@ -75,5 +75,6 @@
   "go": "VIA",
   "seatsMore": "+{{count}} altri",
   "youreIn": "Sei dentro, {{name}}",
-  "playersHere": "{{count}} presenti"
+  "playersHere": "{{count}} presenti",
+  "standingLevel": "Pari con {{name}}. Ancora una risposta veloce e lo superi."
 }
