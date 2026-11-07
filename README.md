@@ -117,6 +117,7 @@ Options:
 - `managerPassword`: The master password for accessing the manager interface. **Must be changed from the default `"PASSWORD"` value**, otherwise manager access is blocked.
 - `visuals.background`: Optional instance-wide background. The manager's **Visuals** tab uploads PNG, JPEG, WebP, or GIF images up to 5 MB and writes this portable config-asset reference for you.
 - `visuals.soundTheme`: Optional sound pack. `show` (default) is the generated score: it follows each round, climbs a semitone per question and answers the room's verdict. `classic` keeps the original quiz loops. `techno` replaces the whole pack — the answers bed plus every UI and podium cue — from `public/sounds/themes/techno/`. The manager's **Visuals** tab can switch this without changing the classic files; the pack is snapshotted when a game is created, so switching it never swaps cues under a running game.
+- `visuals.showIntensity`: Optional, how big the show is: `full` (default) is everything, with light and sound hits that fill the whole frame; `calm` keeps the picture but drops the full-frame hits, the spotlight and beams, and plays the music 12 dB lower with no groove while answering; `silent` is calm with no audio. The manager's **Visuals** tab sets it, and it is fixed when a game is created. A device set to reduced motion gets calm's visuals either way.
 
 ### Third-party audio
 
@@ -141,6 +142,7 @@ startup cleanup removes abandoned unreferenced files left by an earlier process.
 Quizzes can be created in two ways:
 
 - **Via the Quiz Editor** — use the built-in editor available in the manager dashboard (recommended)
+  The editor's **Rehearse** button opens a tab that plays the quiz as it is on screen, saved or not, on the projector's and a phone's real screens, with no game and no login. It warns about a question that may not fit the projector.
 - **Via JSON files** — manually create files in the `config/quizz/` directory
 
 You can have multiple quiz files and select which one to use when starting a game.
