@@ -59,23 +59,24 @@ const player = (name: string) => ({
 
 const arrives = (name: string) => fire(EVENTS.MANAGER.NEW_PLAYER, player(name))
 
-const renderLobby = () =>
-  render(
-    <StrictMode>
-      <SocketContext.Provider
-        value={{
-          socket: fakeSocket as never,
-          isConnected: true,
-          clientId: "host",
-          connect: vi.fn(),
-          disconnect: vi.fn(),
-          reconnect: vi.fn(),
-        }}
-      >
-        <Room data={{ text: "game:waitingForPlayers", inviteCode: "123456" }} />
-      </SocketContext.Provider>
-    </StrictMode>,
-  )
+const lobby = () => (
+  <StrictMode>
+    <SocketContext.Provider
+      value={{
+        socket: fakeSocket as never,
+        isConnected: true,
+        clientId: "host",
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        reconnect: vi.fn(),
+      }}
+    >
+      <Room data={{ text: "game:waitingForPlayers", inviteCode: "123456" }} />
+    </SocketContext.Provider>
+  </StrictMode>
+)
+
+const renderLobby = () => render(lobby())
 
 const chipsIn = (container: HTMLElement) =>
   [...container.querySelectorAll("[data-player-chip]")].map(
@@ -199,5 +200,60 @@ describe("Room lobby when many phones join at once", () => {
 
     expect(chipsIn(container)).toEqual(["Ada", "Bea"])
     expect(joinCues()).toEqual([0, 1])
+  })
+})
+
+describe("Room lobby after the host reconnects", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.players = []
+    listeners.clear()
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("shows the players the server sent when the store's list is replaced", () => {
+    const { container, rerender } = renderLobby()
+
+    act(() => {
+      arrives("Ann")
+      arrives("Bo")
+    })
+    expect(chipsIn(container)).toEqual(["Ann", "Bo"])
+
+    // The host dropped, two phones joined in the gap, and the server's whole list
+    // came back with the reconnect.
+    mocks.players = [player("Ann"), player("Bo"), player("Cy"), player("Di")]
+    rerender(lobby())
+
+    expect(chipsIn(container)).toEqual(["Ann", "Bo", "Cy", "Di"])
+  })
+
+  it("keeps adding joins to the list it caught up to", () => {
+    const { container, rerender } = renderLobby()
+
+    mocks.players = [player("Ann"), player("Bo"), player("Cy")]
+    rerender(lobby())
+    act(() => {
+      arrives("Di")
+    })
+
+    expect(chipsIn(container)).toEqual(["Ann", "Bo", "Cy", "Di"])
+    // The note a join plays climbs from the seats there already were.
+    expect(joinCues()).toEqual([3])
+  })
+
+  it("leaves the list alone when nothing replaced the players", () => {
+    const { container, rerender } = renderLobby()
+
+    act(() => {
+      arrives("Ann")
+      arrives("Bo")
+    })
+    rerender(lobby())
+
+    expect(chipsIn(container)).toEqual(["Ann", "Bo"])
   })
 })

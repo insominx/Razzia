@@ -54,6 +54,17 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
 
   useOnClickOutside({ ref: qrContentRef, handler: () => setQrOpen(false) })
 
+  // Joins reach this screen as events, but a host that reconnects is handed the
+  // server's whole list, which lands in the store while this screen stays
+  // mounted (a lecture lobby survives its host dropping). Phones that joined
+  // during the gap are in that list and in no event, so take it when it arrives.
+  useEffect(() => {
+    if (players !== seatedRef.current) {
+      seatedRef.current = players
+      setPlayerList(players)
+    }
+  }, [players])
+
   const updateSeated = (seated: PublicPlayer[]) => {
     seatedRef.current = seated
     setPlayerList(seated)
