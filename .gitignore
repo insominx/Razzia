@@ -8,6 +8,11 @@
 release.json
 web2
 
+# The task workflow lives in its own repository (insominx/razzia-workflow), cloned here.
+# Ignoring it keeps it out of this repo's status and out of oxlint, and stops it being
+# added by accident as an embedded repository.
+/razzia-workflow/
+
 # Local agent / workflow scratch (do not commit runtime dumps or screenshot scrapbooks)
 .workflow/runtime/
 .workflow/tasks/
