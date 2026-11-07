@@ -37,9 +37,9 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   const webUrl = window.location.origin
   const { players } = useManagerStore()
   const [playerList, setPlayerList] = useState<PublicPlayer[]>(players)
-  // Phones can join faster than this screen renders, and useEvent keeps an older
-  // render's handler subscribed until the next effect runs. So the handlers work
-  // from this, which every event keeps current, and never from `playerList`.
+  // Phones can join faster than this screen renders: several events can arrive
+  // before the next render. So the handlers work from this, which every event
+  // keeps current, and never from `playerList`.
   const seatedRef = useRef(players)
   const [totalPlayers, setTotalPlayers] = useState(0)
   const [qrOpen, setQrOpen] = useState(false)
@@ -53,17 +53,6 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   }, [])
 
   useOnClickOutside({ ref: qrContentRef, handler: () => setQrOpen(false) })
-
-  // Joins reach this screen as events, but a host that reconnects is handed the
-  // server's whole list, which lands in the store while this screen stays
-  // mounted (a lecture lobby survives its host dropping). Phones that joined
-  // during the gap are in that list and in no event, so take it when it arrives.
-  useEffect(() => {
-    if (players !== seatedRef.current) {
-      seatedRef.current = players
-      setPlayerList(players)
-    }
-  }, [players])
 
   const updateSeated = (seated: PublicPlayer[]) => {
     seatedRef.current = seated
@@ -82,6 +71,15 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   useEvent(EVENTS.MANAGER.REMOVE_PLAYER, handlePlayerGone)
 
   useEvent(EVENTS.MANAGER.PLAYER_KICKED, handlePlayerGone)
+
+  // A host that reconnects is handed the server's whole list while this screen
+  // stays mounted (a lecture lobby survives its host dropping). Phones that
+  // joined during the gap are in that list and in no join event. Take the list
+  // from the event itself, not from the store after a render, so it lands in
+  // order with the joins around it and a join right after it is kept.
+  useEvent(EVENTS.MANAGER.SUCCESS_RECONNECT, ({ players: serverList }) => {
+    updateSeated(serverList)
+  })
 
   useEvent(EVENTS.GAME.TOTAL_PLAYERS, (total) => {
     setTotalPlayers(total)

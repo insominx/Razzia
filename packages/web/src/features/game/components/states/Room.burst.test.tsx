@@ -59,6 +59,15 @@ const player = (name: string) => ({
 
 const arrives = (name: string) => fire(EVENTS.MANAGER.NEW_PLAYER, player(name))
 
+// As in the app: the page puts the reconnect's list in the store, and the
+// lobby gets the same event.
+const reconnects = (names: string[]) => {
+  const players = names.map(player)
+
+  mocks.players = players
+  fire(EVENTS.MANAGER.SUCCESS_RECONNECT, { gameId: "game-1", players })
+}
+
 const lobby = () => (
   <StrictMode>
     <SocketContext.Provider
@@ -114,18 +123,6 @@ describe("Room lobby when many phones join at once", () => {
       container.querySelector("[data-players-joined]")?.textContent,
     ).toContain("25")
     expect(container.querySelectorAll("[data-seat-empty]")).toHaveLength(3)
-  })
-
-  it("keeps a seat when a join lands after the render but before the effect", () => {
-    const { container } = renderLobby()
-    // React paints before it runs effects, so this handler stays subscribed for
-    // a moment after a newer list is already on the board.
-    const [notYetReplaced] = subscribed(EVENTS.MANAGER.NEW_PLAYER)
-
-    act(() => arrives("Adaline"))
-    act(() => notYetReplaced(player("Grace")))
-
-    expect(chipsIn(container)).toEqual(["Adaline", "Grace"])
   })
 
   it("climbs one note per player through a burst", () => {
@@ -214,8 +211,8 @@ describe("Room lobby after the host reconnects", () => {
     cleanup()
   })
 
-  it("shows the players the server sent when the store's list is replaced", () => {
-    const { container, rerender } = renderLobby()
+  it("shows the players the server sent with the reconnect", () => {
+    const { container } = renderLobby()
 
     act(() => {
       arrives("Ann")
@@ -225,33 +222,45 @@ describe("Room lobby after the host reconnects", () => {
 
     // The host dropped, two phones joined in the gap, and the server's whole list
     // came back with the reconnect.
-    mocks.players = [player("Ann"), player("Bo"), player("Cy"), player("Di")]
-    rerender(lobby())
+    act(() => reconnects(["Ann", "Bo", "Cy", "Di"]))
 
     expect(chipsIn(container)).toEqual(["Ann", "Bo", "Cy", "Di"])
   })
 
   it("keeps adding joins to the list it caught up to", () => {
-    const { container, rerender } = renderLobby()
+    const { container } = renderLobby()
 
-    mocks.players = [player("Ann"), player("Bo"), player("Cy")]
-    rerender(lobby())
-    act(() => {
-      arrives("Di")
-    })
+    act(() => reconnects(["Ann", "Bo", "Cy"]))
+    act(() => arrives("Di"))
 
     expect(chipsIn(container)).toEqual(["Ann", "Bo", "Cy", "Di"])
     // The note a join plays climbs from the seats there already were.
     expect(joinCues()).toEqual([3])
   })
 
-  it("leaves the list alone when nothing replaced the players", () => {
+  it("keeps a join that lands right after the reconnect, before any render", () => {
+    const { container, rerender } = renderLobby()
+
+    // In the app the reconnect also puts its list in the store, and the join
+    // after it is not in that list. Taking the store's list after the render
+    // would drop the join.
+    act(() => {
+      reconnects(["Ann", "Bo"])
+      arrives("Late")
+    })
+    rerender(lobby())
+
+    expect(chipsIn(container)).toEqual(["Ann", "Bo", "Late"])
+  })
+
+  it("leaves the list alone when the store's list changes without a reconnect", () => {
     const { container, rerender } = renderLobby()
 
     act(() => {
       arrives("Ann")
       arrives("Bo")
     })
+    mocks.players = [player("Someone else")]
     rerender(lobby())
 
     expect(chipsIn(container)).toEqual(["Ann", "Bo"])
