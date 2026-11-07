@@ -2,7 +2,7 @@ import {
   QUESTION_CONTENT_ENTER_MS,
   QUESTION_NUMBER_FADE_MS,
 } from "@razzia/common/utils/question-transition"
-import { useQuestionStore } from "@razzia/web/features/game/stores/question"
+import { useRoundProgress } from "@razzia/web/features/game/hooks/use-round-progress"
 import clsx from "clsx"
 import { motion, useReducedMotion } from "motion/react"
 import { useTranslation } from "react-i18next"
@@ -23,16 +23,17 @@ const QuestionNumber = ({
 }: Props) => {
   const { t } = useTranslation()
   const reducedMotion = useReducedMotion()
-  const total = useQuestionStore((state) => state.questionStates?.total)
-  // "Question 4 of 6", and "Final question" on the last; a quiz of one, or one
-  // whose length is not known, keeps the plain number.
+  const { total, final } = useRoundProgress(questionNumber)
+  // "Question 4 of 6", and "Final question" on the last one played (in a
+  // lecture deck, not always the last number); a quiz of one, or one whose
+  // length is not known, keeps the plain number.
   const known = total !== undefined && total > 1
   const label = (() => {
     if (!known) {
       return `${t("game:questionPrefix")}${questionNumber}`
     }
 
-    return questionNumber === total
+    return final
       ? t("game:finalQuestion")
       : t("game:questionOf", { number: questionNumber, total })
   })()

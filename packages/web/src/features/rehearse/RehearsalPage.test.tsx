@@ -50,6 +50,7 @@ const draft = (
         time: 20,
       },
     ],
+    savedAt: Date.now(),
   })
 
 const frame = () => {

@@ -4,6 +4,7 @@ import ChargeLine from "@razzia/web/features/game/components/ChargeLine"
 import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
 import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import { useQuestionPrompt } from "@razzia/web/features/game/hooks/use-question-prompt"
+import { useSceneArrival } from "@razzia/web/features/game/hooks/use-scene-arrival"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { questionSegment } from "@razzia/web/features/game/utils/charge-line"
 import { useEffect, useRef } from "react"
@@ -17,12 +18,14 @@ const Question = ({ data }: Props) => {
   const { visibleCount, barDelayMs, shouldLift } = useQuestionPrompt(data)
   // A reviewed question must not cut the live game's bed.
   const reviewing = useManagerStore((state) => state.review !== null)
+  const arrived = useSceneArrival(data.serverNow)
   const promptScroll = useRef<HTMLDivElement>(null)
 
   // Near silence while the prompt appears, then the charge for the cooldown.
+  // Asked again when a review ends, it stays on the clock it arrived with.
   useEffect(() => {
-    score.start(readingSpec(data), { silent: reviewing })
-  }, [data, reviewing])
+    score.start(arrived(readingSpec(data)), { silent: reviewing })
+  }, [data, reviewing, arrived])
 
   // On a phone the prompt scrolls; it follows the text as each sentence lands.
   useEffect(() => {

@@ -93,6 +93,7 @@ export const createRuntimeDeps = (): ControllerDeps => {
       setTimeout: timers.setTimeout,
       clearTimeout: timers.clearTimeout,
     }),
+    gestures: document,
     now,
     timers,
   }

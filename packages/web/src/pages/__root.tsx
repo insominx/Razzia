@@ -11,21 +11,28 @@ import {
   type SurfaceOverride,
   useSurface,
 } from "@razzia/web/hooks/use-surface"
-import { createRootRoute, Outlet } from "@tanstack/react-router"
+import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+
+// The rehearsal and the dev pages play the screens on a fake socket. A real
+// one would only open a connection to the server that nothing on them uses.
+const OFFLINE_PATH = /^\/(rehearse(\/|$)|dev\/)/
 
 const GameLayout = () => {
   const { isConnected, connect } = useSocket()
+  const offline = useRouterState({
+    select: (routerState) => OFFLINE_PATH.test(routerState.location.pathname),
+  })
   const [surfaceOverride, setSurfaceOverride] =
     useState<SurfaceOverride | null>(null)
 
   useSurface(surfaceOverride)
 
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected && !offline) {
       connect()
     }
-  }, [connect, isConnected])
+  }, [connect, isConnected, offline])
 
   return (
     <SurfaceOverrideContext.Provider value={setSurfaceOverride}>

@@ -543,6 +543,81 @@ describe("useDeckBridge", () => {
     expect(storage.getItem("razzia_deck_games")).toContain("g-new")
   })
 
+  // The created game's answer goes to the connection that asked for it.
+  it("asks again for a lecture game when the connection drops before the answer", () => {
+    stubStorage()
+    mocks.router.pathname = "/manager/config"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+
+    mocks.connection.isConnected = false
+    rerender()
+    mocks.connection.isConnected = true
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toHaveLength(2)
+  })
+
+  it("asks again for a lecture game once a host the server forgot logs back in", () => {
+    stubStorage()
+    mocks.router.pathname = "/manager/config"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+
+    fire(EVENTS.MANAGER.UNAUTHORIZED)
+    expect(mocks.navigate).toHaveBeenLastCalledWith({
+      to: "/manager",
+      replace: true,
+    })
+    mocks.router.pathname = "/manager"
+    rerender()
+    fire(EVENTS.MANAGER.CONFIG, config)
+    mocks.router.pathname = "/manager/config"
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toHaveLength(2)
+  })
+
+  it("asks again for a lecture game that never came, but not sooner", () => {
+    vi.useFakeTimers()
+    stubStorage()
+    mocks.router.pathname = "/manager/config"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    const creates = () =>
+      mocks.socket.emit.mock.calls.filter(
+        ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+      )
+
+    act(() => {
+      vi.advanceTimersByTime(9_999)
+    })
+    rerender()
+    expect(creates()).toHaveLength(1)
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(creates()).toHaveLength(2)
+  })
+
   it("opens the config page before creating", () => {
     stubStorage()
     mocks.router.pathname = "/party/manager/old"
@@ -614,12 +689,12 @@ describe("useDeckBridge", () => {
     )
   })
 
-  it.each([
-    ["End quiz", { type: "close", quiz: QUIZ }],
-    ["Restart quiz", { type: "ensureGame", quiz: QUIZ, restart: "always" }],
-  ])("stops asking for the old game after %s", (_label, command) => {
+  // The server ignores a leave from any connection but the game's manager, so
+  // leaving before this one is back in would keep the room open.
+  it("holds End quiz until it is back in, then closes the game", () => {
     vi.useFakeTimers()
-    stubStorage()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
     mocks.router.pathname = "/party/manager/g-1"
     renderHook(() => {
       useDeckBridge()
@@ -627,18 +702,138 @@ describe("useDeckBridge", () => {
     sendCommand({ type: "hello" })
     fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
 
-    sendCommand(command)
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "queued",
+    })
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(lastState()).toMatchObject({ reattaching: true })
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+    expect(mocks.socket.emit).toHaveBeenCalledWith(EVENTS.MANAGER.RECONNECT, {
+      gameId: "g-1",
+    })
+
+    fire(EVENTS.MANAGER.SUCCESS_RECONNECT, {})
+
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "accepted",
+    })
+    expect(lastState()).toMatchObject({ reattaching: false, gameId: null })
+
     mocks.socket.emit.mockClear()
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-
     expect(mocks.socket.emit).not.toHaveBeenCalledWith(
       EVENTS.MANAGER.RECONNECT,
-      {
-        gameId: "g-1",
-      },
+      expect.anything(),
     )
+  })
+
+  it("holds Restart quiz until it is back in, then opens a new lobby", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+
+    sendCommand({ type: "ensureGame", quiz: QUIZ, restart: "always" })
+
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "ensureGame",
+      outcome: "queued",
+    })
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(lastState()).toMatchObject({ reattaching: true })
+
+    fire(EVENTS.MANAGER.SUCCESS_RECONNECT, {})
+
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+
+    mocks.router.pathname = "/manager/config"
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toEqual([[EVENTS.GAME.CREATE_LECTURE, QUIZ]])
+  })
+
+  it("gives up a held End quiz when it cannot get back in", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    act(() => {
+      vi.advanceTimersByTime(95_000)
+    })
+
+    expect(errorCodes()).toContain("reattachFailed")
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "ignored",
+      reason: "reattachFailed",
+    })
+    expect(lastState()).toMatchObject({ reattaching: false })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+
+    // A late answer for the old game closes nothing.
+    mocks.navigate.mockClear()
+    fire(EVENTS.MANAGER.SUCCESS_RECONNECT, {})
+    expect(postedOf("result").at(-1)).toMatchObject({ outcome: "ignored" })
+  })
+
+  it("closes a held End quiz when the server says the game is gone", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    fire(EVENTS.GAME.RESET, "errors:game.expired")
+
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "accepted",
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(lastState()).toMatchObject({ reattaching: false })
   })
 
   it("stops asking for a game the server says is gone", () => {

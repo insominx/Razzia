@@ -710,14 +710,22 @@ const clunk = (g: Bus, w: number, p: { m: number; v?: number }): void => {
   pluck(g, w, { m, v: 0.75 * v, rev: 0.34, dly: 0.18, bus: "dry" })
 }
 
-const flap = (g: Bus, w: number, p: { n?: number; v?: number }): void => {
-  const { n = 5, v = 0.3 } = p
+/**
+ * `k` seeds the jitter (a join passes its index): two flaps at the same moment
+ * would otherwise be the same flap, in phase. Zero is the prototype's flap.
+ */
+const flap = (
+  g: Bus,
+  w: number,
+  p: { n?: number; v?: number; k?: number },
+): void => {
+  const { n = 5, v = 0.3, k = 0 } = p
 
   for (let i = 0; i < n; i += 1) {
-    const at = w + i * 0.026 + seed(i + w) * 0.008
+    const at = w + i * 0.026 + seed(i + w + k) * 0.008
     const source = noiseSource(g, at, 0.02)
     const band = resonant(
-      filter(g, "bandpass", 2400 + seed(i * 3 + w) * 1600),
+      filter(g, "bandpass", 2400 + seed(i * 3 + w + k) * 1600),
       1.3,
     )
     const gain = envelope(g, at, {

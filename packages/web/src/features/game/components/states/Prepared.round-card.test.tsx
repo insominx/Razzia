@@ -73,6 +73,108 @@ describe("Prepared round card", () => {
     )
   })
 
+  describe("in a lecture deck, which plays questions out of order", () => {
+    const lecture = (played: number[], current: number) => {
+      useManagerStore.getState().setLecture({
+        inviteCode: "123456",
+        total: 6,
+        played,
+        current,
+        finished: false,
+      })
+    }
+
+    afterEach(() => {
+      useManagerStore.getState().setLecture(null)
+    })
+
+    it("marks the questions it really played, not the ones numbered lower", () => {
+      lecture([3, 5], 5)
+      useQuestionStore.getState().setQuestionStates({ current: 6, total: 6 })
+
+      const { container } = render(
+        <Prepared data={{ questionNumber: 6, totalAnswers: 4 }} />,
+      )
+
+      expect(pips(container)).toEqual([
+        "next",
+        "next",
+        "next",
+        "done",
+        "next",
+        "now",
+      ])
+      // The last slide's question, with four still to play, is not the final one.
+      expect(
+        container.querySelector("[data-question-number-layout]")?.textContent,
+      ).toBe('game:questionOf:{"number":6,"total":6}')
+      expect(
+        container.querySelector("[data-round-number]"),
+      ).not.toHaveAttribute("data-final")
+    })
+
+    it("calls the one left when every other has played the final one", () => {
+      lecture([0, 1, 2, 3, 4, 5], 2)
+      useQuestionStore.getState().setQuestionStates({ current: 3, total: 6 })
+
+      const { container } = render(
+        <Prepared data={{ questionNumber: 3, totalAnswers: 4 }} />,
+      )
+
+      expect(pips(container)).toEqual([
+        "done",
+        "done",
+        "now",
+        "done",
+        "done",
+        "done",
+      ])
+      expect(
+        container.querySelector("[data-question-number-layout]")?.textContent,
+      ).toBe("game:finalQuestion")
+      expect(container.querySelector("[data-round-number]")).toHaveAttribute(
+        "data-final",
+      )
+    })
+
+    it("draws a phone's pips from the played questions the server sent", () => {
+      // A phone has no lecture state; its question update says what was played.
+      useQuestionStore
+        .getState()
+        .setQuestionStates({ current: 6, total: 6, played: [3, 5] })
+
+      const { container } = render(
+        <Prepared data={{ questionNumber: 6, totalAnswers: 4 }} />,
+      )
+
+      expect(pips(container)).toEqual([
+        "next",
+        "next",
+        "next",
+        "done",
+        "next",
+        "now",
+      ])
+      expect(
+        container.querySelector("[data-round-number]"),
+      ).not.toHaveAttribute("data-final")
+    })
+
+    it("does not count the question as played before the deck says so", () => {
+      // The card can arrive before the deck's own update: the rest decide.
+      lecture([0, 1, 3, 4, 5], 4)
+      useQuestionStore.getState().setQuestionStates({ current: 3, total: 6 })
+
+      const { container } = render(
+        <Prepared data={{ questionNumber: 3, totalAnswers: 4 }} />,
+      )
+
+      expect(container.querySelector("[data-round-number]")).toHaveAttribute(
+        "data-final",
+      )
+    })
+  })
+
   it("keeps the plain number for a quiz whose length is not known", () => {
     useQuestionStore.getState().setQuestionStates(null)
 

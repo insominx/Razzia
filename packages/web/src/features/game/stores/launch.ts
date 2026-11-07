@@ -6,6 +6,8 @@ interface LaunchStore {
   arm: () => void
   /** True once, if the countdown just ran: GO belongs to it, and no one else. */
   consume: () => boolean
+  /** The first card was missed (a reconnect past it): no later card takes GO. */
+  disarm: () => void
 }
 
 /**
@@ -26,4 +28,5 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
 
     return armed
   },
+  disarm: () => set({ armed: false }),
 }))

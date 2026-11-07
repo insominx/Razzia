@@ -2,6 +2,9 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import Answers from "@razzia/web/features/game/components/states/Answers"
+import type { SceneOptions, SceneSpec } from "@razzia/web/features/game/audio"
+import { anchorOf, originMs } from "@razzia/web/features/game/audio/scenes"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 
 const mocks = vi.hoisted(() => ({
   socketEmit: vi.fn(),
@@ -183,6 +186,94 @@ describe("Answers reveal lifecycle", () => {
     fireEvent.click(screen.getByText("Second"))
 
     expect(mocks.socketEmit).toHaveBeenCalledTimes(1)
+  })
+
+  it("sends the pick again when a reconnect shows the question still unanswered", () => {
+    const open = makeData({ answeringOpen: true, serverNow: 5_000 })
+    const { rerender } = render(<Answers data={open} />)
+
+    // Tapped during a blip: the emit reaches the server before the phone has
+    // rejoined, and is dropped.
+    fireEvent.click(screen.getByText("Second"))
+    expect(mocks.socketEmit).toHaveBeenCalledTimes(1)
+
+    // The same screen again is not a reconnect.
+    rerender(<Answers data={{ ...open }} />)
+    expect(mocks.socketEmit).toHaveBeenCalledTimes(1)
+
+    // The reconnect's own copy of the screen, restamped: still waiting.
+    rerender(<Answers data={{ ...open, serverNow: 7_000 }} />)
+
+    expect(mocks.socketEmit).toHaveBeenCalledTimes(2)
+    expect(mocks.socketEmit).toHaveBeenLastCalledWith("player:selectedAnswer", {
+      gameId: "game-1",
+      data: { answerKey: 1 },
+    })
+    // Still the same pick, still locked in.
+    expect(tiles().map((tile) => tile.dataset.state)).toEqual([
+      "faded",
+      "picked",
+    ])
+    expect(document.querySelector("[data-locked-in-pill]")).not.toBeNull()
+  })
+
+  it("drops an old question's pick when a reconnect lands on a new one", () => {
+    const { rerender } = render(
+      <Answers data={makeData({ answeringOpen: true, serverNow: 5_000 })} />,
+    )
+
+    fireEvent.click(screen.getByText("Second"))
+
+    rerender(
+      <Answers
+        data={makeData({
+          questionNumber: 8,
+          answeringOpen: true,
+          serverNow: 40_000,
+        })}
+      />,
+    )
+
+    // Question 7's pick is never sent as question 8's answer.
+    expect(mocks.socketEmit).toHaveBeenCalledTimes(1)
+    expect(tiles().map((tile) => tile.dataset.state)).toEqual([
+      "active",
+      "active",
+    ])
+
+    fireEvent.click(screen.getByText("First"))
+    expect(mocks.socketEmit).toHaveBeenLastCalledWith("player:selectedAnswer", {
+      gameId: "game-1",
+      data: { answerKey: 0 },
+    })
+  })
+
+  it("keeps the scene in the past when a review over the hidden screen ends", () => {
+    mocks.player = { player: null, gameId: null as unknown as string }
+    const data = makeData({ answeringOpen: true, serverNow: 5_000 })
+    const arrivedAt = Date.now()
+
+    try {
+      render(<Answers data={data} />)
+
+      act(() => useManagerStore.getState().setReview(0))
+      act(() => {
+        vi.advanceTimersByTime(30_000)
+      })
+      act(() => useManagerStore.getState().setReview(null))
+
+      const [spec, options] = mocks.start.mock.calls.at(-1) as [
+        SceneSpec,
+        SceneOptions,
+      ]
+
+      expect(options).toMatchObject({ silent: false })
+      expect(
+        originMs(anchorOf(spec) ?? null, Date.now(), options.offsetMs),
+      ).toBe(arrivedAt + data.unlockAt - data.serverNow)
+    } finally {
+      useManagerStore.getState().reset()
+    }
   })
 
   it("renders untappable tiles on the projector, where nobody has a seat", () => {

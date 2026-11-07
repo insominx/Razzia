@@ -64,6 +64,7 @@ const Result = ({
     picked,
     correctAnswers,
     streak,
+    behind,
   },
 }: Props) => {
   const { t } = useTranslation()
@@ -121,6 +122,9 @@ const Result = ({
   })()
   const title = verdict === "none" ? t("game:noAnswer") : t(message)
   const place = formatRank(t, rank)
+  // Level on points with the player listed ahead is a tie, not "behind" them,
+  // as on the standing screen.
+  const level = behind === 0
 
   return (
     <section
@@ -191,10 +195,15 @@ const Result = ({
             </div>
           )}
           <p className="text-text-primary text-xl font-bold">
-            {aheadOfMe
+            {aheadOfMe && !level
               ? t("game:standingBehind", { place, name: aheadOfMe })
               : t("game:standing", { place })}
           </p>
+          {aheadOfMe && level && (
+            <p className="text-text-muted text-base font-semibold">
+              {t("game:standingLevel", { name: aheadOfMe })}
+            </p>
+          )}
           {note && (
             <p className="text-text-muted mt-4 max-w-md text-lg font-semibold">
               {t(note)}

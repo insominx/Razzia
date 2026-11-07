@@ -13,6 +13,7 @@ import FrameHit from "@razzia/web/features/game/components/FrameHit"
 import QuestionCard from "@razzia/web/features/game/components/QuestionCard"
 import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import { useResultClock } from "@razzia/web/features/game/hooks/use-result-clock"
+import { useSceneArrival } from "@razzia/web/features/game/hooks/use-scene-arrival"
 import { useCalmVisuals } from "@razzia/web/features/game/hooks/use-show-intensity"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import {
@@ -94,10 +95,12 @@ const Responses = ({
 
   // A reviewed question must not cut the live game's bed.
   const reviewing = useManagerStore((state) => state.review !== null)
+  const arrived = useSceneArrival(serverNow)
 
   // TIME, the count's ticks, the spotlight's heartbeat and the strike are one
   // scene, scheduled from the server's stamps: a screen that arrives after them
-  // (a reconnect) finds them in the past and plays nothing.
+  // (a reconnect) finds them in the past and plays nothing. So does this screen
+  // asking again when a review over it ends.
   useEffect(() => {
     // A saved result with no stamps has no verdict to stage.
     if (resultsAt === undefined || serverNow === undefined) {
@@ -105,16 +108,26 @@ const Responses = ({
     }
 
     score.start(
-      verdictSpec({
-        resultsAt,
-        serverNow,
-        responses,
-        solutions,
-        answerCount: answers.length,
-      }),
+      arrived(
+        verdictSpec({
+          resultsAt,
+          serverNow,
+          responses,
+          solutions,
+          answerCount: answers.length,
+        }),
+      ),
       { silent: reviewing },
     )
-  }, [resultsAt, serverNow, responses, solutions, answers.length, reviewing])
+  }, [
+    resultsAt,
+    serverNow,
+    responses,
+    solutions,
+    answers.length,
+    reviewing,
+    arrived,
+  ])
 
   // The flood leaves the right tile, so it needs to know where that is. The
   // tile has just been marked correct in this same commit.

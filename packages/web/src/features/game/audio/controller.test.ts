@@ -1,3 +1,4 @@
+import { NO_TIME_LIMIT } from "@razzia/common/constants"
 import {
   type ControllerDeps,
   createScore,
@@ -6,10 +7,14 @@ import {
   type SoundState,
 } from "@razzia/web/features/game/audio/controller"
 import type { Engine, EngineDeps } from "@razzia/web/features/game/audio/engine"
-import type { LegacyRunner } from "@razzia/web/features/game/audio/legacy"
+import type {
+  LegacyPlan,
+  LegacyRunner,
+} from "@razzia/web/features/game/audio/legacy"
 import type { Scene } from "@razzia/web/features/game/audio/music"
 import type { SceneSpec } from "@razzia/web/features/game/audio/scenes"
 import {
+  type FakeAudioContext,
   fakeContext,
   fakeNode,
   type ManualClock,
@@ -60,6 +65,7 @@ const setup = (initial: Partial<SoundState> = {}, hasWork = true) => {
     ...initial,
   }
   const listeners = new Set<() => void>()
+  const gestures = new EventTarget()
   const engine = fakeEngine(hasWork)
   const engineDeps: EngineDeps[] = []
   const legacy = {
@@ -83,6 +89,7 @@ const setup = (initial: Partial<SoundState> = {}, hasWork = true) => {
       },
     },
     legacy,
+    gestures,
     now: clock.now,
     timers: clock.timers(),
     createEngine: (made) => {
@@ -106,6 +113,7 @@ const setup = (initial: Partial<SoundState> = {}, hasWork = true) => {
     howler,
     engine,
     engineDeps,
+    gestures,
     legacy,
     listeners,
     score,
@@ -445,6 +453,62 @@ describe("the pump", () => {
   })
 })
 
+describe("unlocking on a gesture (iOS)", () => {
+  // WebKit resumes a context only inside a gesture until it has run once.
+  const asleep = (ctx: FakeAudioContext) => {
+    ctx.state = "suspended"
+    ctx.resume = () => {
+      ctx.resumed += 1
+
+      return Promise.resolve()
+    }
+  }
+
+  const settle = () =>
+    new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+
+  it("resumes the context inside the first gesture, then stops listening", async () => {
+    const { ctx, gestures } = setup()
+
+    ctx.state = "suspended"
+    gestures.dispatchEvent(new Event("pointerdown"))
+
+    expect(ctx.resumed).toBe(1)
+    await settle()
+
+    // Running now; a later interruption is the pump's to wake.
+    ctx.state = "suspended"
+    gestures.dispatchEvent(new Event("pointerdown"))
+
+    expect(ctx.resumed).toBe(1)
+  })
+
+  it("listens for a touch, a key and a pointer until the context runs", async () => {
+    const { ctx, gestures } = setup()
+
+    asleep(ctx)
+
+    for (const type of ["touchend", "keydown", "pointerdown"]) {
+      gestures.dispatchEvent(new Event(type))
+    }
+
+    await settle()
+    expect(ctx.resumed).toBe(3)
+  })
+
+  it("stops listening when the score is disposed", () => {
+    const { ctx, gestures, score } = setup()
+
+    asleep(ctx)
+    score.dispose()
+    gestures.dispatchEvent(new Event("pointerdown"))
+
+    expect(ctx.resumed).toBe(0)
+  })
+})
+
 describe("Howler's auto-suspend", () => {
   it("is switched off while a scene plays, and put back when everything stops", () => {
     const { howler, score } = setup()
@@ -599,6 +663,71 @@ describe("the legacy packs", () => {
 
     expect(legacy.unloadAll).toHaveBeenCalled()
     expect(legacy.setTheme).toHaveBeenLastCalledWith("techno")
+  })
+
+  describe("an untimed question's music", () => {
+    const untimed = (clock: ManualClock): AnswersSpec => ({
+      ...answers(clock, 0),
+      time: NO_TIME_LIMIT,
+    })
+
+    it("comes back after a mute and an unmute", () => {
+      const { clock, legacy, score, setSound } = setup()
+
+      score.configure({ intensity: "full", theme: "classic", surface: "host" })
+      score.start(untimed(clock))
+      clock.advance(5000)
+      setSound({ muted: true })
+      setSound({ muted: false })
+
+      expect(legacy.start).toHaveBeenCalledTimes(2)
+      expect(legacy.start.mock.calls[1][0]).toMatchObject({ lane: "bed" })
+    })
+
+    it("comes back after an intensity change", () => {
+      const { clock, legacy, score } = setup()
+
+      score.configure({ intensity: "full", theme: "techno", surface: "host" })
+      score.start(untimed(clock))
+      clock.advance(5000)
+      score.configure({ intensity: "calm", theme: "techno", surface: "host" })
+
+      expect(legacy.start).toHaveBeenCalledTimes(2)
+      expect(legacy.start.mock.calls[1][2]).toBe("calm")
+    })
+
+    it("is not torn down and restarted when the screen asks again", () => {
+      const { clock, legacy, score } = setup()
+      const spec = untimed(clock)
+
+      score.configure({ intensity: "full", theme: "classic", surface: "host" })
+      score.start(spec)
+      clock.advance(5000)
+      score.start({ ...spec })
+
+      expect(legacy.start).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it("plays the podium's files, and the board's cut, through the old pack", () => {
+    const { legacy, score } = setup()
+
+    score.configure({ intensity: "full", theme: "techno", surface: "host" })
+    score.start({ scene: "podium", places: 3 })
+    score.start({ scene: "leaderboard", rows: 5, overtakes: true })
+
+    const [[podium], [board]] = legacy.start.mock.calls as [
+      [LegacyPlan],
+      [LegacyPlan],
+    ]
+
+    expect(podium.events.map((event) => event.sfx)).toEqual([
+      "three",
+      "second",
+      "roll",
+      "first",
+    ])
+    expect(board.cuts).toEqual(["verdict"])
   })
 
   it("leaves the engine alone and holds no auto-suspend for the mp3s", () => {

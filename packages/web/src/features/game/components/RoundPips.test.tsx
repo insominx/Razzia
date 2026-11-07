@@ -26,6 +26,25 @@ describe("RoundPips", () => {
     expect(states(container)).toEqual(["done", "done", "done", "done", "now"])
   })
 
+  it("marks only the questions played when they did not play in order", () => {
+    const { container } = render(
+      <RoundPips current={2} total={5} done={[4, 5]} />,
+    )
+
+    expect(states(container)).toEqual(["next", "now", "next", "done", "done"])
+  })
+
+  it("fills a long deck's bar by the questions played, not the number", () => {
+    const { container } = render(
+      <RoundPips current={50} total={MAX_PIPS * 4 + 6} done={[3, 9]} />,
+    )
+
+    expect(
+      container.querySelector<HTMLElement>("[data-round-progress] > div")?.style
+        .width,
+    ).toBe(`${(3 / (MAX_PIPS * 4 + 6)) * 100}%`)
+  })
+
   it("is read as a position, not as a row of dots", () => {
     const { container } = render(<RoundPips current={2} total={6} />)
 

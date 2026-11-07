@@ -1,5 +1,6 @@
 import type { PublicPlayer } from "@razzia/common/types/game"
 import Leaderboard from "@razzia/web/features/game/components/states/Leaderboard"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import {
   BOARD_COMMENT_DELAY_MS,
   BOARD_HOLD_MS,
@@ -7,6 +8,13 @@ import {
 } from "@razzia/web/features/game/utils/board"
 import { act, cleanup, render } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+const { start } = vi.hoisted(() => ({ start: vi.fn() }))
+
+// The score has its own tests; here the board is judged by the scene it asks for.
+vi.mock("@razzia/web/features/game/audio", () => ({
+  score: { start, cue: vi.fn(), stop: vi.fn() },
+}))
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -22,6 +30,9 @@ const player = (id: string, points: number, streak = 0): PublicPlayer => ({
   points,
   streak,
 })
+
+const players = (ids: readonly string[], points: number) =>
+  ids.map((id) => player(id, points))
 
 const rowOrder = (container: HTMLElement) =>
   [...container.querySelectorAll("[data-leaderboard-row]")].map((row) => ({
@@ -43,14 +54,23 @@ const advance = (ms: number) => {
   })
 }
 
+// A lecture deck reviewing a question over the screen, or ending the review.
+const review = (question: number | null) => {
+  act(() => {
+    useManagerStore.getState().setReview(question)
+  })
+}
+
 describe("Leaderboard", () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    start.mockClear()
   })
 
   afterEach(() => {
     cleanup()
     vi.useRealTimers()
+    useManagerStore.getState().setReview(null)
   })
 
   it("numbers rows and colours only the podium ranks", () => {
@@ -98,6 +118,29 @@ describe("Leaderboard", () => {
     for (const name of container.querySelectorAll(".truncate")) {
       expect(name).not.toHaveClass("text-3xl")
     }
+  })
+
+  it("gives players level on points one place once the board has sorted", () => {
+    const old = players(["a", "b", "c", "d"], 0)
+    const next = [
+      player("a", 1_765),
+      player("b", 1_765),
+      player("c", 1_765),
+      player("d", 900),
+    ]
+    const { container } = render(
+      <Leaderboard data={{ oldLeaderboard: old, leaderboard: next }} />,
+    )
+
+    advance(BOARD_REORDER_MS)
+
+    // As their phones say: three share first, the next is fourth.
+    expect(rowOrder(container).map((row) => row.rank)).toEqual([
+      "1",
+      "1",
+      "1",
+      "4",
+    ])
   })
 
   it("holds the old standing, with each bar its share of the new longest", () => {
@@ -225,5 +268,81 @@ describe("Leaderboard", () => {
 
     expect(container.querySelector("[data-board-commentary]")).toBeNull()
     expect(barWidths(container)).toEqual([`${(1_000 / 1_900) * 100}%`])
+  })
+
+  describe("the score", () => {
+    it("starts the board's scene once, with its rows and whether anyone moves", () => {
+      const data = {
+        oldLeaderboard: [player("a", 300), player("b", 200)],
+        leaderboard: [player("b", 900), player("a", 300)],
+      }
+      const { rerender } = render(<Leaderboard data={data} />)
+
+      expect(start).toHaveBeenCalledTimes(1)
+      expect(start).toHaveBeenCalledWith(
+        { scene: "leaderboard", rows: 2, overtakes: true },
+        { silent: false, offsetMs: 0 },
+      )
+
+      // The board's own beats re-render it; the scene is not asked for again.
+      advance(BOARD_REORDER_MS + BOARD_COMMENT_DELAY_MS)
+      rerender(<Leaderboard data={data} />)
+
+      expect(start).toHaveBeenCalledTimes(1)
+    })
+
+    it("skips the overtake when nobody changes place", () => {
+      const board = [player("a", 300), player("b", 200), player("c", 100)]
+
+      render(
+        <Leaderboard data={{ oldLeaderboard: board, leaderboard: board }} />,
+      )
+
+      expect(start.mock.calls[0][0]).toEqual({
+        scene: "leaderboard",
+        rows: 3,
+        overtakes: false,
+      })
+    })
+
+    it("counts a player climbing in from outside the top five as a move", () => {
+      const old = players(["a", "b", "c", "d", "e"], 100)
+      const next = players(["a", "b", "c", "d", "f"], 200)
+
+      render(<Leaderboard data={{ oldLeaderboard: old, leaderboard: next }} />)
+
+      expect(start.mock.calls[0][0]).toMatchObject({ overtakes: true })
+    })
+
+    it("keeps a reviewed board from touching the live game's score", () => {
+      useManagerStore.getState().setReview(2)
+
+      const board = [player("a", 300)]
+
+      render(
+        <Leaderboard data={{ oldLeaderboard: board, leaderboard: board }} />,
+      )
+
+      expect(start.mock.calls[0][1]).toEqual({ silent: true, offsetMs: 0 })
+    })
+
+    it("does not play the board's music again when a review over it ends", () => {
+      const board = [player("a", 300)]
+
+      render(
+        <Leaderboard data={{ oldLeaderboard: board, leaderboard: board }} />,
+      )
+
+      // A lecture deck reviews a question over the hidden board for 30 s.
+      review(0)
+      advance(30_000)
+      review(null)
+
+      // Asked again, the scene is placed where it began, 30 s ago.
+      expect(start.mock.calls.at(-1)?.[1]).toEqual({
+        silent: false,
+        offsetMs: 30_000,
+      })
+    })
   })
 })

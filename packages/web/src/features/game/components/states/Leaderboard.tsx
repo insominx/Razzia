@@ -1,6 +1,8 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
+import { score } from "@razzia/web/features/game/audio"
 import Fire from "@razzia/web/features/game/components/icons/Fire"
 import Odometer from "@razzia/web/features/game/components/Odometer"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import {
   BOARD_COMMENT_DELAY_MS,
   BOARD_HOLD_MS,
@@ -93,6 +95,28 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
   const { t } = useTranslation()
   const reduced = useReducedMotion() ?? false
   const [beat, setBeat] = useState<Beat>(reduced ? "told" : "hold")
+  // A reviewed board must not cut the live game's bed.
+  const reviewing = useManagerStore((state) => state.review !== null)
+  // The overtake flourish only plays if the swap changes anything.
+  const overtakes = leaderboard.some(
+    (player, index) => oldLeaderboard.at(index)?.id !== player.id,
+  )
+
+  // When the board first showed. The board's scene has no server stamp, so the
+  // score places it from when it is asked for.
+  const [shownAt] = useState(() => Date.now())
+
+  // The board's music: its groove and overtake land on the swap, which is
+  // the score's own beat (`BOARD_REORDER_MS`). Asking again while it plays is
+  // a no-op, so the board's re-renders never restart it. Asking again later
+  // (a lecture review over the hidden board ends) passes how long the board has
+  // been up, so the scene is placed where it began and does not play again.
+  useEffect(() => {
+    score.start(
+      { scene: "leaderboard", rows: leaderboard.length, overtakes },
+      { silent: reviewing, offsetMs: Date.now() - shownAt },
+    )
+  }, [leaderboard.length, overtakes, reviewing, shownAt])
 
   useEffect(() => {
     if (reduced) {
@@ -145,6 +169,12 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
             const change = swapped
               ? placeChange(oldLeaderboard, leaderboard, id)
               : 0
+            // Once the board has sorted, players level on points share a place,
+            // as on their phones (1, 1, 3). Before that the rows still stand in
+            // the old order and keep its numbers.
+            const place = swapped
+              ? leaderboard.findIndex((p) => p.points === points) + 1
+              : index + 1
 
             return (
               <motion.div
@@ -159,7 +189,7 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
                 data-leaderboard-row
                 className="bg-panel border-border text-text-primary rounded-rz-lg stage:text-[2.75rem] flex w-full items-center gap-5 border p-3 text-4xl font-bold"
               >
-                <RankBadge rank={index + 1} />
+                <RankBadge rank={place} />
 
                 {/* A name can be twenty characters and the bars do not need the
                     room, so the name gets a third of the row. */}

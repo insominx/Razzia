@@ -165,6 +165,35 @@ describe("Result", () => {
       expect(screen.queryByText(/game:streak/u)).not.toBeInTheDocument()
     })
 
+    it("calls a tie on points a tie, not a place behind", () => {
+      render(
+        <Result
+          data={live({ rank: 14, aheadOfMe: "Grace", behind: 0, picked: 1 })}
+        />,
+      )
+
+      advance(RESULT_PHONE_DETAILS_MS + 100)
+
+      expect(screen.queryByText(/game:standingBehind/u)).not.toBeInTheDocument()
+      expect(screen.getByText(/game:standing:/u)).toHaveTextContent(
+        '"place":"game:rank',
+      )
+      expect(screen.getByText(/game:standingLevel/u)).toHaveTextContent(
+        '"name":"Grace"',
+      )
+    })
+
+    it("still says behind for a real gap", () => {
+      render(
+        <Result data={live({ rank: 14, aheadOfMe: "Grace", behind: 120 })} />,
+      )
+
+      advance(RESULT_PHONE_DETAILS_MS + 100)
+
+      expect(screen.getByText(/game:standingBehind/u)).toBeInTheDocument()
+      expect(screen.queryByText(/game:standingLevel/u)).not.toBeInTheDocument()
+    })
+
     it("says where you stand plainly in first place", () => {
       render(<Result data={live()} />)
 

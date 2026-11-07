@@ -193,6 +193,28 @@ describe("the voices", () => {
     expect(Math.max(...unique)).toBeLessThan(4)
   })
 
+  it("a flap seeded by its cue's index does not double another at the same moment", () => {
+    const flapAt = (p: { n: number; k?: number }) => {
+      const ctx = fakeContext()
+
+      INSTRUMENTS.flap(fakeGraph(ctx), 2, p)
+
+      return {
+        starts: startTimes(ctx),
+        bands: ctx.nodes
+          .filter((node) => node.kind === "filter")
+          .map((node) => node.frequency.value),
+      }
+    }
+
+    const plain = flapAt({ n: 6 })
+
+    // Unseeded, or seeded with zero, it is the prototype's flap.
+    expect(flapAt({ n: 6, k: 0 })).toEqual(plain)
+    expect(flapAt({ n: 6, k: 3 }).starts).not.toEqual(plain.starts)
+    expect(flapAt({ n: 6, k: 3 }).bands).not.toEqual(plain.bands)
+  })
+
   it("play through the bus they are given, so a lane can be faded alone", () => {
     const ctx = fakeContext()
     const graph = fakeGraph(ctx)

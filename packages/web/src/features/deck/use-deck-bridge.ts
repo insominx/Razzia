@@ -51,6 +51,13 @@ interface EnsureRequest {
   restart?: "ifFinished" | "always"
 }
 
+// End quiz or Restart quiz, waiting for this connection to be the game's
+// manager again.
+interface HeldCommand {
+  type: "close" | "restart"
+  quiz: string
+}
+
 // Lets a lecture deck that frames this page run a lecture game: it creates or
 // resumes the game, plays the questions the deck asks for, reports what is on
 // screen, and hands the deck's keys back to it.
@@ -73,12 +80,17 @@ export const useDeckBridge = () => {
   const [ensure, setEnsure] = useState<EnsureRequest | null>(null)
   const [pending, setPending] = useState<BridgeState["pending"]>(null)
   const [reattaching, setReattaching] = useState(false)
+  // Bumped when a create has waited its full time, to check on it again.
+  const [createCheck, setCreateCheck] = useState(0)
 
   const quiz = useRef<string | null>(null)
   const queued = useRef<{ command: RoundCommand; at: number } | null>(null)
+  const held = useRef<HeldCommand | null>(null)
   const createSentAt = useRef<number | null>(null)
+  const createTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const configRequested = useRef(false)
   const retryTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const retryFailed = useRef<(() => void) | null>(null)
   const lastPosted = useRef("")
 
   const state = buildBridgeState({
@@ -137,6 +149,7 @@ export const useDeckBridge = () => {
         if (Date.now() >= until) {
           stopRetry()
           post({ type: "error", code: "reattachFailed" })
+          retryFailed.current?.()
 
           return
         }
@@ -244,6 +257,76 @@ export const useDeckBridge = () => {
     emitRound(command, gameId)
   }
 
+  // Leaving the game's page closes a lecture game this connection manages.
+  const leaveGame = (gameQuiz: string) => {
+    forgetGame({ storage: localStorageOrNull(), quiz: gameQuiz })
+    queued.current = null
+    createSentAt.current = null
+    setEnsure(null)
+    setPending(null)
+    setAttached(false)
+    setPlayers(0)
+
+    if (pathname !== CONFIG_PATH) {
+      navigate({ to: CONFIG_PATH, replace: true })
+    }
+  }
+
+  // While the bridge asks to get back in, the server still counts the old,
+  // dead connection as the manager and ignores a leave from this one: leaving
+  // now would keep the room open for half an hour. So End quiz and Restart
+  // quiz wait until this connection is back in. A later one replaces the one
+  // held, and a lobby asked for after End quiz is a restart.
+  const hold = (
+    next: HeldCommand,
+    command: "close" | "ensureGame",
+    origin: string,
+  ) => {
+    held.current = next
+    queued.current = null
+    setEnsure(null)
+    setPending(null)
+    post({ type: "result", command, outcome: "queued" }, origin)
+  }
+
+  const runHeld = () => {
+    const next = held.current
+    held.current = null
+
+    if (!next) {
+      return
+    }
+
+    if (next.type === "close") {
+      leaveGame(next.quiz)
+      post({ type: "result", command: "close", outcome: "accepted" })
+
+      return
+    }
+
+    quiz.current = next.quiz
+    setEnsure({ quiz: next.quiz, restart: "always" })
+  }
+
+  // Without the game back, a held command cannot close it. Forgetting it
+  // means the next ensureGame starts a new game rather than chase this one.
+  const dropHeld = () => {
+    const next = held.current
+    held.current = null
+
+    if (!next) {
+      return
+    }
+
+    leaveGame(next.quiz)
+    post({
+      type: "result",
+      command: next.type === "close" ? "close" : "ensureGame",
+      outcome: "ignored",
+      reason: "reattachFailed",
+    })
+  }
+
   const handleCommand = (command: DeckCommand, origin: string) => {
     if (deckOrigin !== origin) {
       setDeckOrigin(origin)
@@ -256,9 +339,13 @@ export const useDeckBridge = () => {
     }
 
     if (command.type === "ensureGame") {
-      // Restart quiz: a reconnect loop for the old game would take it back.
-      if (command.restart === "always") {
-        stopRetry()
+      if (
+        held.current ||
+        (command.restart === "always" && retryTimer.current)
+      ) {
+        hold({ type: "restart", quiz: command.quiz }, "ensureGame", origin)
+
+        return
       }
 
       quiz.current = command.quiz
@@ -268,21 +355,13 @@ export const useDeckBridge = () => {
     }
 
     if (command.type === "close") {
-      // Leaving the game's page closes a lecture game. A reconnect loop still
-      // running would bring the old game back later.
-      stopRetry()
-      forgetGame({ storage: localStorageOrNull(), quiz: command.quiz })
-      queued.current = null
-      createSentAt.current = null
-      setEnsure(null)
-      setPending(null)
-      setAttached(false)
-      setPlayers(0)
+      if (retryTimer.current) {
+        hold({ type: "close", quiz: command.quiz }, "close", origin)
 
-      if (pathname !== CONFIG_PATH) {
-        navigate({ to: CONFIG_PATH, replace: true })
+        return
       }
 
+      leaveGame(command.quiz)
       post({ type: "result", command: "close", outcome: "accepted" }, origin)
 
       return
@@ -336,6 +415,7 @@ export const useDeckBridge = () => {
 
   useEffect(() => {
     handlerRef.current = handleCommand
+    retryFailed.current = dropHeld
     stateRef.current = state
   })
 
@@ -382,6 +462,8 @@ export const useDeckBridge = () => {
       socket.emit(EVENTS.MANAGER.GET_CONFIG)
     } else {
       setAttached(false)
+      // The created game would be announced to the connection that is gone.
+      createSentAt.current = null
     }
   }, [isConnected, socket])
 
@@ -389,6 +471,10 @@ export const useDeckBridge = () => {
     () => () => {
       if (retryTimer.current) {
         clearInterval(retryTimer.current)
+      }
+
+      if (createTimer.current) {
+        clearTimeout(createTimer.current)
       }
     },
     [],
@@ -403,13 +489,17 @@ export const useDeckBridge = () => {
     setConfig(data)
   })
 
+  // Also the answer to a create the server refused after a restart wiped the
+  // login: the host logs in again, then the create goes out again.
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
+    createSentAt.current = null
     setLoggedIn(false)
   })
 
   useEvent(EVENTS.MANAGER.SUCCESS_RECONNECT, () => {
     setAttached(true)
     stopRetry()
+    runHeld()
   })
 
   useEvent(EVENTS.MANAGER.GAME_CREATED, ({ gameId: createdId }) => {
@@ -467,6 +557,8 @@ export const useDeckBridge = () => {
     }
 
     post({ type: "error", code: "gameExpired" })
+    // A gone game needs no closing: End quiz is done, Restart quiz goes on.
+    runHeld()
   })
 
   // Converges on a lecture game for the requested quiz: resume the one this
@@ -573,10 +665,21 @@ export const useDeckBridge = () => {
     if (!inFlight) {
       createSentAt.current = Date.now()
       socket.emit(EVENTS.GAME.CREATE_LECTURE, ensure.quiz)
+
+      // If no answer comes, nothing else would run this check again.
+      if (createTimer.current) {
+        clearTimeout(createTimer.current)
+      }
+
+      createTimer.current = setTimeout(() => {
+        createTimer.current = null
+        setCreateCheck((count) => count + 1)
+      }, CREATE_TIMEOUT_MS)
     }
   }, [
     attached,
     config,
+    createCheck,
     ensure,
     gameId,
     isConnected,

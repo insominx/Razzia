@@ -226,7 +226,7 @@ const HOST_ONLY: ReadonlySet<SceneName> = new Set([
   "podium",
 ])
 
-const HOST_ONLY_CUES: ReadonlySet<Cue["cue"]> = new Set([
+export const HOST_ONLY_CUES: ReadonlySet<Cue["cue"]> = new Set([
   "join",
   "place",
   "roll",
@@ -727,6 +727,12 @@ const answersScene = (
 
 const VERDICT_CUT = [{ lane: "bed", fadeS: 0.04 }] as const
 
+/**
+ * The verdict beats that stop the answers bed: TIME and the whole verdict on
+ * the projector, and the strike, which is the only one a phone starts.
+ */
+const CUTS_BED: ReadonlySet<string> = new Set(["time", "verdict", "strike"])
+
 const verdictAnchor = (spec: {
   resultsAt: number
   serverNow: number
@@ -855,7 +861,7 @@ const verdictScene = (
       ...rest,
       lane: "verdict",
       anchor: verdictAnchor(spec),
-      cuts: def.name === "time" || def.name === "verdict" ? VERDICT_CUT : [],
+      cuts: CUTS_BED.has(def.name) ? VERDICT_CUT : [],
     },
     [events],
   )
@@ -1328,7 +1334,7 @@ const cueEvents = (cue: Cue, c: Ctx) => {
   switch (cue.cue) {
     case "join":
       return [
-        ev(0, "flap", { n: 6, v: 0.2 }),
+        ev(0, "flap", { n: 6, v: 0.2, k: cue.index }),
         ev(0.02, "pluck", {
           m: tr(c, PENT[mod(cue.index, PENT.length)]),
           v: 0.42,

@@ -1,4 +1,7 @@
+import { NO_TIME_LIMIT } from "@razzia/common/constants"
 import {
+  CUE_BURST_MAX,
+  CUE_STAGGER_S,
   createEngine,
   DRIFT_S,
   LOOKAHEAD_S,
@@ -347,6 +350,32 @@ describe("lanes", () => {
     ).toEqual([])
   })
 
+  it("a phone's strike cuts the answers bed still running under it", () => {
+    const { clock, played, run, start } = setup()
+
+    // An untimed question: the bed would otherwise run until the next one.
+    start(answers(0, NO_TIME_LIMIT), clock.now())
+    run(2000)
+
+    const bedBus = played[0].bus
+
+    start(
+      {
+        scene: "strike",
+        resultsAt: clock.now(),
+        serverNow: clock.now(),
+        outcome: "right",
+      },
+      clock.now(),
+    )
+    run(2000)
+
+    expect(gainCalls(bedBus, "setTargetAtTime").length).toBeGreaterThan(0)
+    expect(
+      played.filter((entry) => entry.bus === bedBus && entry.event.t > 2.5),
+    ).toEqual([])
+  })
+
   it("lets a groove that already ended keep its tail when TIME arrives", () => {
     const { clock, played, run, start } = setup()
 
@@ -490,5 +519,87 @@ describe("levels and cues", () => {
 
     expect(played.map((entry) => entry.when)).toEqual([3.01, 3.03])
     expect(played[0].bus).toBe(played[1].bus)
+  })
+
+  it("spreads a burst of the same cue, and caps how many of it sound", () => {
+    const { ctx, played, engine } = setup()
+
+    ctx.currentTime = 3
+
+    // Twenty-five answers land in one tick: twenty-five pops at once.
+    for (let k = 0; k < 25; k += 1) {
+      engine.cue([{ t: 0, inst: "pluck", p: { m: 93 } }])
+    }
+
+    const whens = played.map((entry) => entry.when)
+
+    expect(whens).toHaveLength(CUE_BURST_MAX)
+    expect(new Set(whens).size).toBe(CUE_BURST_MAX)
+    expect(whens[0]).toBe(3.01)
+
+    for (const [k, when] of whens.entries()) {
+      expect(when).toBeCloseTo(3.01 + k * CUE_STAGGER_S, 9)
+    }
+  })
+
+  it("spreads a burst whole: a cue's own voices keep their spacing", () => {
+    const { played, engine } = setup()
+    const join = [
+      { t: 0, inst: "flap", p: { n: 6 } },
+      { t: 0.02, inst: "pluck", p: { m: 72 } },
+    ] as const
+
+    engine.cue(join)
+    engine.cue(join)
+
+    const expected = [0.01, 0.03, 0.01 + CUE_STAGGER_S, 0.03 + CUE_STAGGER_S]
+
+    expect(played).toHaveLength(4)
+
+    for (const [k, entry] of played.entries()) {
+      expect(entry.when).toBeCloseTo(expected[k], 9)
+    }
+  })
+
+  it("leaves cues a moment apart, and different cues together, as they are", () => {
+    const { ctx, clock, played, engine } = setup()
+
+    engine.cue([{ t: 0, inst: "pluck", p: { m: 72 } }])
+    engine.cue([{ t: 0, inst: "tick", p: { m: 88 } }])
+    clock.advance(500)
+    ctx.currentTime += 0.5
+    engine.cue([{ t: 0, inst: "pluck", p: { m: 72 } }])
+
+    expect(played.map((entry) => entry.when)).toEqual([0.01, 0.01, 0.51])
+  })
+})
+
+describe("a stamp that is not a number", () => {
+  it("is ignored, so the pump does not run forever", () => {
+    const { engine, run, scenes } = setup()
+    const [scene] = scenes({ scene: "roundCard" })
+
+    expect(engine.start(scene, Number.NaN)).toBe(false)
+    run(5000)
+
+    expect(engine.pump()).toBe(false)
+    expect(engine.hasWork()).toBe(false)
+    expect(engine.live()).toEqual({})
+  })
+
+  it("does not cut the live bed either", () => {
+    const { clock, played, engine, run, start, scenes } = setup()
+
+    start({ scene: "lobby" }, clock.now())
+    run(200)
+
+    const [time] = scenes({ scene: "time", resultsAt: 0, serverNow: 0 })
+
+    engine.start(time, Number.POSITIVE_INFINITY)
+
+    const lobbyBus = played[0].bus
+
+    expect(gainCalls(lobbyBus, "setTargetAtTime")).toEqual([])
+    expect(engine.live()).toEqual({ bed: "lobby" })
   })
 })

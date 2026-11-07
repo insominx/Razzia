@@ -3,9 +3,9 @@ import { score } from "@razzia/web/features/game/audio"
 import FrameHit from "@razzia/web/features/game/components/FrameHit"
 import QuestionNumber from "@razzia/web/features/game/components/QuestionNumber"
 import RoundPips from "@razzia/web/features/game/components/RoundPips"
+import { useRoundProgress } from "@razzia/web/features/game/hooks/use-round-progress"
 import { useCalmVisuals } from "@razzia/web/features/game/hooks/use-show-intensity"
 import { useLaunchStore } from "@razzia/web/features/game/stores/launch"
-import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import clsx from "clsx"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -25,10 +25,11 @@ const GO_MS = 900
 const Prepared = ({ data: { questionNumber } }: Props) => {
   const { t } = useTranslation()
   const calm = useCalmVisuals()
-  const total = useQuestionStore((state) => state.questionStates?.total)
+  const progress = useRoundProgress(questionNumber)
+  const { total, done } = progress
   const [go, setGo] = useState(false)
   const known = total !== undefined && total > 1
-  const final = known && questionNumber === total
+  const final = known && progress.final
 
   // The whoosh of a new card; the first card's GO is the countdown's own.
   useEffect(() => {
@@ -70,7 +71,9 @@ const Prepared = ({ data: { questionNumber } }: Props) => {
         {questionNumber}
       </p>
 
-      {known && <RoundPips current={questionNumber} total={total} />}
+      {known && (
+        <RoundPips current={questionNumber} total={total} done={done} />
+      )}
     </section>
   )
 }

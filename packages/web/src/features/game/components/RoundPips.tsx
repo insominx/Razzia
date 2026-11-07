@@ -3,18 +3,29 @@ import clsx from "clsx"
 /** More questions than this and a pip each would be a smear: draw a bar. */
 export const MAX_PIPS = 12
 
-const pipState = (number: number, current: number) => {
-  if (number < current) {
-    return "done"
+const pipState = (
+  number: number,
+  current: number,
+  done: readonly number[] | undefined,
+) => {
+  if (number === current) {
+    return "now"
   }
 
-  return number === current ? "now" : "next"
+  const finished = done ? done.includes(number) : number < current
+
+  return finished ? "done" : "next"
 }
 
 interface Props {
   /** 1-based: the question on screen. */
   current: number
   total: number
+  /**
+   * 1-based: the questions already played, for a lecture deck that plays them
+   * out of order. Without it, every lower number has been played.
+   */
+  done?: readonly number[]
   className?: string
 }
 
@@ -22,8 +33,11 @@ interface Props {
  * Where the round is in the quiz: one pip per question, the finished ones solid
  * and the current one lit. A long lecture deck draws a progress bar instead.
  */
-const RoundPips = ({ current, total, className }: Props) => {
+const RoundPips = ({ current, total, done, className }: Props) => {
   if (total > MAX_PIPS) {
+    // The bar is how much has been played, this question included.
+    const played = done ? done.length + 1 : current
+
     return (
       <div
         data-round-progress={current}
@@ -36,7 +50,7 @@ const RoundPips = ({ current, total, className }: Props) => {
       >
         <div
           className="bg-brand h-full rounded-full"
-          style={{ width: `${Math.min(100, (current / total) * 100)}%` }}
+          style={{ width: `${Math.min(100, (played / total) * 100)}%` }}
         />
       </div>
     )
@@ -49,7 +63,7 @@ const RoundPips = ({ current, total, className }: Props) => {
       className={clsx("stage:gap-5 flex items-center gap-3", className)}
     >
       {Array.from({ length: total }, (_, index) => {
-        const state = pipState(index + 1, current)
+        const state = pipState(index + 1, current, done)
 
         return (
           <span

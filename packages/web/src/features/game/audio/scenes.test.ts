@@ -372,7 +372,7 @@ describe("the verdict", () => {
     expect(of(list, "crash")).toEqual([])
   })
 
-  it("cuts the answering groove at TIME, the strike scene does not", () => {
+  it("cuts the answering groove at TIME, and at a phone's strike", () => {
     const [verdictScene] = compileScene(verdict("right"), FULL)
     const [strike] = compileScene(
       { scene: "strike", resultsAt: 1, serverNow: 1, outcome: "right" },
@@ -385,7 +385,20 @@ describe("the verdict", () => {
 
     expect(verdictScene.cuts.map((cut) => cut.lane)).toEqual(["bed"])
     expect(time.cuts.map((cut) => cut.lane)).toEqual(["bed"])
-    expect(strike.cuts).toEqual([])
+    // A phone starts only the strike, so it is what stops the answers bed there.
+    expect(strike.cuts.map((cut) => cut.lane)).toEqual(["bed"])
+  })
+
+  it("leaves the count and the spotlight to ring on the verdict lane", () => {
+    const stamps = { resultsAt: 1, serverNow: 1 }
+    const [count] = compileScene(
+      { scene: "count", ...stamps, votes: [1, 2] },
+      FULL,
+    )
+    const [spotlight] = compileScene({ scene: "spotlight", ...stamps }, FULL)
+
+    expect(count.cuts).toEqual([])
+    expect(spotlight.cuts).toEqual([])
   })
 
   it("is the same events whether called as one verdict or as four scenes", () => {
@@ -697,6 +710,16 @@ describe("cues", () => {
     )
     expect(note({ cue: "pop", index: 99 })).toBe(93)
     expect(note({ cue: "join", index: 0 })).toBe(69)
+  })
+
+  it("seed a join's flap from its index, so a burst of joins is not one voice", () => {
+    const flapOf = (index: number) =>
+      compileCue({ cue: "join", index }, FULL).find(
+        (event) => event.inst === "flap",
+      )?.p
+
+    expect(flapOf(0)).toEqual({ n: 6, v: 0.2, k: 0 })
+    expect(flapOf(7)).toEqual({ n: 6, v: 0.2, k: 7 })
   })
 
   it("play now: every voice is at or just after time zero", () => {

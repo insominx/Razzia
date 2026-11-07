@@ -1,9 +1,12 @@
-import { render } from "@testing-library/react"
+import { act, cleanup, render } from "@testing-library/react"
 import {
   getQuestionPromptRevealMs,
   QUESTION_CONTENT_ENTER_MS,
 } from "@razzia/common/utils/question-transition"
 import { describe, expect, it, vi } from "vitest"
+import type { SceneOptions, SceneSpec } from "@razzia/web/features/game/audio"
+import { anchorOf, originMs } from "@razzia/web/features/game/audio/scenes"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import {
   QUESTION_LAYOUT_MODE,
   QUESTION_LAYOUT_TRANSITION_MS,
@@ -49,6 +52,50 @@ describe("Question score", () => {
       },
       { silent: false },
     )
+  })
+
+  it("keeps the charge in the past when a review over the hidden screen ends", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2040-01-01T00:00:00.000Z"))
+    mocks.start.mockClear()
+
+    const data = {
+      question: "Which boundary owns this state?",
+      questionNumber: 1,
+      cooldown: 5,
+      promptStartedAt: 1_000,
+      serverNow: 1_200,
+    }
+    const arrivedAt = Date.now()
+
+    try {
+      render(<Question data={data} />)
+
+      act(() => useManagerStore.getState().setReview(0))
+      act(() => {
+        vi.advanceTimersByTime(30_000)
+      })
+      act(() => useManagerStore.getState().setReview(null))
+
+      const [spec, options] = mocks.start.mock.calls.at(-1) as [
+        SceneSpec,
+        SceneOptions,
+      ]
+
+      expect(options).toMatchObject({ silent: false })
+      expect(
+        originMs(anchorOf(spec) ?? null, Date.now(), options.offsetMs),
+      ).toBe(
+        arrivedAt +
+          1_000 +
+          getQuestionPromptRevealMs(data.question) -
+          data.serverNow,
+      )
+    } finally {
+      cleanup()
+      useManagerStore.getState().reset()
+      vi.useRealTimers()
+    }
   })
 })
 

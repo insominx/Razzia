@@ -75,6 +75,17 @@ describe("legacyPlan: what the old packs did", () => {
     }
   })
 
+  it("stops the answers bed at a phone's strike", () => {
+    const plan = legacyPlan(
+      spec({ scene: "strike", resultsAt: 1, serverNow: 1, outcome: "right" }),
+      null,
+      { ...HOST, surface: "player" },
+    )
+
+    expect(plan?.cuts).toEqual(["bed"])
+    expect(plan?.events).toEqual([])
+  })
+
   it("has the old podium's two-second steps, and goes straight to first with fewer than three", () => {
     const three = legacyPlan(spec({ scene: "podium", places: 3 }), null, HOST)
     const two = legacyPlan(spec({ scene: "podium", places: 2 }), null, HOST)
@@ -96,7 +107,6 @@ describe("legacyPlan: what the old packs did", () => {
       spec({ scene: "roundCard" }),
       spec({ scene: "count", resultsAt: 1, serverNow: 1, votes: [1] }),
       spec({ scene: "spotlight", resultsAt: 1, serverNow: 1 }),
-      spec({ scene: "strike", resultsAt: 1, serverNow: 1, outcome: "right" }),
     ]) {
       expect(legacyPlan(scene, null, HOST)).toBeNull()
     }
@@ -138,6 +148,16 @@ describe("legacyCue", () => {
     expect(sfx({ cue: "roll", ms: 4000 })).toBe("roll")
     expect(sfx({ cue: "go" })).toBeUndefined()
     expect(sfx({ cue: "impact" })).toBeUndefined()
+  })
+
+  it("keeps the projector's cues off a phone, as the show pack does", () => {
+    const phone: LegacyOptions = { ...HOST, surface: "player" }
+
+    expect(legacyCue({ cue: "join", index: 0 }, phone)).toBeNull()
+    expect(legacyCue({ cue: "place", place: 1 }, phone)).toBeNull()
+    expect(legacyCue({ cue: "roll", ms: 4000 }, phone)).toBeNull()
+    expect(legacyCue({ cue: "pop", index: 0 }, phone)?.sfx).toBe("pop")
+    expect(legacyCue({ cue: "tick", index: 0 }, phone)?.sfx).toBe("tick")
   })
 
   it("cuts a roll after its length, and is silent when silent", () => {

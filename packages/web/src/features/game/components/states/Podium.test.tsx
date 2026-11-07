@@ -18,6 +18,13 @@ vi.mock("@razzia/web/hooks/useScreenSize", () => ({
   default: () => ({ width: 1920, height: 1080 }),
 }))
 
+const { start } = vi.hoisted(() => ({ start: vi.fn() }))
+
+// The score has its own tests; here the podium is judged by the scene it asks for.
+vi.mock("@razzia/web/features/game/audio", () => ({
+  score: { start, cue: vi.fn(), stop: vi.fn() },
+}))
+
 const player = (id: string, points: number): PublicPlayer => ({
   id,
   connected: true,
@@ -38,6 +45,13 @@ const advance = (seconds: number) => {
   })
 }
 
+// A lecture deck reviewing a question over the screen, or ending the review.
+const review = (question: number | null) => {
+  act(() => {
+    useManagerStore.getState().setReview(question)
+  })
+}
+
 /** Which places have risen, as ranks in order (the DOM runs 2, 1, 3). */
 const risen = (container: HTMLElement) =>
   [...container.querySelectorAll("[data-podium-place]")]
@@ -49,11 +63,13 @@ describe("Podium", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     useManagerStore.getState().setVisuals({})
+    start.mockClear()
   })
 
   afterEach(() => {
     cleanup()
     vi.useRealTimers()
+    useManagerStore.getState().setReview(null)
   })
 
   it("starts with nobody on the podium", () => {
@@ -152,5 +168,73 @@ describe("Podium", () => {
     expect(container.textContent).toContain("grace")
     expect(container.textContent).toContain("8,920")
     expect(container.textContent).toContain("Git")
+  })
+
+  it("shows players level on points on the same place, as their phones do", () => {
+    const tied = [
+      player("ada", 1_766),
+      player("grace", 1_766),
+      player("linus", 1_765),
+    ]
+    const { container } = render(
+      <Podium data={{ subject: "Git", top: tied }} />,
+    )
+
+    const shown = (rank: number) =>
+      container
+        .querySelector(`[data-podium-place="${rank}"]`)
+        ?.getAttribute("data-shown-place")
+
+    // Two tied for first both stand on gold; the next is third, not second.
+    expect([shown(1), shown(2), shown(3)]).toEqual(["1", "1", "3"])
+  })
+
+  describe("the score", () => {
+    it("starts the podium's scene once, for the places filled", () => {
+      const { rerender } = render(
+        <Podium data={{ subject: "Git", top: TOP }} />,
+      )
+
+      expect(start).toHaveBeenCalledTimes(1)
+      expect(start).toHaveBeenCalledWith(
+        { scene: "podium", places: 3 },
+        { silent: false, offsetMs: 0 },
+      )
+
+      // Every reveal re-renders the screen; the scene is not asked for again.
+      advance(podiumTimes(3).first + 1)
+      rerender(<Podium data={{ subject: "Git", top: TOP }} />)
+
+      expect(start).toHaveBeenCalledTimes(1)
+    })
+
+    it("asks for fewer places when fewer players finished", () => {
+      render(<Podium data={{ subject: "Git", top: TOP.slice(0, 2) }} />)
+
+      expect(start.mock.calls[0][0]).toEqual({ scene: "podium", places: 2 })
+    })
+
+    it("keeps a reviewed podium from touching the live game's score", () => {
+      useManagerStore.getState().setReview(2)
+
+      render(<Podium data={{ subject: "Git", top: TOP }} />)
+
+      expect(start.mock.calls[0][1]).toEqual({ silent: true, offsetMs: 0 })
+    })
+
+    it("does not play the ceremony again when a review over it ends", () => {
+      render(<Podium data={{ subject: "Git", top: TOP }} />)
+
+      // A lecture deck reviews a question over the hidden podium for 30 s.
+      review(0)
+      advance(30)
+      review(null)
+
+      // Asked again, the scene is placed where it began, 30 s ago.
+      expect(start.mock.calls.at(-1)).toEqual([
+        { scene: "podium", places: 3 },
+        { silent: false, offsetMs: 30_000 },
+      ])
+    })
   })
 })

@@ -1,4 +1,5 @@
 import {
+  clearDraft,
   type Draft,
   loadDraft,
   openRehearsal,
@@ -96,10 +97,14 @@ describe("tidyDraft", () => {
   })
 })
 
+// As saveDraft keeps it, just now.
+const saved = (value: Record<string, unknown>) =>
+  JSON.stringify({ ...value, savedAt: Date.now() })
+
 describe("parseDraft", () => {
   it("reads what the editor saved", () => {
     const draft = parseDraft(
-      JSON.stringify({ subject: "Quiz", at: 1, questions: [question()] }),
+      saved({ subject: "Quiz", at: 1, questions: [question()] }),
     )
 
     expect(draft?.subject).toBe("Quiz")
@@ -108,7 +113,7 @@ describe("parseDraft", () => {
 
   it("ignores the editor's own question ids", () => {
     const draft = parseDraft(
-      JSON.stringify({
+      saved({
         subject: "Quiz",
         questions: [{ ...question(), id: "abc" }],
       }),
@@ -120,14 +125,12 @@ describe("parseDraft", () => {
   it("is nothing for nothing, for noise and for a quiz with no questions", () => {
     expect(parseDraft(null)).toBeNull()
     expect(parseDraft("not json")).toBeNull()
-    expect(
-      parseDraft(JSON.stringify({ subject: "Quiz", questions: [] })),
-    ).toBeNull()
+    expect(parseDraft(saved({ subject: "Quiz", questions: [] }))).toBeNull()
   })
 
   it("keeps a bad media entry out rather than refusing the draft", () => {
     const draft = parseDraft(
-      JSON.stringify({
+      saved({
         subject: "Quiz",
         questions: [question({ media: { url: "nope" } })],
       }),
@@ -168,5 +171,61 @@ describe("saving and opening", () => {
 
     expect(openRehearsal(draft)).toBe(false)
     expect(open).not.toHaveBeenCalled()
+  })
+})
+
+// The draft holds the quiz's answers, and /rehearse needs no login: on a
+// shared computer it must not outlive the session it was made in.
+describe("how long a draft lasts", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memoryStorage())
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-11-07T09:00:00Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  const draft: Draft = { subject: "Quiz", at: 0, questions: [question()] }
+  const HOUR = 60 * 60 * 1_000
+
+  it("lasts through an afternoon of rehearsing", () => {
+    saveDraft(draft)
+    vi.advanceTimersByTime(4 * HOUR - 1)
+
+    expect(loadDraft()?.subject).toBe("Quiz")
+  })
+
+  it("is gone from storage after a few hours", () => {
+    saveDraft(draft)
+    vi.advanceTimersByTime(4 * HOUR)
+
+    expect(loadDraft()).toBeNull()
+    expect(localStorage.getItem(REHEARSAL_KEY)).toBeNull()
+  })
+
+  it("arrives from the editor's tab only while it is fresh", () => {
+    saveDraft(draft)
+    const stored = localStorage.getItem(REHEARSAL_KEY)
+
+    expect(parseDraft(stored)?.subject).toBe("Quiz")
+    vi.advanceTimersByTime(4 * HOUR)
+    expect(parseDraft(stored)).toBeNull()
+  })
+
+  it("does not keep a draft saved with no time on it", () => {
+    localStorage.setItem(REHEARSAL_KEY, JSON.stringify(draft))
+
+    expect(loadDraft()).toBeNull()
+    expect(localStorage.getItem(REHEARSAL_KEY)).toBeNull()
+  })
+
+  it("goes when asked", () => {
+    saveDraft(draft)
+    clearDraft()
+
+    expect(localStorage.getItem(REHEARSAL_KEY)).toBeNull()
   })
 })

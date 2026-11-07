@@ -1,5 +1,5 @@
 import { EVENTS } from "@razzia/common/constants"
-import type { Status } from "@razzia/common/types/game/status"
+import { STATUS, type Status } from "@razzia/common/types/game/status"
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import Button from "@razzia/web/components/Button"
 import Loader from "@razzia/web/components/Loader"
@@ -13,6 +13,7 @@ import {
   useCalmVisuals,
   useShowIntensity,
 } from "@razzia/web/features/game/hooks/use-show-intensity"
+import { useLaunchStore } from "@razzia/web/features/game/stores/launch"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import {
   moodForStatus,
@@ -38,6 +39,13 @@ import {
 } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+
+/**
+ * How long Next stays held after a click with no answer from the server. The
+ * held button only stops a double click; a command lost on a dropped connection
+ * must not leave the host without one.
+ */
+export const NEXT_RETRY_MS = 4_000
 
 type Props = PropsWithChildren & {
   statusName: Status | undefined
@@ -69,6 +77,9 @@ const GameWrapper = ({
   const [isDisabled, setIsDisabled] = useState(false)
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
   const hostControls = useManagerStore((state) => state.hostControls)
+  const managerStatus = useManagerStore((state) => state.status)
+  // Set only on the host of a lecture game.
+  const lecture = useManagerStore((state) => state.lecture)
   const controls = manager && hostControls
 
   useLayoutEffect(() => {
@@ -76,9 +87,18 @@ const GameWrapper = ({
   }, [manager])
 
   // The score follows this session's pack, intensity and round, and stops with
-  // the game: leaving the page must not leave a bed playing.
+  // the game: leaving the page must not leave a bed playing. A lecture deck
+  // plays its questions by slide, so its round is how many it has played: the
+  // last slide's question, asked early, is not the final one. A phone learns
+  // what was played from the question's update.
+  const playedSoFar = lecture?.played ?? questionStates?.played
   useScoreConfig({ intensity, theme, surface: manager ? "host" : "player" })
-  useScoreRound(questionStates?.current ?? 1, questionStates?.total ?? 0)
+  useScoreRound(
+    playedSoFar
+      ? Math.max(1, playedSoFar.length)
+      : (questionStates?.current ?? 1),
+    questionStates?.total ?? 0,
+  )
 
   useEffect(
     () => () => {
@@ -87,10 +107,25 @@ const GameWrapper = ({
     [],
   )
 
-  useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total }) => {
+  // GO is the card's that directly follows the countdown. Any other screen
+  // first means that card was missed (a reconnect past it), and a GO left armed
+  // would flash on some later question's card.
+  useEffect(() => {
+    if (
+      statusName !== undefined &&
+      statusName !== STATUS.SHOW_START &&
+      statusName !== STATUS.SHOW_PREPARED
+    ) {
+      useLaunchStore.getState().disarm()
+    }
+  }, [statusName])
+
+  useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total, played }) => {
     setQuestionStates({
       current,
       total,
+      // A lecture's played questions: how a phone draws its pips.
+      ...(played ? { played } : {}),
     })
   })
 
@@ -100,9 +135,24 @@ const GameWrapper = ({
     setIsDisabled(false)
   })
 
+  // Any word from the server answers the click. A click sent while the socket
+  // was down can be lost, and the reconnect then restores the very same screen:
+  // a new status object, or the connection itself coming back, frees it too.
   useEffect(() => {
     setIsDisabled(false)
-  }, [nextActionKey, statusName])
+  }, [nextActionKey, statusName, managerStatus, isConnected])
+
+  useEffect(() => {
+    if (!isDisabled) {
+      return
+    }
+
+    const timer = setTimeout(() => setIsDisabled(false), NEXT_RETRY_MS)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [isDisabled])
 
   const handleNext = () => {
     setIsDisabled(true)

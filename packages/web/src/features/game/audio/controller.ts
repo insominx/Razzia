@@ -13,6 +13,8 @@
  * - Nothing is scheduled while the page is muted, suppressed or at zero volume,
  *   or when intensity is silent: the pump stops entirely. Scenes are still
  *   remembered, so unmuting mid-bed joins it mid-bar.
+ * - The first tap or key press resumes the context, which WebKit requires
+ *   before anything outside a gesture can wake it.
  * - The `classic` and `techno` packs play through the legacy adapter instead.
  *
  * Everything it touches arrives through `ControllerDeps`, so tests drive it
@@ -112,6 +114,8 @@ export interface ControllerDeps {
     subscribe: (listener: () => void) => () => void
   }
   legacy: LegacyRunner
+  /** Where the page's taps and key presses arrive (the document). */
+  gestures?: Pick<EventTarget, "addEventListener" | "removeEventListener">
   now: () => number
   timers: {
     setInterval: (fn: () => void, ms: number) => unknown
@@ -130,6 +134,8 @@ const CUE_LATE_MS = 150
 
 /** While the context is asleep, ask it to wake this often. */
 const RESUME_EVERY_TICKS = 40
+
+const GESTURES = ["pointerdown", "keydown", "touchend"] as const
 
 export const DEFAULT_CONFIG: ScoreConfig = {
   intensity: "full",
@@ -244,6 +250,39 @@ export const createScore = (deps: ControllerDeps): Score => {
 
     if (ctx && ctx.state !== "running" && ctx.state !== "closed") {
       ctx.resume().catch(() => undefined)
+    }
+  }
+
+  // WebKit will not resume a context outside a tap or key press until it has
+  // run once, and `wake` runs from timers. Howler has its own unlock, but only
+  // once a Howl exists, and the `show` pack builds none. So the first gesture
+  // resumes the context, and the listener goes once the context is running.
+  const unlockOnGesture = (): void => {
+    const { ctx } = howler
+
+    if (!ctx || ctx.state === "closed") {
+      return
+    }
+
+    if (ctx.state === "running") {
+      stopUnlocking()
+
+      return
+    }
+
+    ctx
+      .resume()
+      .then(() => {
+        if (ctx.state === "running") {
+          stopUnlocking()
+        }
+      })
+      .catch(() => undefined)
+  }
+
+  const stopUnlocking = (): void => {
+    for (const type of GESTURES) {
+      deps.gestures?.removeEventListener(type, unlockOnGesture, true)
     }
   }
 
@@ -390,7 +429,16 @@ export const createScore = (deps: ControllerDeps): Score => {
       key: plan.key,
       spec,
       originMs: originMs(plan.anchor, receivedAt, offsetMs),
-      end: Math.max(0, ...plan.events.map((event) => event.until ?? event.t)),
+      // A loop with no `until` (an untimed question's music) never ends by
+      // itself, so a mute, a setting change or a repeated start must keep it.
+      end: Math.max(
+        0,
+        ...plan.events.map((event) =>
+          event.sfx === "music" && event.until === undefined
+            ? Infinity
+            : (event.until ?? event.t),
+        ),
+      ),
       lanes: [plan.lane],
       cuts: [...plan.cuts],
       scenes: [],
@@ -466,6 +514,10 @@ export const createScore = (deps: ControllerDeps): Score => {
         play(item)
       }
     }
+  }
+
+  for (const type of GESTURES) {
+    deps.gestures?.addEventListener(type, unlockOnGesture, true)
   }
 
   return {
@@ -585,6 +637,7 @@ export const createScore = (deps: ControllerDeps): Score => {
       stopEverything(0)
       live.clear()
       teardownEngine()
+      stopUnlocking()
       unsubscribe?.()
       unsubscribe = null
       release()

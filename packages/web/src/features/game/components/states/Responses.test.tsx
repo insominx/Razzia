@@ -6,6 +6,8 @@ import {
   RESULT_SPOTLIGHT_MS,
   RESULT_STRIKE_MS,
 } from "@razzia/common/utils/result-reveal"
+import type { SceneOptions, SceneSpec } from "@razzia/web/features/game/audio"
+import { anchorOf, originMs } from "@razzia/web/features/game/audio/scenes"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { act, cleanup, render, screen } from "@testing-library/react"
 import { renderToStaticMarkup } from "react-dom/server"
@@ -281,6 +283,26 @@ describe("Responses staged verdict", () => {
     act(() => {
       vi.advanceTimersByTime(ms)
     })
+
+  it("keeps the verdict in the past when a review over the hidden screen ends", async () => {
+    const data = staged()
+    const arrivedAt = Date.now()
+    await renderResponses(data)
+
+    advance(2_000)
+    act(() => useManagerStore.getState().setReview(2))
+    advance(30_000)
+    act(() => useManagerStore.getState().setReview(null))
+
+    const [spec, options] = start.mock.calls.at(-1) as [SceneSpec, SceneOptions]
+
+    expect(options).toMatchObject({ silent: false })
+    // Where the score puts it: on the beat it always had, half a minute ago,
+    // so nothing of it plays again over the settled grid.
+    expect(originMs(anchorOf(spec) ?? null, Date.now(), options.offsetMs)).toBe(
+      arrivedAt + (data.resultsAt ?? 0) - (data.serverNow ?? 0),
+    )
+  })
 
   it("takes the whole frame for TIME, then clears it", async () => {
     await renderResponses(staged({ totalPlayers: 25 }))

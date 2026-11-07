@@ -15,6 +15,7 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useAnswerReveal } from "@razzia/web/features/game/hooks/use-answer-reveal"
+import { useSceneArrival } from "@razzia/web/features/game/hooks/use-scene-arrival"
 import { useSecondsUntil } from "@razzia/web/features/game/hooks/use-seconds-until"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useMoodOverride } from "@razzia/web/features/game/stores/mood"
@@ -60,12 +61,20 @@ const Answers = ({ data }: Props) => {
   const [cooldown, setCooldown] = useState(time)
   const [totalAnswer, setTotalAnswer] = useState(0)
   // Set on the tap itself: the press is felt before the server has answered.
-  const [pickedKey, setPickedKey] = useState<number | null>(null)
+  // It belongs to its question: a reconnect can land on the next one with this
+  // screen still up, and an old pick must not lock (or answer) a new question.
+  const [pick, setPick] = useState<{ key: number; question: number } | null>(
+    null,
+  )
+  const pickedKey = pick?.question === questionNumber ? pick.key : null
+  // The `serverNow` of the screen the pick was last sent from.
+  const sentFrom = useRef<number | null>(null)
   const promptScroll = useRef<HTMLDivElement>(null)
   const visibleCount = useAnswerReveal(data)
   const { t } = useTranslation()
   // A reviewed question must not cut the live game's bed.
   const reviewing = useManagerStore((state) => state.review !== null)
+  const arrived = useSceneArrival(serverNow)
 
   const timed = time !== NO_TIME_LIMIT
   const opensIn = useSecondsUntil(unlockAt, serverNow, !answeringOpen)
@@ -75,7 +84,8 @@ const Answers = ({ data }: Props) => {
 
   // Power-on, the drop on the unlock beat, the groove while answering and the
   // last five ticks are one scene, scheduled from the server's stamps. The same
-  // call on every data change is a no-op.
+  // call on every data change is a no-op, and a call when a review ends keeps
+  // the scene on the clock it arrived with.
   // A question with its own sound (audio or video) keeps the bed out from under
   // it, as the answers loop always did; the taps and pops still play.
   useEffect(() => {
@@ -83,8 +93,8 @@ const Answers = ({ data }: Props) => {
       return
     }
 
-    score.start(answersSpec(data), { silent: reviewing })
-  }, [data, media?.type, reviewing])
+    score.start(arrived(answersSpec(data)), { silent: reviewing })
+  }, [data, media?.type, reviewing, arrived])
 
   // Only a phone has a seat; the projector shows the same tiles, untappable.
   const interactive = Boolean(player && gameId)
@@ -94,7 +104,8 @@ const Answers = ({ data }: Props) => {
       return
     }
 
-    setPickedKey(answerKey)
+    setPick({ key: answerKey, question: questionNumber })
+    sentFrom.current = serverNow
 
     socket.emit(EVENTS.PLAYER.SELECTED_ANSWER, {
       gameId,
@@ -107,6 +118,29 @@ const Answers = ({ data }: Props) => {
     score.cue({ cue: "pop", index: totalAnswer })
     haptic(HAPTIC.tap)
   }
+
+  // A tap during a connection blip is sent when the connection comes back, but
+  // before the phone has rejoined the game, so the server drops it. The server
+  // then sends this screen again (a new `serverNow`) because it is still
+  // waiting for this player: the pick goes again. It never counts twice, since
+  // the server keeps one answer per player, and a pick it did take brings the
+  // Locked-in screen, not this one.
+  useEffect(() => {
+    if (
+      pickedKey === null ||
+      !answeringOpen ||
+      !gameId ||
+      sentFrom.current === serverNow
+    ) {
+      return
+    }
+
+    sentFrom.current = serverNow
+    socket.emit(EVENTS.PLAYER.SELECTED_ANSWER, {
+      gameId,
+      data: { answerKey: pickedKey },
+    })
+  }, [pickedKey, answeringOpen, gameId, serverNow, socket])
 
   // On a phone the prompt scrolls above the pinned tiles; it rests on the end,
   // where the real question is.

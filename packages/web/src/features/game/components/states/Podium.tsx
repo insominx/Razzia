@@ -1,6 +1,8 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
+import { score } from "@razzia/web/features/game/audio"
 import FrameHit from "@razzia/web/features/game/components/FrameHit"
 import { useCalmVisuals } from "@razzia/web/features/game/hooks/use-show-intensity"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { MEDAL } from "@razzia/web/features/game/utils/game-constants"
 import {
   CONFETTI_MS,
@@ -107,18 +109,37 @@ const BLOCK_REM = { 1: 30, 2: 23, 3: 17 } as const
 
 const SPRING = { type: "spring", stiffness: 170, damping: 17, mass: 1 } as const
 
+type PodiumPlace = 1 | 2 | 3
+
 interface PlaceProps {
-  rank: 1 | 2 | 3
+  /** Which block this is: the order the podium rises in. */
+  rank: PodiumPlace
+  /** The place it shows, shared by players level on points (1, 1, 3). */
+  place: PodiumPlace
   name: string
   points: number
   up: boolean
   instant: boolean
 }
 
+/**
+ * The place a podium player holds. Players level on points share one, as on
+ * their phones and in the saved result: two tied for first both stand on gold.
+ */
+const placeOf = (
+  top: Array<{ points: number }>,
+  player: { points: number },
+): PodiumPlace =>
+  Math.max(
+    1,
+    top.findIndex((other) => other.points === player.points) + 1,
+  ) as PodiumPlace
+
 /** One solid block, risen from below the floor on a spring. */
-const Place = ({ rank, name, points, up, instant }: PlaceProps) => (
+const Place = ({ rank, place, name, points, up, instant }: PlaceProps) => (
   <motion.div
     data-podium-place={rank}
+    data-shown-place={place}
     data-up={up}
     initial={false}
     animate={{ y: up ? 0 : "115%", opacity: up ? 1 : 0 }}
@@ -127,14 +148,14 @@ const Place = ({ rank, name, points, up, instant }: PlaceProps) => (
   >
     <p className={PODIUM_NAME}>{name}</p>
     <div
-      style={{ height: `${BLOCK_REM[rank]}rem` }}
+      style={{ height: `${BLOCK_REM[place]}rem` }}
       className={clsx(
         "rounded-t-rz-lg flex w-full flex-col items-center justify-start gap-2 border-x-4 border-t-4 pt-6",
-        MEDAL[rank - 1],
+        MEDAL[place - 1],
       )}
     >
       <p className="font-mono text-[8rem] leading-none font-extrabold">
-        {rank}
+        {place}
       </p>
       <p className="font-mono text-5xl font-bold tabular-nums">
         {points.toLocaleString("en-US")}
@@ -145,6 +166,24 @@ const Place = ({ rank, name, points, up, instant }: PlaceProps) => (
 
 const Podium = ({ data: { subject, top } }: Props) => {
   const stage = usePodiumStage(top.length)
+  // A reviewed podium must not cut the live game's bed.
+  const reviewing = useManagerStore((state) => state.review !== null)
+
+  // When the podium first showed. Its scene has no server stamp, so the score
+  // places it from when it is asked for.
+  const [shownAt] = useState(() => Date.now())
+
+  // Third, second, the roll and first, on the clock the stage follows. Asking
+  // again while it plays is a no-op, so the reveals never restart it. Asking
+  // again later (a lecture review over the hidden podium ends) passes how long
+  // it has been up, so the ceremony is not played a second time.
+  useEffect(() => {
+    score.start(
+      { scene: "podium", places: top.length },
+      { silent: reviewing, offsetMs: Date.now() - shownAt },
+    )
+  }, [top.length, reviewing, shownAt])
+
   const calm = useCalmVisuals()
   const reduced = useReducedMotion() ?? false
   const { width, height } = useScreenSize()
@@ -195,6 +234,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
             <div className="z-20 self-end">
               <Place
                 rank={2}
+                place={placeOf(top, second)}
                 name={second.username}
                 points={second.points}
                 up={stage.second}
@@ -216,6 +256,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
               )}
               <Place
                 rank={1}
+                place={1}
                 name={first.username}
                 points={first.points}
                 up={stage.first}
@@ -228,6 +269,7 @@ const Podium = ({ data: { subject, top } }: Props) => {
             <div className="z-10 self-end">
               <Place
                 rank={3}
+                place={placeOf(top, third)}
                 name={third.username}
                 points={third.points}
                 up={stage.third}

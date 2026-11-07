@@ -9,12 +9,16 @@ import QuestionEditor from "@razzia/web/features/quizz/components/QuestionEditor
 import QuizzEditorHeader from "@razzia/web/features/quizz/components/QuizzEditorHeader"
 import QuizzEditorSidebar from "@razzia/web/features/quizz/components/QuizzEditorSidebar"
 import { QuizzEditorProvider } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 
 const QuizzEditPage = () => {
   const { quizzId } = Route.useParams()
   const { socket } = useSocket()
+  const navigate = useNavigate()
+  const { t } = useTranslation()
   const [quizz, setQuizz] = useState<QuizzWithId | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState<string | undefined>(
     undefined,
@@ -29,6 +33,18 @@ const QuizzEditPage = () => {
       setQuizz(data)
       setBackgroundUrl(resolvedVisuals.backgroundUrl)
     }
+  })
+
+  // A quiz that is not there (a stale link, one deleted since) would leave the
+  // loader spinning. Once a quiz is open, its header answers a failed save.
+  // Replace, not push: Back must not return to the missing quiz.
+  useEvent(EVENTS.QUIZZ.ERROR, (message) => {
+    if (quizz) {
+      return
+    }
+
+    toast.error(t(message))
+    navigate({ to: "/manager/config", replace: true })
   })
 
   if (!quizz) {

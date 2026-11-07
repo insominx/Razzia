@@ -84,6 +84,22 @@ describe("Start", () => {
     expect(mocks.start.mock.calls).toEqual([[{ scene: "lamps" }]])
   })
 
+  it("picks up the lamps for a reconnect that missed the countdown's start", () => {
+    const { container } = render(<Start data={{ time: 3, subject: "Git" }} />)
+    mocks.start.mockClear()
+
+    // Back mid-countdown: START_COOLDOWN went by, the ticks still come.
+    fire(EVENTS.GAME.COOLDOWN, 2)
+
+    expect(container.querySelector("[data-start-title]")).toBeNull()
+    expect(lamps(container)).toEqual(["on", "on", "off"])
+    expect(container.querySelector("[data-start-count]")?.textContent).toBe("2")
+    // The clunks were scheduled from the start; a late start would be off the beat.
+    expect(mocks.start).not.toHaveBeenCalled()
+    // The lamps were seen, so the first card still gets its GO.
+    expect(useLaunchStore.getState().armed).toBe(true)
+  })
+
   it("hands GO to the first round card once the lamps start", () => {
     render(<Start data={{ time: 3, subject: "Git" }} />)
 

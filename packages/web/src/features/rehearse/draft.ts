@@ -10,6 +10,11 @@ import { z } from "zod"
 
 export const REHEARSAL_KEY = "razzia:rehearsal"
 
+// The draft holds the quiz's answers and /rehearse asks for no login, so on a
+// shared computer it must not outlive the session it was made in. Each
+// Rehearse saves it again, so this only has to outlast one sitting.
+const DRAFT_TTL_MS = 4 * 60 * 60 * 1_000
+
 const MAX_ANSWERS = 4
 
 const MIN_COOLDOWN = 3
@@ -37,6 +42,10 @@ const draftSchema = z.object({
 })
 
 export type Draft = z.infer<typeof draftSchema>
+
+// As kept in storage: a draft with no time on it is one an older version left
+// behind indefinitely, and is treated as expired.
+const savedDraftSchema = draftSchema.extend({ savedAt: z.number() })
 
 /** Words for the parts an author has not written yet. */
 export interface Placeholders {
@@ -99,22 +108,49 @@ const storage = (): Storage | null => {
   }
 }
 
-export const parseDraft = (raw: string | null): Draft | null => {
+/** Null for a draft that is missing, unreadable or past its time. */
+export const parseDraft = (
+  raw: string | null,
+  now = Date.now(),
+): Draft | null => {
   if (!raw) {
     return null
   }
 
   try {
-    const parsed = draftSchema.safeParse(JSON.parse(raw))
+    const parsed = savedDraftSchema.safeParse(JSON.parse(raw))
 
-    return parsed.success ? parsed.data : null
+    if (!parsed.success || now - parsed.data.savedAt >= DRAFT_TTL_MS) {
+      return null
+    }
+
+    const { savedAt: _savedAt, ...draft } = parsed.data
+
+    return draft
   } catch {
     return null
   }
 }
 
-export const loadDraft = (): Draft | null =>
-  parseDraft(storage()?.getItem(REHEARSAL_KEY) ?? null)
+export const clearDraft = () => {
+  try {
+    storage()?.removeItem(REHEARSAL_KEY)
+  } catch {
+    // Storage that refuses this kept nothing to remove.
+  }
+}
+
+/** Reads the draft, and removes one that is past its time or unreadable. */
+export const loadDraft = (): Draft | null => {
+  const raw = storage()?.getItem(REHEARSAL_KEY) ?? null
+  const draft = parseDraft(raw)
+
+  if (raw && !draft) {
+    clearDraft()
+  }
+
+  return draft
+}
 
 /** False when the browser would not keep it, so the caller can say so. */
 export const saveDraft = (draft: Draft): boolean => {
@@ -125,7 +161,10 @@ export const saveDraft = (draft: Draft): boolean => {
       return false
     }
 
-    store.setItem(REHEARSAL_KEY, JSON.stringify(draft))
+    store.setItem(
+      REHEARSAL_KEY,
+      JSON.stringify({ ...draft, savedAt: Date.now() }),
+    )
 
     return true
   } catch {

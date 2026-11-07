@@ -80,6 +80,10 @@ describe("createRuntimeDeps", () => {
     expect(deps.howler).toBe(Howler)
   })
 
+  it("listens for gestures on the page, to unlock the context on iOS", () => {
+    expect(createRuntimeDeps().gestures).toBe(document)
+  })
+
   it("creates a Howl only when asked, never at construction", () => {
     Howl.mockClear()
 

@@ -31,8 +31,16 @@ const Start = ({ data: { time, subject } }: Props) => {
     score.start({ scene: "lamps" })
   })
 
+  // A tick with no countdown begun is a reconnect that missed START_COOLDOWN:
+  // the lamps pick up where it is. Their sound was scheduled from the start and
+  // would be off the beat now, so it stays out.
   useEvent(EVENTS.GAME.COOLDOWN, (sec) => {
     setCooldown(sec)
+
+    if (!counting) {
+      setCounting(true)
+      useLaunchStore.getState().arm()
+    }
   })
 
   // The first lamp lights as the countdown starts, one more with each second.

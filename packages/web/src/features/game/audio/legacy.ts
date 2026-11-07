@@ -20,6 +20,7 @@ import type { Anchor, Lane } from "@razzia/web/features/game/audio/music"
 import {
   CALM_MUSIC_DB,
   type Cue,
+  HOST_ONLY_CUES,
   type Intensity,
   type SceneSpec,
   type Surface,
@@ -158,6 +159,10 @@ export const legacyPlan = (
     case "time":
       return resultsPlan(spec, anchor)
 
+    // A phone starts only the strike, so it is what stops the answers bed there.
+    case "strike":
+      return plan("verdict", spec, { anchor, cuts: ["bed"] })
+
     case "podium":
       return host
         ? plan("show", spec, {
@@ -196,6 +201,12 @@ export const legacyCue = (
   options: LegacyOptions,
 ): LegacyEvent | null => {
   if (options.intensity === "silent") {
+    return null
+  }
+
+  // The same rule as the show pack: a phone does not play the room's joins or
+  // the podium's places and roll.
+  if (options.surface === "player" && HOST_ONLY_CUES.has(cue.cue)) {
     return null
   }
 

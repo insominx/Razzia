@@ -46,6 +46,7 @@ const draft = JSON.stringify({
       time: 20,
     },
   ],
+  savedAt: Date.now(),
 })
 
 describe("RehearsalFrame", () => {

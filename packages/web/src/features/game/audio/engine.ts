@@ -58,6 +58,19 @@ export const lateToleranceS = (inst: InstrumentName): number =>
 /** Where a cue's first voice sits after "now", so it is never scheduled in the past. */
 const CUE_LEAD_S = 0.01
 
+/**
+ * Copies of the same cue that arrive together (twenty-five answers landing in
+ * one tick) are played this far apart. Started on the same sample they would
+ * be one voice, many times as loud, and would clip the soft clipper.
+ */
+export const CUE_STAGGER_S = 0.02
+
+/** At most this many copies of one cue sound from one burst; the rest are dropped. */
+export const CUE_BURST_MAX = 6
+
+/** A copy that arrives within this long of a burst's first belongs to it. */
+const CUE_BURST_MS = CUE_STAGGER_S * 1000
+
 export interface EngineDeps {
   ctx: BaseAudioContext
   graph: Graph
@@ -89,10 +102,13 @@ interface Running {
 export interface Engine {
   /**
    * Starts a scene whose t = 0 is local time `originMs`. Returns false when the
-   * same scene is already live in its lane.
+   * same scene is already live in its lane, or when `originMs` is not finite.
    */
   start: (scene: Scene, originMs: number) => boolean
-  /** Plays voices now; their `t` are seconds after this call. */
+  /**
+   * Plays voices now; their `t` are seconds after this call. Copies of the same
+   * cue in one burst are spread out and capped (`CUE_STAGGER_S`, `CUE_BURST_MAX`).
+   */
   cue: (events: readonly SceneEvent[]) => void
   /** Schedules everything due within `horizonS`. Returns whether work remains. */
   pump: (horizonS?: number) => boolean
@@ -119,6 +135,9 @@ export const createEngine = (deps: EngineDeps): Engine => {
   const lanes = new Map<Lane, Running>()
   let anchor = { wall: now(), audio: ctx.currentTime }
   let cueBus: LaneBus | null = null
+  // The latest burst of each cue, keyed by its voices: a pop and a tick in the
+  // same tick are different cues and both play at once.
+  const bursts = new Map<string, { atMs: number; count: number }>()
 
   const audioAt = (wallMs: number): number =>
     anchor.audio + (wallMs - anchor.wall) / 1000
@@ -223,6 +242,13 @@ export const createEngine = (deps: EngineDeps): Engine => {
 
   return {
     start: (scene, originMs) => {
+      // A broken stamp (NaN or infinite) cannot be placed on the clock, and a
+      // scene with no place never reaches its end, so the pump would run on
+      // forever. It is ignored, and cuts nothing.
+      if (!Number.isFinite(originMs)) {
+        return false
+      }
+
       const nowMs = now()
       const existing = lanes.get(scene.lane)
 
@@ -258,15 +284,32 @@ export const createEngine = (deps: EngineDeps): Engine => {
 
     cue: (events) => {
       const nowMs = now()
+      const key = events.map((event) => event.inst).join("+")
+      const last = bursts.get(key)
+      const burst =
+        last && nowMs - last.atMs < CUE_BURST_MS
+          ? last
+          : { atMs: nowMs, count: 0 }
 
+      if (burst.count >= CUE_BURST_MAX) {
+        return
+      }
+
+      // The first copy plays exactly as a lone cue does; each later one waits
+      // its turn.
+      const staggerS = burst.count * CUE_STAGGER_S
+
+      burst.count += 1
+      bursts.set(key, burst)
       track(nowMs)
       cueBus ??= createLaneBus(graph, levelDb("cue"))
 
       for (const event of events) {
-        const when = Math.max(
-          audioAt(nowMs + event.t * 1000) + CUE_LEAD_S,
-          ctx.currentTime + CUE_LEAD_S,
-        )
+        const when =
+          Math.max(
+            audioAt(nowMs + event.t * 1000) + CUE_LEAD_S,
+            ctx.currentTime + CUE_LEAD_S,
+          ) + staggerS
 
         play(cueBus, event, when)
       }
