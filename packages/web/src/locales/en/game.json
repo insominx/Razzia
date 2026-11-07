@@ -2,8 +2,9 @@
   "correct": "Nice!",
   "gamePinLabel": "Game PIN:",
   "hud": {
-    "responses": "Responses",
-    "time": "Time"
+    "responses": "Answered",
+    "time": "Time",
+    "opensIn": "Opens in"
   },
   "joinInstruction": "Join the game at",
   "leaderboard": "Leaderboard",
@@ -21,8 +22,6 @@
     "other_ordinal_two": "{{rank}}nd place"
   },
   "rankSuffix": " place",
-  "resultBehind": ", behind ",
-  "resultTop": "You finished ",
   "startGame": "Start Game",
   "usernamePlaceholder": "Username here",
   "waitingForAnswers": "Waiting for the players to answer",
@@ -38,5 +37,47 @@
   "yourAnswer": "Your answer",
   "lectureNextQuestion": "The next question comes up during the lecture.",
   "lectureFinalStandings": "Final standings come up at the end of the lecture.",
-  "lectureJoinHint": "Join at {{url}} · PIN {{pin}}"
+  "lectureJoinHint": "Join at {{url}} · PIN {{pin}}",
+  "reveal": {
+    "time": "TIME",
+    "allIn": "ALL IN",
+    "headline": {
+      "crowdWrong": "Only {{right}} of {{of}} got it. {{wrong}} fell for {{letters}}.",
+      "crowdRight": "{{right}} of {{of}} got it.",
+      "everyone": "Everyone got it.",
+      "nobody": "Nobody answered."
+    },
+    "fastest": "Fastest: {{name}}, {{seconds}} s"
+  },
+  "noAnswer": "No answer",
+  "itWas": "It was",
+  "streak": "{{count}} in a row",
+  "standing": "You're {{place}}",
+  "standingBehind": "You're {{place}}, behind {{name}}",
+  "lockedIn": "Locked in",
+  "answeredOf": "{{answered}} of {{total}} in",
+  "standingUp": "▲{{count}} since last question",
+  "standingDown": "▼{{count}} since last question",
+  "standingGap": "{{points}} behind {{name}}. One more fast answer and you pass them.",
+  "standingLeader": "You're in front. Keep it going.",
+  "finishedSummary": "{{points}} points · {{rank}} of {{total}}",
+  "medal": {
+    "1": "Gold",
+    "2": "Silver",
+    "3": "Bronze"
+  },
+  "board": {
+    "newLeader": "{{name}} takes the lead from {{other}}",
+    "overtook": "{{name}} passes {{other}}",
+    "enters": "{{name}} climbs into the top five",
+    "biggestGain": "{{name}} gained the most: +{{points}}",
+    "tight": "Only {{points}} between {{name}} and {{other}}",
+    "leads": "{{name}} leads with {{points}}"
+  },
+  "questionOf": "Question {{number}} of {{total}}",
+  "finalQuestion": "Final question",
+  "go": "GO",
+  "seatsMore": "+{{count}} more",
+  "youreIn": "You're in, {{name}}",
+  "playersHere": "{{count}} here"
 }

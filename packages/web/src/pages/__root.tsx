@@ -30,7 +30,7 @@ const GameLayout = () => {
   return (
     <SurfaceOverrideContext.Provider value={setSurfaceOverride}>
       {IS_DECK_EMBED && <DeckBridge />}
-      <div className="bg-canvas text-text-body antialiased">
+      <div data-app-root className="bg-canvas text-text-body antialiased">
         <Outlet />
       </div>
     </SurfaceOverrideContext.Provider>

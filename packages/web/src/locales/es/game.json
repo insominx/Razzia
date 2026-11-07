@@ -2,8 +2,9 @@
   "correct": "¡Bien!",
   "gamePinLabel": "PIN del juego:",
   "hud": {
-    "responses": "Respuestas",
-    "time": "Tiempo"
+    "responses": "Respondidas",
+    "time": "Tiempo",
+    "opensIn": "Se abre en"
   },
   "joinInstruction": "Únete al juego en",
   "leaderboard": "Clasificación",
@@ -17,8 +18,6 @@
     "other": "Puesto {{rank}}"
   },
   "rankSuffix": " puesto",
-  "resultBehind": ", detrás de ",
-  "resultTop": "Terminaste ",
   "startGame": "Iniciar juego",
   "usernamePlaceholder": "Nombre de usuario aquí",
   "waitingForAnswers": "Esperando que los jugadores respondan",
@@ -34,5 +33,47 @@
   "yourAnswer": "Tu respuesta",
   "lectureNextQuestion": "La siguiente pregunta llega durante la clase.",
   "lectureFinalStandings": "La clasificación final llega al final de la clase.",
-  "lectureJoinHint": "Únete en {{url}} · PIN {{pin}}"
+  "lectureJoinHint": "Únete en {{url}} · PIN {{pin}}",
+  "reveal": {
+    "time": "TIEMPO",
+    "allIn": "TODOS LISTOS",
+    "headline": {
+      "crowdWrong": "Solo {{right}} de {{of}} acertaron. {{wrong}} cayeron con {{letters}}.",
+      "crowdRight": "{{right}} de {{of}} acertaron.",
+      "everyone": "Todos acertaron.",
+      "nobody": "Nadie respondió."
+    },
+    "fastest": "Más rápido: {{name}}, {{seconds}} s"
+  },
+  "noAnswer": "Sin respuesta",
+  "itWas": "Era",
+  "streak": "{{count}} seguidas",
+  "standing": "Estás en {{place}}",
+  "standingBehind": "Estás en {{place}}, detrás de {{name}}",
+  "lockedIn": "Enviada",
+  "answeredOf": "{{answered}} de {{total}} han respondido",
+  "standingUp": "▲{{count}} desde la última pregunta",
+  "standingDown": "▼{{count}} desde la última pregunta",
+  "standingGap": "{{points}} detrás de {{name}}. Una respuesta rápida más y lo pasas.",
+  "standingLeader": "Vas en cabeza. ¡Sigue así!",
+  "finishedSummary": "{{points}} puntos · {{rank}} de {{total}}",
+  "medal": {
+    "1": "Oro",
+    "2": "Plata",
+    "3": "Bronce"
+  },
+  "board": {
+    "newLeader": "{{name}} le quita el liderato a {{other}}",
+    "overtook": "{{name}} adelanta a {{other}}",
+    "enters": "{{name}} entra en el top 5",
+    "biggestGain": "{{name}} sumó más: +{{points}}",
+    "tight": "Solo {{points}} separan a {{name}} de {{other}}",
+    "leads": "{{name}} lidera con {{points}}"
+  },
+  "questionOf": "Pregunta {{number}} de {{total}}",
+  "finalQuestion": "Última pregunta",
+  "go": "YA",
+  "seatsMore": "+{{count}} más",
+  "youreIn": "Estás dentro, {{name}}",
+  "playersHere": "{{count}} aquí"
 }

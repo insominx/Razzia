@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
+import {
+  backgroundAssetPathValidator,
+  soundThemeValidator,
+} from "@razzia/common/validators/visuals"
 
 describe("backgroundAssetPathValidator", () => {
   it("accepts safe image basenames", () => {
@@ -32,5 +35,17 @@ describe("backgroundAssetPathValidator", () => {
       false,
     )
     expect(backgroundAssetPathValidator.safeParse("noext").success).toBe(false)
+  })
+})
+
+describe("soundThemeValidator", () => {
+  it("accepts the two mp3 packs and the generated show score", () => {
+    for (const theme of ["classic", "techno", "show"]) {
+      expect(soundThemeValidator.parse(theme)).toBe(theme)
+    }
+  })
+
+  it("rejects an unknown pack", () => {
+    expect(soundThemeValidator.safeParse("neon-disco").success).toBe(false)
   })
 })

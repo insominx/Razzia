@@ -53,7 +53,9 @@
     "invalidDialect": "デザインモードが無効です",
     "invalidSoundTheme": "サウンドテーマが無効です",
     "soundThemeSetFailed": "サウンドテーマを更新できませんでした",
-    "unsupportedBackgroundType": "PNG、JPEG、WebP、またはGIF画像を使用してください"
+    "unsupportedBackgroundType": "PNG、JPEG、WebP、またはGIF画像を使用してください",
+    "invalidShowIntensity": "「フル」「穏やか」「消音」から選んでください",
+    "showIntensitySetFailed": "ショーの強さを変更できませんでした"
   },
   "route": {
     "back": "ホームに戻る",

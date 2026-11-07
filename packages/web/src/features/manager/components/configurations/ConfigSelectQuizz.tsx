@@ -79,7 +79,19 @@ const ConfigSelectQuizz = () => {
             )}
             onClick={handleSelect(quizz.id)}
           >
-            {quizz.subject}
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate">{quizz.subject}</span>
+              {quizz.questionCount !== undefined && (
+                <span
+                  data-question-count
+                  className="text-text-muted text-sm font-normal"
+                >
+                  {t("manager:quizz.questionCount", {
+                    count: quizz.questionCount,
+                  })}
+                </span>
+              )}
+            </span>
 
             <div
               className={clsx(

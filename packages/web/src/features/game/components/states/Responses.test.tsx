@@ -1,55 +1,35 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
-import { cleanup, render, screen } from "@testing-library/react"
+import {
+  RESULT_COUNT_MS,
+  RESULT_HEADLINE_MS,
+  RESULT_SETTLED_MS,
+  RESULT_SPOTLIGHT_MS,
+  RESULT_STRIKE_MS,
+} from "@razzia/common/utils/result-reveal"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { act, cleanup, render, screen } from "@testing-library/react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-interface SoundMock {
-  play: ReturnType<typeof vi.fn>
-  stop: ReturnType<typeof vi.fn>
-  options: Record<string, unknown>
-}
+const { start } = vi.hoisted(() => ({ start: vi.fn() }))
 
-// `use-sound` returns `useCallback`s over its Howl, so a real screen sees the
-// same `play` identity across renders. Keying the mocks by `src` reproduces
-// that: fresh callbacks per render would refire the effects under test.
-const { sounds } = vi.hoisted(() => ({
-  sounds: new Map<string, SoundMock>(),
+// The score is the audio module's job (it has its own tests); here a screen is
+// judged by which scene it asks for, and when.
+vi.mock("@razzia/web/features/game/audio", async () => ({
+  // The scene builder is pure and is the thing under test's input; the engine
+  // behind the score is not needed to judge which scene a screen asks for.
+  verdictSpec: (await import("@razzia/web/features/game/audio/scenes"))
+    .verdictSpec,
+  score: { start, cue: vi.fn(), stop: vi.fn() },
 }))
 
-vi.mock("use-sound", () => ({
-  default: (src: string, options: Record<string, unknown>) => {
-    const existing = sounds.get(src)
-
-    if (existing) {
-      existing.options = options
-
-      return [existing.play, { stop: existing.stop }]
-    }
-
-    const created: SoundMock = { play: vi.fn(), stop: vi.fn(), options }
-    sounds.set(src, created)
-
-    return [created.play, { stop: created.stop }]
-  },
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options ? `${key}:${JSON.stringify(options)}` : key,
+    i18n: { language: "en" },
+  }),
 }))
-
-// Path resolution is `use-sfx.test.tsx`'s job; here the classic path is the key.
-vi.mock("@razzia/web/features/game/hooks/use-sfx", () => ({
-  useSfx: () => (classicPath: string) => classicPath,
-}))
-
-const MUSIC = "/sounds/answersMusic.mp3"
-const RESULTS = "/sounds/results.mp3"
-
-const soundFor = (src: string): SoundMock => {
-  const sound = sounds.get(src)
-
-  if (!sound) {
-    throw new Error(`no sound registered for ${src}`)
-  }
-
-  return sound
-}
 
 const DATA: ManagerStatusDataMap["SHOW_RESPONSES"] = {
   question: "Which one?",
@@ -68,44 +48,37 @@ const renderResponses = async (
   return render(<Responses data={data} />)
 }
 
-// The count sits inside the quantity cluster; `data-response-row` is the
-// whole A–D row (letter, mark, bar, stats), which is what the scoring
-// assertions need to reach.
-const rowOf = (count: HTMLElement): HTMLElement => {
-  const row = count.closest<HTMLElement>("[data-response-row]")
+const tileOf = (label: string): HTMLElement => {
+  const tile = document.querySelector<HTMLElement>(
+    `[data-answer-tile][data-answer="${label}"]`,
+  )
 
-  if (!row) {
-    throw new Error(`no row around count ${count.textContent}`)
+  if (!tile) {
+    throw new Error(`no tile for ${label}`)
   }
 
-  return row
+  return tile
 }
 
-const rows = (): HTMLElement[] =>
-  Array.from(document.querySelectorAll<HTMLElement>("[data-response-row]"))
-
-const barOf = (count: HTMLElement): HTMLElement => {
-  const bar = rowOf(count).querySelector<HTMLElement>("[data-bar]")
+const railOf = (tile: HTMLElement): HTMLElement => {
+  const bar = tile.querySelector<HTMLElement>(".rz-tile-bar")
 
   if (!bar) {
-    throw new Error(`no bar in the row for count ${count.textContent}`)
+    throw new Error("no rail")
   }
 
   return bar
 }
 
-const barFor = (count: number): HTMLElement =>
-  barOf(screen.getByText(String(count)))
-
-const rowFor = (count: number): HTMLElement =>
-  rowOf(screen.getByText(String(count)))
+const shareOf = (tile: HTMLElement): string =>
+  tile.querySelector(".rz-tile-share")?.textContent ?? ""
 
 describe("Responses", () => {
   // `globals` is off, so RTL never registers its own teardown and each render
   // would otherwise stack another copy of the screen onto the same body.
   beforeEach(() => {
     cleanup()
-    sounds.clear()
+    start.mockClear()
   })
 
   it("keeps the shared question number above the response question", async () => {
@@ -118,108 +91,68 @@ describe("Responses", () => {
     ).toHaveAttribute("data-question-number-phase", "settled")
   })
 
-  it("keeps a deliberate responsive gutter between response bars and options", async () => {
+  it("puts each answer's share in its own letter block and runs the rail by it", async () => {
     await renderResponses()
 
-    const screenLayout = document.querySelector("[data-response-screen]")
-    const resultContent = document.querySelector("[data-response-content]")
-
-    expect(screenLayout).toHaveClass("gap-10", "md:gap-12")
-    expect(resultContent).not.toHaveClass("h-full")
-  })
-
-  it("paints the bars from the responses on first render", async () => {
-    await renderResponses()
-
-    expect(barFor(12).style.width).toBe("67%")
-    expect(barFor(2).style.width).toBe("11%")
-    expect(barFor(3).style.width).toBe("17%")
-    expect(barFor(1).style.width).toBe("6%")
-  })
-
-  it("states each share next to its bar", async () => {
-    await renderResponses()
-
-    expect(screen.getByText("67%")).toBeInTheDocument()
-    expect(screen.getByText("11%")).toBeInTheDocument()
-    expect(screen.getByText("17%")).toBeInTheDocument()
-    expect(screen.getByText("6%")).toBeInTheDocument()
-  })
-
-  it("marks the solution row correct and the rest incorrect", async () => {
-    await renderResponses()
-
-    expect(rowFor(12).dataset.mark).toBe("correct")
-    expect(rowFor(2).dataset.mark).toBe("incorrect")
-    expect(rowFor(3).dataset.mark).toBe("incorrect")
-    expect(rowFor(1).dataset.mark).toBe("incorrect")
-
-    expect(rowFor(12).querySelector("[data-mark-badge]")?.className).toContain(
-      "bg-success",
-    )
-    expect(rowFor(2).querySelector("[data-mark-badge]")?.className).toContain(
-      "text-danger",
+    expect(["A", "B", "C", "D"].map((label) => shareOf(tileOf(label)))).toEqual(
+      ["67%", "11%", "17%", "6%"],
     )
     expect(
-      rowFor(2).querySelector("[data-mark-badge]")?.className,
-    ).not.toContain("bg-success")
-
-    expect(rowFor(12).className).toContain("bg-success-tint")
-    expect(rowFor(2).className).not.toContain("bg-success-tint")
-
-    expect(
-      rowFor(12).querySelector("[data-quantity]")?.className,
-    ).not.toContain("opacity-40")
-    expect(rowFor(2).querySelector("[data-quantity]")?.className).toContain(
-      "opacity-40",
-    )
-    expect(rowFor(2).querySelector("[data-quantity]")?.className).toContain(
-      "grayscale",
-    )
+      ["A", "B", "C", "D"].map((label) => railOf(tileOf(label)).style.width),
+    ).toEqual(["67%", "11%", "17%", "6%"])
   })
 
-  it("keeps A-D identity fills on the bars", async () => {
+  it("frames the solution as correct and steps the rest back", async () => {
     await renderResponses()
 
-    expect(barFor(12).className).toContain("bg-answer-a")
-    expect(barFor(12).className).not.toContain("bg-success")
-    expect(barFor(2).className).toContain("bg-answer-b")
-    expect(barFor(3).className).toContain("bg-answer-c")
-    expect(barFor(1).className).toContain("bg-answer-d")
+    expect(tileOf("A")).toHaveAttribute("data-state", "correct")
+    expect(tileOf("A").querySelector("[role='img']")).toHaveAttribute(
+      "aria-label",
+      "Correct",
+    )
+    for (const label of ["B", "C", "D"]) {
+      expect(tileOf(label)).toHaveAttribute("data-state", "wrong")
+      expect(tileOf(label).querySelector("[role='img']")).toBeNull()
+    }
   })
 
-  it("still marks the empty solution correct when the crowd picked a wrong slot", async () => {
+  it("frames every solution of a question that has several", async () => {
+    await renderResponses({ ...DATA, solutions: [0, 2] })
+
+    expect(
+      ["A", "B", "C", "D"].map((label) => tileOf(label).dataset.state),
+    ).toEqual(["correct", "wrong", "correct", "wrong"])
+  })
+
+  it("still frames the empty solution when the crowd picked a wrong slot", async () => {
     await renderResponses({
       ...DATA,
-      responses: { 0: 1 },
+      responses: { 1: 5 },
       solutions: [2],
     })
 
-    const [rowA, rowB, rowC, rowD] = rows()
+    expect(tileOf("C")).toHaveAttribute("data-state", "correct")
+    expect(shareOf(tileOf("C"))).toBe("0%")
+    expect(railOf(tileOf("C")).style.width).toBe("0%")
+    expect(tileOf("B")).toHaveAttribute("data-state", "wrong")
+    expect(shareOf(tileOf("B"))).toBe("100%")
+  })
 
-    expect(rowA.dataset.mark).toBe("incorrect")
-    expect(rowB.dataset.mark).toBe("incorrect")
-    expect(rowC.dataset.mark).toBe("correct")
-    expect(rowD.dataset.mark).toBe("incorrect")
+  it("takes its colour from the answer, not from the verdict", async () => {
+    await renderResponses()
 
-    expect(rowA.querySelector<HTMLElement>("[data-bar]")?.style.width).toBe(
-      "100%",
-    )
-    expect(rowC.querySelector<HTMLElement>("[data-bar]")?.style.width).toBe(
-      "0%",
-    )
-    expect(rowC.querySelector("[data-mark-badge]")?.className).toContain(
-      "bg-success",
-    )
-    expect(rowA.querySelector("[data-mark-badge]")?.className).not.toContain(
-      "bg-success",
-    )
-    expect(rowA.querySelector("[data-quantity]")?.className).toContain(
-      "opacity-40",
-    )
-    expect(rowC.querySelector("[data-quantity]")?.className).not.toContain(
-      "opacity-40",
-    )
+    expect(tileOf("A").style.getPropertyValue("--c")).toBe("var(--rz-answer-a)")
+    expect(tileOf("C").style.getPropertyValue("--c")).toBe("var(--rz-answer-c)")
+  })
+
+  it("is a panel, not a set of buttons: nothing here can be tapped", async () => {
+    await renderResponses()
+
+    expect(screen.queryAllByRole("button")).toHaveLength(0)
+    expect(document.querySelectorAll("[data-answer-tile]")).toHaveLength(4)
+    for (const tile of document.querySelectorAll("[data-answer-tile]")) {
+      expect(tile.tagName).toBe("DIV")
+    }
   })
 
   // Effects never run in a server render, so this is the one place that can
@@ -237,59 +170,322 @@ describe("Responses", () => {
     expect(markup).toContain("width:6%")
   })
 
-  // A width has no "auto" that reads as empty the way an unset height did: an
-  // unset one fills the whole track, so an unanswered question has to land on
-  // an explicit zero — once for a key that is missing entirely, and once for a
-  // key that is present but zero, which used to divide by zero into `NaN%`.
-  it("renders empty bars when nobody answered", async () => {
+  // A width has no "auto" that reads as empty: an unset one fills the whole
+  // track, so an unanswered question has to land on an explicit zero, once for
+  // a key that is missing entirely and once for a key that is present but
+  // zero, which used to divide by zero into `NaN%`.
+  it("renders empty rails when nobody answered", async () => {
     await renderResponses({ ...DATA, responses: {} })
 
-    const bars = screen.getAllByText("0").map(barOf)
-
-    expect(bars).toHaveLength(4)
-    expect(bars.map((bar) => bar.style.width)).toEqual(["0%", "0%", "0%", "0%"])
-    expect(screen.getAllByText("0%")).toHaveLength(4)
+    expect(
+      ["A", "B", "C", "D"].map((label) => railOf(tileOf(label)).style.width),
+    ).toEqual(["0%", "0%", "0%", "0%"])
+    expect(["A", "B", "C", "D"].map((label) => shareOf(tileOf(label)))).toEqual(
+      ["0%", "0%", "0%", "0%"],
+    )
   })
 
-  it("renders empty bars when every answer drew a zero", async () => {
+  it("renders empty rails when every answer drew a zero", async () => {
     await renderResponses({ ...DATA, responses: { 0: 0, 1: 0, 2: 0, 3: 0 } })
 
-    const bars = screen.getAllByText("0").map(barOf)
-
-    expect(bars.map((bar) => bar.style.width)).toEqual(["0%", "0%", "0%", "0%"])
-    expect(screen.getAllByText("0%")).toHaveLength(4)
+    expect(
+      ["A", "B", "C", "D"].map((label) => railOf(tileOf(label)).style.width),
+    ).toEqual(["0%", "0%", "0%", "0%"])
   })
 
-  it("plays the results sting once per mount", async () => {
-    const { rerender } = await renderResponses()
+  it("asks for the verdict scene once, from the server's stamps", async () => {
+    const data = staged({ responses: { 0: 3, 1: 8, 2: 4, 3: 2 } })
+    const { rerender } = await renderResponses(data)
     const { default: Responses } =
       await import("@razzia/web/features/game/components/states/Responses")
 
-    expect(soundFor(RESULTS).play).toHaveBeenCalledTimes(1)
+    expect(start).toHaveBeenCalledTimes(1)
+    expect(start).toHaveBeenCalledWith(
+      {
+        scene: "verdict",
+        resultsAt: data.resultsAt,
+        serverNow: data.serverNow,
+        votes: [3, 8, 4, 2],
+        // Most picked is B, and B is not the answer: the crowd fell for it.
+        outcome: "wrong",
+      },
+      { silent: false },
+    )
 
-    rerender(<Responses data={DATA} />)
+    // The same screen again is the same scene: nothing restarts.
+    rerender(<Responses data={data} />)
 
-    expect(soundFor(RESULTS).play).toHaveBeenCalledTimes(1)
+    expect(start).toHaveBeenCalledTimes(1)
   })
 
-  it("loops the answers bed instead of restarting it by hand", async () => {
-    await renderResponses()
+  it("says the crowd was right when the most-picked answer is a solution", async () => {
+    await renderResponses(staged())
 
-    expect(soundFor(MUSIC).options).toMatchObject({
-      interrupt: true,
-      loop: true,
+    expect(start.mock.calls[0][0]).toMatchObject({ outcome: "right" })
+  })
+
+  it("keeps a reviewed question from touching the live game's score", async () => {
+    useManagerStore.getState().setReview(3)
+
+    await renderResponses(staged())
+
+    expect(start.mock.calls[0][1]).toEqual({ silent: true })
+  })
+
+  it("asks for no scene when the result has no stamps to stage", async () => {
+    await renderResponses(DATA)
+
+    expect(start).not.toHaveBeenCalled()
+  })
+})
+
+// The staged verdict, on a clock the tests move by hand.
+const staged = (
+  overrides: Partial<ManagerStatusDataMap["SHOW_RESPONSES"]> = {},
+): ManagerStatusDataMap["SHOW_RESPONSES"] => ({
+  ...DATA,
+  totalPlayers: 18,
+  resultsAt: Date.now(),
+  serverNow: Date.now(),
+  ...overrides,
+})
+
+const phaseOf = () =>
+  document.querySelector<HTMLElement>("[data-reveal]")?.dataset.phase
+
+const states = () =>
+  [...document.querySelectorAll<HTMLElement>("[data-answer-tile]")].map(
+    (tile) => tile.dataset.state,
+  )
+
+const spotted = () =>
+  [...document.querySelectorAll<HTMLElement>("[data-spot]")].map(
+    (tile) => tile.dataset.answer,
+  )
+
+describe("Responses staged verdict", () => {
+  beforeEach(() => {
+    cleanup()
+    start.mockClear()
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2040-01-01T00:00:00.000Z"))
+    useManagerStore.getState().reset()
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
+
+  const advance = (ms: number) =>
+    act(() => {
+      vi.advanceTimersByTime(ms)
     })
-    expect(soundFor(MUSIC).options.onend).toBeUndefined()
-    expect(soundFor(MUSIC).play).toHaveBeenCalledTimes(1)
+
+  it("takes the whole frame for TIME, then clears it", async () => {
+    await renderResponses(staged({ totalPlayers: 25 }))
+
+    expect(phaseOf()).toBe("time")
+    expect(document.querySelector("[data-hit='time']")).toHaveTextContent(
+      "game:reveal.time",
+    )
+
+    advance(RESULT_COUNT_MS + 50)
+
+    expect(phaseOf()).toBe("count")
+    expect(document.querySelector("[data-hit]")).toBeNull()
   })
 
-  it("stops the answers bed on unmount", async () => {
-    const { unmount } = await renderResponses()
+  it("says ALL IN when everyone answered before the clock ran out", async () => {
+    await renderResponses(staged({ totalPlayers: 18 }))
 
-    expect(soundFor(MUSIC).stop).not.toHaveBeenCalled()
+    expect(document.querySelector("[data-hit='time']")).toHaveTextContent(
+      "game:reveal.allIn",
+    )
+  })
 
-    unmount()
+  it("holds the verdict back: no tile is right or wrong until the strike", async () => {
+    await renderResponses(staged())
 
-    expect(soundFor(MUSIC).stop).toHaveBeenCalled()
+    advance(RESULT_STRIKE_MS - 100)
+
+    expect(phaseOf()).toBe("spotlight")
+    expect(states()).toEqual(["result", "result", "result", "result"])
+  })
+
+  it("grows the shares in as the rails go, then shows them whole", async () => {
+    await renderResponses(staged())
+    const share = (label: string) =>
+      document.querySelector(`[data-answer="${label}"] .rz-tile-share`)
+        ?.textContent
+
+    // Not yet counting: the block shows only its letter.
+    expect(share("A")).toBeUndefined()
+
+    advance(RESULT_COUNT_MS + 100)
+    expect(share("A")).toBeDefined()
+    expect(Number.parseInt(share("A") ?? "0", 10)).toBeLessThan(67)
+
+    advance(RESULT_SPOTLIGHT_MS)
+    expect(share("A")).toBe("67%")
+  })
+
+  it("holds the most-picked answer in the light while the room waits", async () => {
+    await renderResponses(staged())
+
+    expect(spotted()).toEqual([])
+
+    advance(RESULT_SPOTLIGHT_MS + 50)
+
+    expect(phaseOf()).toBe("spotlight")
+    expect(spotted()).toEqual(["A"])
+  })
+
+  it("keeps every tied answer lit", async () => {
+    await renderResponses(
+      staged({ responses: { 0: 5, 1: 5, 2: 2, 3: 0 }, totalPlayers: 12 }),
+    )
+
+    advance(RESULT_SPOTLIGHT_MS + 50)
+
+    expect(spotted()).toEqual(["A", "B"])
+  })
+
+  it("floods the frame from the right answer on the strike, then settles", async () => {
+    await renderResponses(staged())
+
+    advance(RESULT_STRIKE_MS + 50)
+
+    expect(phaseOf()).toBe("strike")
+    expect(states()).toEqual(["correct", "wrong", "wrong", "wrong"])
+    expect(document.querySelector("[data-hit='strike']")).toHaveTextContent(
+      "Alpha",
+    )
+    expect(spotted()).toEqual([])
+
+    advance(RESULT_SETTLED_MS - RESULT_STRIKE_MS)
+
+    expect(phaseOf()).toBe("settled")
+    expect(document.querySelector("[data-hit]")).toBeNull()
+    expect(states()).toEqual(["correct", "wrong", "wrong", "wrong"])
+  })
+
+  it("names every right answer in the flood when there are several", async () => {
+    await renderResponses(staged({ solutions: [0, 2] }))
+
+    advance(RESULT_STRIKE_MS + 50)
+
+    const flood = document.querySelector("[data-hit='strike']")
+
+    expect(flood).toHaveTextContent("Alpha")
+    expect(flood).toHaveTextContent("Gamma")
+    expect(flood).not.toHaveTextContent("Beta")
+  })
+
+  it("lands the headline after the strike, naming who was fooled", async () => {
+    // Most of the room picked B, which is wrong; three picked the right A.
+    await renderResponses(
+      staged({ responses: { 0: 3, 1: 8, 2: 4, 3: 2 }, totalPlayers: 18 }),
+    )
+    const headline = () => document.querySelector("[data-headline]")
+
+    expect(headline()).not.toHaveAttribute("data-shown")
+
+    advance(RESULT_HEADLINE_MS + 50)
+
+    expect(headline()).toHaveAttribute("data-shown")
+    expect(headline()).toHaveTextContent("game:reveal.headline.crowdWrong")
+    expect(headline()?.textContent).toContain('"right":3')
+    expect(headline()?.textContent).toContain('"of":18')
+    expect(headline()?.textContent).toContain('"wrong":8')
+    expect(headline()?.textContent).toContain('"letters":"B"')
+  })
+
+  it("says it plainly when the crowd was right", async () => {
+    await renderResponses(staged())
+
+    advance(RESULT_HEADLINE_MS + 50)
+
+    expect(document.querySelector("[data-headline]")).toHaveTextContent(
+      "game:reveal.headline.crowdRight",
+    )
+  })
+
+  it("names the fastest player, a beat after the headline", async () => {
+    await renderResponses(
+      staged({ fastest: { username: "Ada", seconds: 2.2 } }),
+    )
+
+    advance(RESULT_HEADLINE_MS + 20)
+    expect(document.querySelector("[data-fastest]")).not.toHaveAttribute(
+      "data-shown",
+    )
+
+    advance(200)
+    expect(document.querySelector("[data-fastest]")).toHaveAttribute(
+      "data-shown",
+    )
+    expect(document.querySelector("[data-fastest]")?.textContent).toContain(
+      "Ada",
+    )
+  })
+
+  it("is the final grid at once for a reconnect after the reveal: no flood", async () => {
+    const now = Date.now()
+
+    await renderResponses(staged({ resultsAt: now - 60_000, serverNow: now }))
+
+    expect(phaseOf()).toBe("settled")
+    expect(document.querySelector("[data-hit]")).toBeNull()
+    expect(document.querySelector("[data-headline]")).toHaveAttribute(
+      "data-shown",
+    )
+    expect(document.querySelector("[data-answer='A']")).toHaveAttribute(
+      "data-state",
+      "correct",
+    )
+  })
+
+  it("joins a reconnect part-way, from the stamps", async () => {
+    const now = Date.now()
+
+    await renderResponses(staged({ resultsAt: now - 3_300, serverNow: now }))
+
+    expect(phaseOf()).toBe("strike")
+  })
+
+  describe("in Calm", () => {
+    beforeEach(() => {
+      useManagerStore.getState().setVisuals({ showIntensity: "calm" })
+    })
+
+    it("has no full-frame hit: the verdict happens on the tile", async () => {
+      await renderResponses(staged())
+
+      expect(document.querySelector("[data-hit]")).toBeNull()
+      expect(document.querySelector("[data-reveal]")).toHaveAttribute(
+        "data-calm",
+      )
+
+      advance(RESULT_STRIKE_MS + 50)
+
+      expect(document.querySelector("[data-hit]")).toBeNull()
+      expect(document.querySelector("[data-answer='A']")).toHaveAttribute(
+        "data-state",
+        "correct",
+      )
+    })
+
+    it("says TIME in the headline's place instead of flooding the frame", async () => {
+      await renderResponses(staged())
+
+      expect(document.querySelector("[data-time-label]")).toHaveTextContent(
+        "game:reveal.allIn",
+      )
+
+      advance(RESULT_COUNT_MS + 50)
+
+      expect(document.querySelector("[data-time-label]")).toBeNull()
+    })
   })
 })

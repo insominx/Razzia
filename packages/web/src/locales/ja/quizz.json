@@ -35,5 +35,42 @@
     "title": "保存していない変更を破棄しますか？",
     "description": "このクイズの変更は保存されていません。",
     "discard": "破棄"
+  },
+  "fitWarning": {
+    "card": "プロジェクターに収まらない可能性があります",
+    "prompt": "この問題文はプロジェクターには長すぎます。短くするか文に分けないと、切れてしまう可能性があります。",
+    "answer": "90文字を超える選択肢があり、枠に収まらない可能性があります。"
+  },
+  "rehearse": {
+    "button": "リハーサル",
+    "buttonHint": "保存前の変更も含め、いまの状態でプロジェクターとスマホの画面にクイズを映します",
+    "unavailable": "ブラウザーが下書きを保存できなかったため、リハーサルを開けませんでした。",
+    "title": "リハーサル: {{subject}}",
+    "empty": "リハーサルするものがありません。エディターでクイズを開き、リハーサルを選んでください。",
+    "previousQuestion": "前の問題",
+    "nextQuestion": "次の問題",
+    "questionOf": "{{total}}問中 {{current}}問目",
+    "view": {
+      "host": "プロジェクター",
+      "phone": "スマホ"
+    },
+    "screens": {
+      "question": "問題",
+      "answers": "回答受付中",
+      "reveal": "集計 · 多数が正解",
+      "reveal-wrong": "集計 · 多数が不正解",
+      "wait": "回答を確定",
+      "verdict": "正解",
+      "verdict-wrong": "不正解",
+      "verdict-none": "無回答"
+    },
+    "replay": "もう一度",
+    "frameTitle": "リハーサル画面",
+    "keys": "← → 画面 · ↑ ↓ 問題 · R もう一度 · P プロジェクター／スマホ",
+    "placeholder": {
+      "subject": "無題のクイズ",
+      "question": "ここに問題が入ります",
+      "answer": "答え"
+    }
   }
 }

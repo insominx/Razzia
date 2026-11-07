@@ -447,6 +447,7 @@ describe("resolveVisuals", () => {
 
     expect(resolveVisuals(undefined, getGameConfig())).toEqual({
       soundTheme: "techno",
+      showIntensity: "full",
     })
     expect(
       resolveVisuals(
@@ -456,15 +457,34 @@ describe("resolveVisuals", () => {
     ).toEqual({
       backgroundUrl: "/config-assets/backgrounds/quiz.png",
       soundTheme: "techno",
+      showIntensity: "full",
     })
   })
 
-  it("defaults sound theme to classic when game config omits it", async () => {
+  it("defaults sound theme to the show's own score when game config omits it", async () => {
     const { resolveVisuals } = await import("@razzia/socket/services/visuals")
     const { getGameConfig } = await import("@razzia/socket/services/config")
 
     expect(resolveVisuals(undefined, getGameConfig())).toEqual({
-      soundTheme: "classic",
+      soundTheme: "show",
+      showIntensity: "full",
     })
+  })
+
+  it("resolves a configured show intensity, and defaults to full", async () => {
+    fs.writeFileSync(
+      path.join(configRoot, "game.json"),
+      JSON.stringify({
+        managerPassword: "secret",
+        visuals: { showIntensity: "calm" },
+      }),
+    )
+
+    const { resolveVisuals } = await import("@razzia/socket/services/visuals")
+    const { getGameConfig } = await import("@razzia/socket/services/config")
+
+    expect(resolveVisuals(undefined, getGameConfig()).showIntensity).toBe(
+      "calm",
+    )
   })
 })

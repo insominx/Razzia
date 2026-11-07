@@ -152,7 +152,11 @@ export const updateGameConfig = (
 }
 
 export const getQuizzMeta = () =>
-  getQuizz().map(({ id, subject }) => ({ id, subject }))
+  getQuizz().map(({ id, subject, questions }) => ({
+    id,
+    subject,
+    questionCount: questions.length,
+  }))
 
 const parseQuizzData = (data: unknown, label: string) => {
   const result = quizzValidator.safeParse(data)

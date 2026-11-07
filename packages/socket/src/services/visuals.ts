@@ -8,6 +8,7 @@ import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 import type { GameConfig } from "@razzia/common/validators/game-config"
 import type { Quizz } from "@razzia/common/types/game"
 import {
+  DEFAULT_SHOW_INTENSITY,
   DEFAULT_SOUND_THEME,
   type BackgroundRef,
   type ResolvedVisuals,
@@ -314,6 +315,7 @@ export const resolveVisuals = (
   return {
     ...(backgroundUrl ? { backgroundUrl } : {}),
     soundTheme: gameConfig.visuals?.soundTheme ?? DEFAULT_SOUND_THEME,
+    showIntensity: gameConfig.visuals?.showIntensity ?? DEFAULT_SHOW_INTENSITY,
   }
 }
 

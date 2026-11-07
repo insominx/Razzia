@@ -1,19 +1,26 @@
-import type { Player } from "@razzia/common/types/game"
+import type { PublicPlayer } from "@razzia/common/types/game"
 import Leaderboard from "@razzia/web/features/game/components/states/Leaderboard"
+import {
+  BOARD_COMMENT_DELAY_MS,
+  BOARD_HOLD_MS,
+  BOARD_REORDER_MS,
+} from "@razzia/web/features/game/utils/board"
 import { act, cleanup, render } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options ? `${key}:${JSON.stringify(options)}` : key,
+  }),
 }))
 
-const player = (id: string, points: number): Player => ({
+const player = (id: string, points: number, streak = 0): PublicPlayer => ({
   id,
-  clientId: `client-${id}`,
   connected: true,
   username: id,
   points,
-  streak: 0,
+  streak,
 })
 
 const rowOrder = (container: HTMLElement) =>
@@ -21,7 +28,20 @@ const rowOrder = (container: HTMLElement) =>
     rank: row.querySelector("[data-rank-badge]")?.textContent,
     name: row.querySelector(".truncate")?.textContent,
     gained: row.querySelector("[data-points-gained]")?.textContent ?? null,
+    change:
+      row.querySelector("[data-place-change]")?.textContent.trim() ?? null,
   }))
+
+const barWidths = (container: HTMLElement) =>
+  [...container.querySelectorAll<HTMLElement>("[data-board-bar]")].map(
+    (bar) => bar.style.width,
+  )
+
+const advance = (ms: number) => {
+  act(() => {
+    vi.advanceTimersByTime(ms)
+  })
+}
 
 describe("Leaderboard", () => {
   beforeEach(() => {
@@ -55,7 +75,21 @@ describe("Leaderboard", () => {
     expect(badges[3]).not.toHaveClass("bg-medal-gold")
   })
 
-  it("re-ranks after the beat and shows what each known player gained", () => {
+  it("holds the old standing, with each bar its share of the new longest", () => {
+    const { container } = render(
+      <Leaderboard
+        data={{
+          oldLeaderboard: [player("ada", 900), player("grace", 450)],
+          leaderboard: [player("ada", 1_000), player("grace", 500)],
+        }}
+      />,
+    )
+
+    expect(rowOrder(container).map((row) => row.name)).toEqual(["ada", "grace"])
+    expect(barWidths(container)).toEqual(["90%", "45%"])
+  })
+
+  it("grows the bars to the new scores, then swaps the rows", () => {
     const { container } = render(
       <Leaderboard
         data={{
@@ -69,20 +103,102 @@ describe("Leaderboard", () => {
       />,
     )
 
-    expect(rowOrder(container)).toEqual([
-      { rank: "1", name: "ada", gained: null },
-      { rank: "2", name: "grace", gained: null },
-    ])
+    advance(BOARD_HOLD_MS)
 
-    act(() => {
-      vi.advanceTimersByTime(1_600)
-    })
+    // The race has started but nobody has changed places yet.
+    expect(rowOrder(container).map((row) => row.name)).toEqual(["ada", "grace"])
+    expect(barWidths(container)[0]).toBe(`${(900 / 1_640) * 100}%`)
+    expect(barWidths(container)[1]).toBe("100%")
+
+    advance(BOARD_REORDER_MS - BOARD_HOLD_MS)
 
     expect(rowOrder(container)).toEqual([
-      { rank: "1", name: "grace", gained: "+840" },
-      { rank: "2", name: "ada", gained: null },
+      { rank: "1", name: "grace", gained: "+840", change: "▲1" },
+      { rank: "2", name: "ada", gained: null, change: "▼1" },
       // Climbed in from outside the old top five: no known previous score.
-      { rank: "3", name: "linus", gained: null },
+      { rank: "3", name: "linus", gained: null, change: null },
     ])
+  })
+
+  it("says one thing about the board, after the rows have swapped", () => {
+    const { container } = render(
+      <Leaderboard
+        data={{
+          oldLeaderboard: [player("ada", 900), player("grace", 800)],
+          leaderboard: [player("grace", 1_640), player("ada", 900)],
+        }}
+      />,
+    )
+
+    advance(BOARD_REORDER_MS)
+    expect(container.querySelector("[data-board-commentary]")).toBeNull()
+
+    advance(BOARD_COMMENT_DELAY_MS)
+    expect(
+      container.querySelector("[data-board-commentary]")?.textContent,
+    ).toBe('game:board.newLeader:{"name":"grace","other":"ada"}')
+  })
+
+  it("works for a room of one", () => {
+    const { container } = render(
+      <Leaderboard
+        data={{
+          oldLeaderboard: [player("ada", 0)],
+          leaderboard: [player("ada", 840)],
+        }}
+      />,
+    )
+
+    advance(BOARD_REORDER_MS + BOARD_COMMENT_DELAY_MS)
+
+    expect(rowOrder(container)).toEqual([
+      { rank: "1", name: "ada", gained: "+840", change: null },
+    ])
+    expect(barWidths(container)).toEqual(["100%"])
+    expect(
+      container.querySelector("[data-board-commentary]")?.textContent,
+    ).toContain("game:board.leads")
+  })
+
+  it("rolls the points through an odometer", () => {
+    const { container } = render(
+      <Leaderboard
+        data={{
+          oldLeaderboard: [player("ada", 900)],
+          leaderboard: [player("ada", 1_740)],
+        }}
+      />,
+    )
+
+    expect(
+      container.querySelector("[data-odometer]")?.getAttribute("data-odometer"),
+    ).toBe("900")
+
+    advance(BOARD_HOLD_MS)
+
+    expect(
+      container.querySelector("[data-odometer]")?.getAttribute("data-odometer"),
+    ).toBe("1740")
+  })
+
+  it("starts over when a new board arrives", () => {
+    const first = {
+      oldLeaderboard: [player("ada", 900)],
+      leaderboard: [player("ada", 1_000)],
+    }
+    const { container, rerender } = render(<Leaderboard data={first} />)
+
+    advance(BOARD_REORDER_MS + BOARD_COMMENT_DELAY_MS)
+    rerender(
+      <Leaderboard
+        data={{
+          oldLeaderboard: [player("ada", 1_000)],
+          leaderboard: [player("ada", 1_900)],
+        }}
+      />,
+    )
+
+    expect(container.querySelector("[data-board-commentary]")).toBeNull()
+    expect(barWidths(container)).toEqual([`${(1_000 / 1_900) * 100}%`])
   })
 })

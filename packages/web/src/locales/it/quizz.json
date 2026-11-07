@@ -35,5 +35,42 @@
     "title": "Scartare le modifiche non salvate?",
     "description": "Le modifiche a questo quiz non sono state salvate.",
     "discard": "Scarta"
+  },
+  "fitWarning": {
+    "card": "Potrebbe non entrare nel proiettore",
+    "prompt": "Questa domanda è lunga per il proiettore. Accorciala o dividila in frasi, altrimenti potrebbe essere tagliata.",
+    "answer": "Una risposta supera i 90 caratteri e potrebbe non entrare nella sua tessera."
+  },
+  "rehearse": {
+    "button": "Prova",
+    "buttonHint": "Riproduci questo quiz sugli schermi del proiettore e del telefono così com'è ora, comprese le modifiche non salvate",
+    "unavailable": "Il browser non ha conservato la bozza, quindi la prova non si è potuta aprire.",
+    "title": "Prova: {{subject}}",
+    "empty": "Ancora niente da provare. Apri un quiz nell'editor e scegli Prova.",
+    "previousQuestion": "Domanda precedente",
+    "nextQuestion": "Domanda successiva",
+    "questionOf": "Domanda {{current}} di {{total}}",
+    "view": {
+      "host": "Proiettore",
+      "phone": "Telefono"
+    },
+    "screens": {
+      "question": "Domanda",
+      "answers": "Risposte aperte",
+      "reveal": "Il conteggio · la sala indovina",
+      "reveal-wrong": "Il conteggio · la sala sbaglia",
+      "wait": "Risposta inviata",
+      "verdict": "Giusta",
+      "verdict-wrong": "Sbagliata",
+      "verdict-none": "Nessuna risposta"
+    },
+    "replay": "Ripeti",
+    "frameTitle": "Schermo della prova",
+    "keys": "← → schermo · ↑ ↓ domanda · R ripeti · P proiettore o telefono",
+    "placeholder": {
+      "subject": "Quiz senza titolo",
+      "question": "Qui va la tua domanda",
+      "answer": "Risposta"
+    }
   }
 }

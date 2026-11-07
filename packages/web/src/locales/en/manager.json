@@ -25,6 +25,10 @@
       "techno": {
         "description": "Full techno pack: a techno bed during answers plus techno UI and podium cues.",
         "title": "Techno"
+      },
+      "show": {
+        "title": "Show",
+        "description": "A generated score that follows the round: quiet while reading, a drop when answers open, and a hit for the verdict. It climbs a little each question."
       }
     },
     "invalidType": "Choose an image file",
@@ -34,7 +38,22 @@
     "upload": "Upload background",
     "uploading": "Uploading",
     "globalDefaultHelp": "This is the global default background for games that do not set a quiz override.",
-    "uploadLimits": "PNG, JPEG, WebP, or GIF up to 5 MB."
+    "uploadLimits": "PNG, JPEG, WebP, or GIF up to 5 MB.",
+    "showIntensity": {
+      "label": "Show intensity",
+      "full": {
+        "title": "Full",
+        "description": "Light and sound hits that fill the whole frame, a spotlight on the most-picked answer, and the full score."
+      },
+      "calm": {
+        "title": "Calm",
+        "description": "No full-frame hits, spotlight or beams. The verdict happens on the tile. Music 12 dB quieter, with no groove while answering."
+      },
+      "silent": {
+        "title": "Silent",
+        "description": "Calm, with no audio at all."
+      }
+    }
   },
   "quizz": {
     "create": "Create Quizz",
@@ -47,7 +66,9 @@
     "pleaseCreate": "Please create a quizz first",
     "pleaseSelect": "Please select a quizz",
     "startGame": "Start game",
-    "invalidJson": "Invalid JSON file"
+    "invalidJson": "Invalid JSON file",
+    "questionCount_one": "{{count}} question",
+    "questionCount_other": "{{count}} questions"
   },
   "result": {
     "delete": "Delete result",

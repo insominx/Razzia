@@ -18,6 +18,7 @@ const Username = () => {
   const { gameId, login, setStatus, setVisuals } = usePlayerStore()
   const navigate = useNavigate()
   const [username, setUsername] = useState("")
+  const [shake, setShake] = useState(0)
   const { t } = useTranslation()
 
   const handleLogin = () => {
@@ -34,6 +35,11 @@ const Username = () => {
     }
   }
 
+  // A taken or refused name shakes the field (the message is the toast's).
+  useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
+    setShake((count) => count + 1)
+  })
+
   useEvent(
     EVENTS.GAME.SUCCESS_JOIN,
     ({ gameId: joinedGameId, visuals, waitText }) => {
@@ -47,12 +53,19 @@ const Username = () => {
 
   return (
     <Card>
-      <Input
-        className="text-center"
-        onChange={(e) => setUsername(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={t("game:usernamePlaceholder")}
-      />
+      <div
+        key={shake}
+        data-shake={shake}
+        className={shake > 0 ? "rz-shake" : undefined}
+      >
+        <Input
+          autoFocus
+          className="w-full text-center"
+          onChange={(e) => setUsername(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={t("game:usernamePlaceholder")}
+        />
+      </div>
       <Button className="mt-4" onClick={handleLogin}>
         {t("common:submit")}
       </Button>

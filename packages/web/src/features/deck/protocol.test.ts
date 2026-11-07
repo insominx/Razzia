@@ -27,6 +27,8 @@ describe("parseDeckCommand", () => {
     command({ type: "visibility", visible: false }),
     command({ type: "review", question: 2 }),
     command({ type: "review", question: null }),
+    command({ type: "backdrop", mode: "slide" }),
+    command({ type: "backdrop", mode: "own" }),
   ])("accepts %o", (data) => {
     expect(parseDeckCommand(data)).toEqual(data)
   })
@@ -44,6 +46,11 @@ describe("parseDeckCommand", () => {
     ["a close without its quiz", command({ type: "close" })],
     ["a review without its question", command({ type: "review" })],
     ["a negative review", command({ type: "review", question: -1 })],
+    ["a backdrop with no mode", command({ type: "backdrop" })],
+    [
+      "a backdrop of some other kind",
+      command({ type: "backdrop", mode: "red" }),
+    ],
     ["a plain string", "hello"],
   ])("refuses %s", (_label, data) => {
     expect(parseDeckCommand(data)).toBeNull()

@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import { EVENTS } from "@razzia/common/constants"
 import { STATUS } from "@razzia/common/types/game/status"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import GameWrapper from "@razzia/web/features/game/components/GameWrapper"
 
 vi.mock("@razzia/web/components/Atmosphere", () => ({
@@ -12,8 +18,11 @@ vi.mock("@razzia/web/features/game/components/VolumeControl", () => ({
   default: () => null,
 }))
 
+const socket = vi.hoisted(() => ({ isConnected: true }))
+
 vi.mock("@razzia/web/features/game/contexts/socket-context", () => ({
   useEvent: vi.fn(),
+  useSocket: () => socket,
 }))
 
 vi.mock("@razzia/web/features/game/stores/player", () => ({
@@ -27,6 +36,23 @@ vi.mock("@razzia/web/features/game/stores/question", () => ({
   }),
 }))
 
+vi.mock("@razzia/web/features/game/audio/score", () => ({
+  score: {
+    configure: vi.fn(),
+    start: vi.fn(),
+    cue: vi.fn(),
+    stop: vi.fn(),
+    setRound: vi.fn(),
+    dispose: vi.fn(),
+    debug: vi.fn(),
+  },
+}))
+
+vi.mock("@razzia/web/features/game/hooks/use-show-intensity", () => ({
+  useCalmVisuals: () => false,
+  useShowIntensity: () => "full",
+}))
+
 vi.mock("@razzia/web/features/game/stores/sound", () => ({
   useSoundStore: {
     getState: () => ({ bindSurface: vi.fn() }),
@@ -36,6 +62,45 @@ vi.mock("@razzia/web/features/game/stores/sound", () => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
+
+describe("GameWrapper reconnecting pill", () => {
+  afterEach(() => {
+    cleanup()
+    socket.isConnected = true
+  })
+
+  it("says so while the socket is down and a game is on screen", () => {
+    socket.isConnected = false
+    render(
+      <GameWrapper statusName={STATUS.SELECT_ANSWER}>
+        <div>Answers</div>
+      </GameWrapper>,
+    )
+
+    expect(screen.getByText("common:reconnecting")).toBeInTheDocument()
+  })
+
+  it("stays out of the way while connected", () => {
+    render(
+      <GameWrapper statusName={STATUS.SELECT_ANSWER}>
+        <div>Answers</div>
+      </GameWrapper>,
+    )
+
+    expect(screen.queryByText("common:reconnecting")).not.toBeInTheDocument()
+  })
+
+  it("does not cover the first connection, which has its own screen", () => {
+    socket.isConnected = false
+    render(
+      <GameWrapper statusName={undefined}>
+        <div>Answers</div>
+      </GameWrapper>,
+    )
+
+    expect(screen.queryByText("common:reconnecting")).not.toBeInTheDocument()
+  })
+})
 
 describe("GameWrapper manager action acknowledgement", () => {
   it("does not duplicate question progress in the top bar", () => {

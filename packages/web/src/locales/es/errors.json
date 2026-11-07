@@ -53,7 +53,9 @@
     "invalidDialect": "El modo de diseño no es válido",
     "invalidSoundTheme": "El tema de sonido no es válido",
     "soundThemeSetFailed": "Error al actualizar el tema de sonido",
-    "unsupportedBackgroundType": "Usa una imagen PNG, JPEG, WebP o GIF"
+    "unsupportedBackgroundType": "Usa una imagen PNG, JPEG, WebP o GIF",
+    "invalidShowIntensity": "Elige Completo, Tranquilo o Silencio",
+    "showIntensitySetFailed": "No se pudo cambiar la intensidad del espectáculo"
   },
   "route": {
     "back": "Volver al inicio",

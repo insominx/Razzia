@@ -116,7 +116,7 @@ Options:
 
 - `managerPassword`: The master password for accessing the manager interface. **Must be changed from the default `"PASSWORD"` value**, otherwise manager access is blocked.
 - `visuals.background`: Optional instance-wide background. The manager's **Visuals** tab uploads PNG, JPEG, WebP, or GIF images up to 5 MB and writes this portable config-asset reference for you.
-- `visuals.soundTheme`: Optional sound pack. `classic` (default) keeps the original quiz loops. `techno` replaces the whole pack — the answers bed plus every UI and podium cue — from `public/sounds/themes/techno/`. The manager's **Visuals** tab can switch this without changing the classic files; the pack is snapshotted when a game is created, so switching it never swaps cues under a running game.
+- `visuals.soundTheme`: Optional sound pack. `show` (default) is the generated score: it follows each round, climbs a semitone per question and answers the room's verdict. `classic` keeps the original quiz loops. `techno` replaces the whole pack — the answers bed plus every UI and podium cue — from `public/sounds/themes/techno/`. The manager's **Visuals** tab can switch this without changing the classic files; the pack is snapshotted when a game is created, so switching it never swaps cues under a running game.
 
 ### Third-party audio
 

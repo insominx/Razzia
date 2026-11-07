@@ -1,6 +1,6 @@
-import logo from "@razzia/web/assets/logo.svg"
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import GithubIcon from "@razzia/web/components/GithubIcon"
+import Logo from "@razzia/web/components/Logo"
 import type { PropsWithChildren } from "react"
 
 const Background = ({ children }: PropsWithChildren) => (
@@ -8,7 +8,7 @@ const Background = ({ children }: PropsWithChildren) => (
     <Atmosphere recipe="ambient" />
 
     {/* Positioned so it paints above the absolute Atmosphere layer. */}
-    <img src={logo} className="relative z-10 mb-10 h-16" alt="logo" />
+    <Logo className="relative z-10 mb-10 h-16" />
     {children}
 
     <a

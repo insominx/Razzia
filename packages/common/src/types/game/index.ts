@@ -20,6 +20,9 @@ export interface Answer {
   clientId: string
   answerId: number
   points: number
+  // How long after answering opened this answer came in. The room's fastest
+  // right answer is named on the results.
+  elapsedMs?: number
 }
 
 export type QuestionMediaType =
@@ -51,6 +54,8 @@ export type QuizzWithId = Quizz & { id: string }
 export interface QuizzMeta {
   id: string
   subject: string
+  /** How many questions, for the picker. Absent from an older server. */
+  questionCount?: number
 }
 
 export interface GameUpdateQuestion {

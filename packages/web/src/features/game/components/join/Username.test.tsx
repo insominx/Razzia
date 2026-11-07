@@ -66,4 +66,22 @@ describe("Username", () => {
       data: { text: "game:waitingForPlayers" },
     })
   })
+
+  it("puts the cursor in the name field on arrival", () => {
+    const { container } = render(<Username />)
+
+    expect(document.activeElement).toBe(container.querySelector("input"))
+  })
+
+  it("shakes the field when the name is refused", () => {
+    const { container } = render(<Username />)
+
+    expect(container.querySelector("[data-shake]")).not.toHaveClass("rz-shake")
+
+    act(() => {
+      handlers.get(EVENTS.GAME.ERROR_MESSAGE)?.("errors:game.usernameTaken")
+    })
+
+    expect(container.querySelector("[data-shake]")).toHaveClass("rz-shake")
+  })
 })

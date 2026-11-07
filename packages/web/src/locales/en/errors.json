@@ -53,7 +53,9 @@
     "invalidDialect": "Design mode is invalid",
     "invalidSoundTheme": "Sound theme is invalid",
     "soundThemeSetFailed": "Failed to update sound theme",
-    "unsupportedBackgroundType": "Use a PNG, JPEG, WebP, or GIF image"
+    "unsupportedBackgroundType": "Use a PNG, JPEG, WebP, or GIF image",
+    "invalidShowIntensity": "Choose Full, Calm or Silent",
+    "showIntensitySetFailed": "Could not change the show intensity"
   },
   "route": {
     "back": "Go back home",

@@ -22,5 +22,6 @@
     "unmute": "Attiva audio",
     "volume": "Volume"
   },
-  "submit": "Invia"
+  "submit": "Invia",
+  "reconnecting": "Riconnessione…"
 }

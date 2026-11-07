@@ -56,6 +56,13 @@ const deckCommandSchema = z.discriminatedUnion("type", [
     type: z.literal("controls"),
     shown: z.boolean(),
   }),
+  // What is behind the quiz: its own night-sky backdrop ("own", the default),
+  // or nothing, so the slide the page sits on shows through ("slide").
+  z.object({
+    ...envelope,
+    type: z.literal("backdrop"),
+    mode: z.enum(["own", "slide"]),
+  }),
 ])
 
 export type DeckCommand = z.infer<typeof deckCommandSchema>

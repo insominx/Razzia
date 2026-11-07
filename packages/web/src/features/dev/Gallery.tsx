@@ -1,272 +1,196 @@
-import { STATUS, type StatusDataMap } from "@razzia/common/types/game/status"
-import Atmosphere from "@razzia/web/components/Atmosphere"
-import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
-import Answers from "@razzia/web/features/game/components/states/Answers"
-import Leaderboard from "@razzia/web/features/game/components/states/Leaderboard"
-import PlayerFinished from "@razzia/web/features/game/components/states/PlayerFinished"
-import Podium from "@razzia/web/features/game/components/states/Podium"
-import Prepared from "@razzia/web/features/game/components/states/Prepared"
-import Question from "@razzia/web/features/game/components/states/Question"
-import Responses from "@razzia/web/features/game/components/states/Responses"
-import Result from "@razzia/web/features/game/components/states/Result"
-import Room from "@razzia/web/features/game/components/states/Room"
-import Start from "@razzia/web/features/game/components/states/Start"
-import Wait from "@razzia/web/features/game/components/states/Wait"
-import { useManagerStore } from "@razzia/web/features/game/stores/manager"
-import { usePlayerStore } from "@razzia/web/features/game/stores/player"
+import { Select, Toggle } from "@razzia/web/features/dev/director-ui"
+import FitTab, { type InspectTarget } from "@razzia/web/features/dev/FitTab"
+import type { FitReport } from "@razzia/web/features/dev/fit"
+import { findQuiz, QUIZZES } from "@razzia/web/features/dev/fixtures"
+import RoundTab from "@razzia/web/features/dev/RoundTab"
 import {
-  type Surface,
-  type SurfaceDialect,
-  useSurfaceOverride,
-} from "@razzia/web/hooks/use-surface"
+  ROOM_MODES,
+  roomFilterId,
+  roomFilterTransfer,
+} from "@razzia/web/features/dev/room-wash"
+import {
+  type DirectorState,
+  initialDirectorState,
+  pickFixture,
+  pickQuiz,
+  pickSize,
+} from "@razzia/web/features/dev/settings"
+import ScoreBoard from "@razzia/web/features/dev/ScoreBoard"
+import SoundTab from "@razzia/web/features/dev/SoundTab"
+import StatesTab from "@razzia/web/features/dev/StatesTab"
+import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
+import { useSurfaceOverride } from "@razzia/web/hooks/use-surface"
 import clsx from "clsx"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
-const PLAYERS = [
-  {
-    id: "gallery-ada",
-    connected: true,
-    username: "Ada",
-    points: 9_640,
-    streak: 4,
-  },
-  {
-    id: "gallery-grace",
-    connected: true,
-    username: "Grace",
-    points: 8_920,
-    streak: 2,
-  },
-  {
-    id: "gallery-linus",
-    connected: true,
-    username: "Linus",
-    points: 7_880,
-    streak: 1,
-  },
+const TABS = [
+  { id: "states", label: "States" },
+  { id: "round", label: "Round" },
+  { id: "fit", label: "Fit report" },
+  { id: "sound", label: "Sound" },
 ] as const
 
-const STATUS_FIXTURES = {
-  [STATUS.SHOW_ROOM]: {
-    text: "game:waitingForPlayers",
-    inviteCode: "426 426",
-  },
-  [STATUS.SHOW_START]: {
-    time: 3,
-    subject: "Systems thinking",
-  },
-  [STATUS.SHOW_PREPARED]: {
-    totalAnswers: 4,
-    questionNumber: 7,
-  },
-  [STATUS.SHOW_QUESTION]: {
-    questionNumber: 7,
-    question:
-      "You host a game at home. Your friend's home uses the same private address range as yours. They enter your PC's private LAN address to join. Where does their PC look for that destination?",
-    cooldown: 5,
-    promptStartedAt: 0,
-    serverNow: 0,
-  },
-  [STATUS.SELECT_ANSWER]: {
-    questionNumber: 7,
-    question: "Which boundary owns the persisted state?",
-    answers: [
-      "The configuration service",
-      "The active browser tab",
-      "The rendered component",
-      "The current socket callback",
-    ],
-    time: 20,
-    totalPlayer: 18,
-    revealStartedAt: 0,
-    unlockAt: 12_000,
-    serverNow: 12_000,
-    answeringOpen: true,
-  },
-  [STATUS.SHOW_RESULT]: {
-    correct: true,
-    message: "game:correct",
-    points: 840,
-    myPoints: 9_640,
-    rank: 1,
-    aheadOfMe: null,
-  },
-  [STATUS.SHOW_RESPONSES]: {
-    questionNumber: 7,
-    question: "Which boundary owns the persisted state?",
-    responses: { 0: 12, 1: 2, 2: 3, 3: 1 },
-    solutions: [0],
-    answers: [
-      "The configuration service",
-      "The active browser tab",
-      "The rendered component",
-      "The current socket callback",
-    ],
-  },
-  [STATUS.SHOW_LEADERBOARD]: {
-    oldLeaderboard: PLAYERS.map((player, index) => ({
-      ...player,
-      points: player.points - (index + 1) * 240,
-    })),
-    leaderboard: [...PLAYERS],
-  },
-  [STATUS.FINISHED]: {
-    subject: "Systems thinking",
-    top: [...PLAYERS],
-    rank: 1,
-  },
-  [STATUS.WAIT]: {
-    text: "game:waitingForAnswers",
-  },
-} satisfies StatusDataMap
+type TabId = (typeof TABS)[number]["id"]
 
-const STATE_PREVIEWS = [
-  {
-    id: "manager-room",
-    label: "Manager · Room",
-    render: () => <Room data={STATUS_FIXTURES[STATUS.SHOW_ROOM]} />,
-  },
-  {
-    id: "show-start",
-    label: "Start",
-    render: () => <Start data={STATUS_FIXTURES[STATUS.SHOW_START]} />,
-  },
-  {
-    id: "show-prepared",
-    label: "Prepared",
-    render: () => <Prepared data={STATUS_FIXTURES[STATUS.SHOW_PREPARED]} />,
-  },
-  {
-    id: "show-question",
-    label: "Question",
-    render: () => <Question data={STATUS_FIXTURES[STATUS.SHOW_QUESTION]} />,
-  },
-  {
-    id: "select-answer",
-    label: "Answers",
-    render: () => <Answers data={STATUS_FIXTURES[STATUS.SELECT_ANSWER]} />,
-  },
-  {
-    id: "show-result",
-    label: "Result",
-    render: () => <Result data={STATUS_FIXTURES[STATUS.SHOW_RESULT]} />,
-  },
-  {
-    id: "show-responses",
-    label: "Responses",
-    render: () => <Responses data={STATUS_FIXTURES[STATUS.SHOW_RESPONSES]} />,
-  },
-  {
-    id: "show-responses-crowd-wrong",
-    label: "Responses · crowd wrong",
-    render: () => (
-      <Responses
-        data={{
-          ...STATUS_FIXTURES[STATUS.SHOW_RESPONSES],
-          responses: { 0: 1 },
-          solutions: [2],
-        }}
-      />
-    ),
-  },
-  {
-    id: "show-leaderboard",
-    label: "Leaderboard",
-    render: () => (
-      <Leaderboard data={STATUS_FIXTURES[STATUS.SHOW_LEADERBOARD]} />
-    ),
-  },
-  {
-    id: "manager-finished",
-    label: "Manager · Podium",
-    render: () => <Podium data={STATUS_FIXTURES[STATUS.FINISHED]} />,
-  },
-  {
-    id: "player-finished",
-    label: "Player · Finished",
-    render: () => <PlayerFinished data={STATUS_FIXTURES[STATUS.FINISHED]} />,
-  },
-  {
-    id: "wait",
-    label: "Wait",
-    render: () => <Wait data={STATUS_FIXTURES[STATUS.WAIT]} />,
-  },
-] as const
+const truncate = (text: string, length: number) =>
+  text.length > length ? `${text.slice(0, length - 1)}…` : text
 
-const Toggle = <T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string
-  options: ReadonlyArray<{ label: string; value: T }>
-  value: T
-  onChange: (value: T) => void
-}) => (
-  <fieldset className="flex flex-wrap items-center gap-2">
-    <legend className="text-text-muted mr-2 text-xs font-bold tracking-widest uppercase">
-      {label}
-    </legend>
-    {options.map((option) => (
-      <button
-        key={option.value}
-        type="button"
-        aria-pressed={value === option.value}
-        className={clsx(
-          "rounded-rz-sm border px-3 py-2 text-sm font-semibold transition",
-          value === option.value
-            ? "border-brand-border bg-brand-tint text-brand"
-            : "border-border bg-panel text-text-muted hover:text-text-primary",
-        )}
-        onClick={() => onChange(option.value)}
-      >
-        {option.label}
-      </button>
-    ))}
-  </fieldset>
+/**
+ * The lit-room model as SVG filters. They run in linear light, which is the
+ * space the model is defined in, so a frame filtered here is the frame `wash.py`
+ * would produce.
+ */
+const RoomWashDefs = () => (
+  <svg
+    width="0"
+    height="0"
+    className="absolute"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <defs>
+      {ROOM_MODES.flatMap((mode) => (mode.contrast ? [mode.contrast] : [])).map(
+        (contrast) => {
+          const { slope, intercept } = roomFilterTransfer(contrast)
+
+          return (
+            <filter
+              key={contrast}
+              id={roomFilterId(contrast)}
+              colorInterpolationFilters="linearRGB"
+            >
+              <feComponentTransfer>
+                {(["R", "G", "B"] as const).map((channel) => {
+                  const Func = `feFunc${channel}` as const
+
+                  return (
+                    <Func
+                      key={channel}
+                      type="linear"
+                      slope={slope}
+                      intercept={intercept}
+                    />
+                  )
+                })}
+              </feComponentTransfer>
+            </filter>
+          )
+        },
+      )}
+    </defs>
+  </svg>
 )
 
+/**
+ * The Director: every screen of a game at the size it is played on, built from
+ * the real quizzes. Dev only; the route is compiled out of production builds.
+ */
 const Gallery = () => {
-  const [dialect, setDialect] = useState<SurfaceDialect>("dark-everywhere")
-  const [surface, setSurface] = useState<Surface>("stage")
-  const [selectedIndex, setSelectedIndex] = useState(1)
-  const setPlayers = useManagerStore((state) => state.setPlayers)
-  const resetManager = useManagerStore((state) => state.reset)
-  const setPlayer = usePlayerStore((state) => state.setPlayer)
-  const resetPlayer = usePlayerStore((state) => state.reset)
-  const currentState = STATE_PREVIEWS[selectedIndex]
+  const [state, setState] = useState<DirectorState>(initialDirectorState)
+  const [tab, setTab] = useState<TabId>("states")
+  const [report, setReport] = useState<FitReport | null>(null)
+  const quiz = findQuiz(state.quizId)?.quiz
 
-  useSurfaceOverride({ dialect, surface })
+  useSurfaceOverride({ dialect: state.dialect, surface: state.surface })
 
-  useEffect(() => {
-    setPlayers([...PLAYERS])
-    setPlayer({ username: "Ada", points: 9_640 })
-
-    return () => {
-      resetManager()
-      resetPlayer()
-    }
-  }, [resetManager, resetPlayer, setPlayer, setPlayers])
+  const inspect = (target: InspectTarget) => {
+    setState((previous) =>
+      pickSize(
+        pickFixture(
+          {
+            ...previous,
+            quizId: target.quizId,
+            question: target.question,
+          },
+          target.fixture,
+        ),
+        target.sizeId,
+      ),
+    )
+    setTab("states")
+  }
 
   return (
     <main className="bg-canvas text-text-body min-h-dvh transition-colors duration-300">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 md:px-8">
+      <RoomWashDefs />
+      <div className="mx-auto flex w-full max-w-[110rem] flex-col gap-6 px-5 py-8 md:px-8">
         <header className="border-border flex flex-col gap-4 border-b pb-6">
-          <div>
-            <h1 className="text-text-primary text-3xl font-semibold tracking-tight md:text-4xl">
-              State gallery
-            </h1>
-            <p className="text-text-muted mt-2 text-sm">
-              Deterministic fixtures for live game states. Role tables live in{" "}
-              <code className="font-mono">STYLE.md</code>.
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-text-primary text-3xl font-semibold tracking-tight md:text-4xl">
+                Director
+              </h1>
+              <p className="text-text-muted mt-2 text-sm">
+                Real questions, on real screens, at the size they are played.
+                Role tables live in <code className="font-mono">STYLE.md</code>.
+              </p>
+            </div>
+            <VolumeControl />
           </div>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end lg:gap-6">
+            <Select
+              label="Quiz"
+              value={state.quizId}
+              onChange={(event) =>
+                setState((previous) => pickQuiz(previous, event.target.value))
+              }
+            >
+              {QUIZZES.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {`${entry.quiz.subject} (${entry.quiz.questions.length})`}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Question"
+              className="max-w-lg"
+              value={state.question}
+              onChange={(event) =>
+                setState((previous) => ({
+                  ...previous,
+                  question: Number(event.target.value),
+                }))
+              }
+            >
+              {quiz?.questions.map((question, index) => (
+                <option key={index} value={index}>
+                  {`#${index + 1} ${truncate(question.question, 72)}`}
+                </option>
+              ))}
+            </Select>
+            <Toggle
+              label="Room"
+              value={state.room}
+              onChange={(room) =>
+                setState((previous) => ({ ...previous, room }))
+              }
+              options={ROOM_MODES.map((mode) => ({
+                label: mode.label,
+                value: mode.id,
+              }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
+            <Toggle
+              label="Intensity"
+              value={state.intensity}
+              onChange={(intensity) =>
+                setState((previous) => ({ ...previous, intensity }))
+              }
+              options={[
+                { label: "Full", value: "full" },
+                { label: "Calm", value: "calm" },
+                { label: "Silent", value: "silent" },
+              ]}
+            />
             <Toggle
               label="Dialect"
-              value={dialect}
-              onChange={setDialect}
+              value={state.dialect}
+              onChange={(dialect) =>
+                setState((previous) => ({ ...previous, dialect }))
+              }
               options={[
                 { label: "Dark everywhere", value: "dark-everywhere" },
                 { label: "Stage & studio", value: "stage-studio" },
@@ -274,8 +198,10 @@ const Gallery = () => {
             />
             <Toggle
               label="Surface"
-              value={surface}
-              onChange={setSurface}
+              value={state.surface}
+              onChange={(surface) =>
+                setState((previous) => ({ ...previous, surface }))
+              }
               options={[
                 { label: "Stage", value: "stage" },
                 { label: "Studio", value: "studio" },
@@ -284,44 +210,56 @@ const Gallery = () => {
           </div>
         </header>
 
-        <nav className="flex flex-wrap gap-2" aria-label="Gallery states">
-          {STATE_PREVIEWS.map((state, index) => (
+        <div role="tablist" aria-label="Director" className="flex gap-2">
+          {TABS.map((candidate) => (
             <button
-              key={state.id}
+              key={candidate.id}
               type="button"
-              aria-pressed={selectedIndex === index}
+              role="tab"
+              aria-selected={tab === candidate.id}
               className={clsx(
-                "rounded-rz-sm border px-3 py-2 text-sm font-semibold transition",
-                selectedIndex === index
+                "rounded-rz-sm border px-4 py-2 text-sm font-semibold transition",
+                tab === candidate.id
                   ? "border-info-border bg-info-tint text-info"
                   : "border-border bg-panel text-text-muted hover:text-text-primary",
               )}
-              onClick={() => setSelectedIndex(index)}
+              onClick={() => setTab(candidate.id)}
             >
-              {state.label}
+              {candidate.label}
             </button>
           ))}
-        </nav>
+        </div>
 
-        <article className="rounded-rz-xl border-border bg-canvas overflow-hidden border">
-          <header className="border-border bg-panel flex items-center justify-between border-b px-4 py-3">
-            <p className="text-text-primary text-sm font-semibold">
-              {currentState.label}
-            </p>
-            <div className="flex items-center gap-3">
-              <VolumeControl />
-              <p className="text-text-muted text-xs tracking-wider uppercase">
-                fixture
-              </p>
+        <section role="tabpanel" aria-label={tab}>
+          {tab === "states" && (
+            <StatesTab
+              state={state}
+              onFixture={(fixture) =>
+                setState((previous) => pickFixture(previous, fixture))
+              }
+              onSize={(sizeId) =>
+                setState((previous) => pickSize(previous, sizeId))
+              }
+            />
+          )}
+          {tab === "round" && (
+            <RoundTab
+              state={state}
+              onQuestion={(question) =>
+                setState((previous) => ({ ...previous, question }))
+              }
+            />
+          )}
+          {tab === "fit" && (
+            <FitTab report={report} onReport={setReport} onInspect={inspect} />
+          )}
+          {tab === "sound" && (
+            <div className="flex flex-col gap-10">
+              <SoundTab />
+              <ScoreBoard />
             </div>
-          </header>
-          <div className="bg-canvas relative flex min-h-[680px] flex-col overflow-hidden p-4">
-            <Atmosphere recipe="photo" placement="container" />
-            <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-              {currentState.render()}
-            </div>
-          </div>
-        </article>
+          )}
+        </section>
       </div>
     </main>
   )

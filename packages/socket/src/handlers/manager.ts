@@ -2,6 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import {
   backgroundRefValidator,
   dialectValidator,
+  showIntensityValidator,
   soundThemeValidator,
 } from "@razzia/common/validators/visuals"
 import type { SocketContext } from "@razzia/socket/handlers/types"
@@ -116,6 +117,37 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           error instanceof Error
             ? error.message
             : "errors:visuals.soundThemeSetFailed"
+
+        callback?.({ error: message })
+      }
+    }),
+  )
+
+  socket.on(
+    EVENTS.MANAGER.SHOW_INTENSITY_SET,
+    manager.withAuth(socket, ({ showIntensity }, callback) => {
+      try {
+        const result = showIntensityValidator.safeParse(showIntensity)
+
+        if (!result.success) {
+          throw new Error(result.error.issues[0].message)
+        }
+
+        updateGameConfig((config) => ({
+          ...config,
+          visuals: {
+            ...config.visuals,
+            showIntensity: result.data,
+          },
+        }))
+        emitConfig(socket)
+        callback?.({ ok: true })
+      } catch (error) {
+        console.error("Failed to set show intensity:", error)
+        const message =
+          error instanceof Error
+            ? error.message
+            : "errors:visuals.showIntensitySetFailed"
 
         callback?.({ error: message })
       }

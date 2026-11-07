@@ -13,6 +13,8 @@ interface Props {
   onSubmit?: () => void
   length?: number
   className?: string
+  /** Puts the cursor in the first cell, so a PIN can be typed on arrival. */
+  autoFocus?: boolean
 }
 
 const PinInput = ({
@@ -21,6 +23,7 @@ const PinInput = ({
   onSubmit,
   length = 6,
   className,
+  autoFocus = false,
 }: Props) => {
   const refs = useRef<Array<HTMLInputElement | null>>([])
 
@@ -102,6 +105,7 @@ const PinInput = ({
           type="text"
           inputMode="numeric"
           maxLength={1}
+          autoFocus={autoFocus && i === 0}
           value={digit}
           onChange={handleChange(i)}
           onKeyDown={handleKeyDown(i)}

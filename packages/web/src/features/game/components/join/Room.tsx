@@ -16,6 +16,7 @@ const Room = () => {
   const { join, resetStatus } = usePlayerStore()
   const navigate = useNavigate()
   const [invitation, setInvitation] = useState("")
+  const [shake, setShake] = useState(0)
   const { pin } = useSearch({ from: "/(auth)/" })
   const hasJoinedRef = useRef(false)
   const { t } = useTranslation()
@@ -26,6 +27,11 @@ const Room = () => {
 
   useEvent(EVENTS.GAME.SUCCESS_ROOM, (gameId) => {
     join(gameId)
+  })
+
+  // A wrong PIN shakes the cells (the message itself is the toast's).
+  useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
+    setShake((count) => count + 1)
   })
 
   // A player already in a started game goes straight back to it; the game
@@ -47,11 +53,19 @@ const Room = () => {
   return (
     <Card>
       <p className="mb-2 text-lg font-semibold">{t("game:pinLabel")}</p>
-      <PinInput
-        value={invitation}
-        onChange={setInvitation}
-        onSubmit={handleJoin}
-      />
+      {/* A new key restarts the shake on every wrong PIN. */}
+      <div
+        key={shake}
+        data-shake={shake}
+        className={shake > 0 ? "rz-shake" : undefined}
+      >
+        <PinInput
+          autoFocus
+          value={invitation}
+          onChange={setInvitation}
+          onSubmit={handleJoin}
+        />
+      </div>
       <Button className="mt-4" onClick={handleJoin}>
         {t("common:submit")}
       </Button>

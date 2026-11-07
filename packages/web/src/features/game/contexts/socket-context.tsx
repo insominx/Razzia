@@ -14,7 +14,7 @@ import { v7 as uuid } from "uuid"
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
-interface SocketContextValue {
+export interface SocketContextValue {
   socket: TypedSocket
   isConnected: boolean
   clientId: string
@@ -51,7 +51,8 @@ export const socketClient: TypedSocket = io("/", {
   auth: { clientId },
 })
 
-const SocketContext = createContext<SocketContextValue>({
+// Exported for the dev Director, whose harness frames provide a fake socket.
+export const SocketContext = createContext<SocketContextValue>({
   socket: socketClient,
   isConnected: false,
   clientId,

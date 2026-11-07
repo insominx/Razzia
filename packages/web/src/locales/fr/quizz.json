@@ -35,5 +35,42 @@
     "title": "Abandonner les modifications non enregistrées ?",
     "description": "Tes modifications de ce quiz n’ont pas été enregistrées.",
     "discard": "Abandonner"
+  },
+  "fitWarning": {
+    "card": "Risque de ne pas tenir sur le projecteur",
+    "prompt": "Cette question est longue pour le projecteur. Raccourcissez-la ou découpez-la en phrases, sinon elle risque d'être coupée.",
+    "answer": "Une réponse dépasse 90 caractères et risque de ne pas tenir dans sa case."
+  },
+  "rehearse": {
+    "button": "Répéter",
+    "buttonHint": "Jouer ce quiz sur les écrans du projecteur et du téléphone tel qu'il est, modifications non enregistrées comprises",
+    "unavailable": "Le navigateur n'a pas conservé le brouillon : la répétition n'a pas pu s'ouvrir.",
+    "title": "Répétition : {{subject}}",
+    "empty": "Rien à répéter pour l'instant. Ouvrez un quiz dans l'éditeur et choisissez Répéter.",
+    "previousQuestion": "Question précédente",
+    "nextQuestion": "Question suivante",
+    "questionOf": "Question {{current}} sur {{total}}",
+    "view": {
+      "host": "Projecteur",
+      "phone": "Téléphone"
+    },
+    "screens": {
+      "question": "Question",
+      "answers": "Réponses ouvertes",
+      "reveal": "Le décompte · la salle a juste",
+      "reveal-wrong": "Le décompte · la salle se trompe",
+      "wait": "Réponse validée",
+      "verdict": "Juste",
+      "verdict-wrong": "Faux",
+      "verdict-none": "Sans réponse"
+    },
+    "replay": "Rejouer",
+    "frameTitle": "Écran de répétition",
+    "keys": "← → écran · ↑ ↓ question · R rejouer · P projecteur ou téléphone",
+    "placeholder": {
+      "subject": "Quiz sans titre",
+      "question": "Votre question va ici",
+      "answer": "Réponse"
+    }
   }
 }

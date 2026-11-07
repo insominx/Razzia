@@ -16,6 +16,7 @@ import type {
   BackgroundRef,
   Dialect,
   ResolvedVisuals,
+  ShowIntensity,
   SoundTheme,
 } from "@razzia/common/types/visuals"
 import { Server as ServerIO, Socket as SocketIO } from "socket.io"
@@ -158,6 +159,10 @@ export interface ClientToServerEvents {
   ) => void
   [EVENTS.MANAGER.SOUND_THEME_SET]: (
     _request: { soundTheme: SoundTheme },
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
+  [EVENTS.MANAGER.SHOW_INTENSITY_SET]: (
+    _request: { showIntensity: ShowIntensity },
     _callback?: (_response: ManagerMutationResponse) => void,
   ) => void
   [EVENTS.MANAGER.LOGOUT]: () => void

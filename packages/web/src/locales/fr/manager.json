@@ -25,6 +25,10 @@
       "techno": {
         "description": "Pack techno complet : ambiance techno pendant les réponses et sons techno pour l’interface et le podium.",
         "title": "Techno"
+      },
+      "show": {
+        "title": "Show",
+        "description": "Une bande-son générée qui suit la manche : discrète pendant la lecture, un drop à l'ouverture des réponses et un coup pour le verdict. Elle monte un peu à chaque question."
       }
     },
     "invalidType": "Choisissez un fichier image",
@@ -34,7 +38,22 @@
     "upload": "Importer un arrière-plan",
     "uploading": "Importation en cours",
     "globalDefaultHelp": "Arrière-plan global par défaut pour les parties sans override de quizz.",
-    "uploadLimits": "PNG, JPEG, WebP ou GIF jusqu'à 5 Mo."
+    "uploadLimits": "PNG, JPEG, WebP ou GIF jusqu'à 5 Mo.",
+    "showIntensity": {
+      "label": "Intensité du show",
+      "full": {
+        "title": "Complet",
+        "description": "Flashs lumineux et coups sonores sur tout l'écran, un projecteur sur la réponse la plus choisie et la musique complète."
+      },
+      "calm": {
+        "title": "Calme",
+        "description": "Pas de flashs plein écran, de projecteur ni de faisceaux. Le verdict se joue sur la tuile. Musique 12 dB plus basse, sans groove pendant les réponses."
+      },
+      "silent": {
+        "title": "Silencieux",
+        "description": "Calme, sans aucun son."
+      }
+    }
   },
   "quizz": {
     "create": "Créer un quizz",
@@ -47,7 +66,9 @@
     "pleaseCreate": "Veuillez d'abord créer un quizz",
     "pleaseSelect": "Veuillez sélectionner un quizz",
     "startGame": "Démarrer la partie",
-    "invalidJson": "Fichier JSON invalide"
+    "invalidJson": "Fichier JSON invalide",
+    "questionCount_one": "{{count}} question",
+    "questionCount_other": "{{count}} questions"
   },
   "result": {
     "delete": "Supprimer le résultat",

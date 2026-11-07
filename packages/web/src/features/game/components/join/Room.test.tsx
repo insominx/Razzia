@@ -49,4 +49,32 @@ describe("Room rejoin", () => {
       params: { gameId: "game-7" },
     })
   })
+
+  it("puts the cursor in the first PIN cell on arrival", () => {
+    const { container } = render(<Room />)
+
+    expect(document.activeElement).toBe(container.querySelector("input"))
+  })
+
+  it("shakes the PIN cells on a wrong PIN, and again on the next", () => {
+    const { container } = render(<Room />)
+
+    expect(container.querySelector("[data-shake]")).not.toHaveClass("rz-shake")
+
+    act(() => {
+      handlers.get(EVENTS.GAME.ERROR_MESSAGE)?.("errors:game.notFound")
+    })
+
+    const first = container.querySelector("[data-shake]")
+
+    expect(first).toHaveClass("rz-shake")
+
+    act(() => {
+      handlers.get(EVENTS.GAME.ERROR_MESSAGE)?.("errors:game.notFound")
+    })
+
+    // A new element, so the animation restarts.
+    expect(container.querySelector("[data-shake]")).not.toBe(first)
+    expect(container.querySelector("[data-shake]")).toHaveClass("rz-shake")
+  })
 })

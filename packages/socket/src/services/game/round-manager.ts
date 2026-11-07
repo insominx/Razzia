@@ -89,6 +89,9 @@ export class RoundManager {
   private startTime = 0
   private leaderboard: Player[] = []
   private tempOldLeaderboard: Player[] | null = null
+  // False for the first scored question: its "before" is only the join order,
+  // which is no place a player was ever in.
+  private previousPlaceKnown = false
   private questionsHistory: QuestionResult[] = []
   private phase: RoundPhase = "idle"
   private questionGeneration = 0
@@ -198,6 +201,7 @@ export class RoundManager {
       question: question.question,
       media: imageMedia,
       cooldown: question.cooldown,
+      answerCount: question.answers.length,
       promptStartedAt,
       serverNow: promptStartedAt,
     })
@@ -225,6 +229,7 @@ export class RoundManager {
       answers: question.answers,
       media: question.media,
       time: question.time,
+      cooldown: question.cooldown,
       totalPlayer: this.opts.players.count(),
       revealStartedAt,
       unlockAt,
@@ -272,6 +277,7 @@ export class RoundManager {
       answers: question.answers,
       media: question.media,
       time: question.time,
+      cooldown: question.cooldown,
       totalPlayer: this.opts.players.count(),
       revealStartedAt,
       unlockAt,
@@ -313,6 +319,10 @@ export class RoundManager {
       {},
     )
 
+    const resultsAt = Date.now()
+    const previousRanks = new Map(
+      this.leaderboard.map((player, index) => [player.clientId, index + 1]),
+    )
     const sortedPlayers = currentPlayers
       .map((player) => {
         const playerAnswer = this.playersAnswers.find(
@@ -346,6 +356,18 @@ export class RoundManager {
         myPoints: player.points,
         rank,
         aheadOfMe: aheadPlayer ? aheadPlayer.username : null,
+        resultsAt,
+        serverNow: resultsAt,
+        picked:
+          this.playersAnswers.find((a) => a.clientId === player.clientId)
+            ?.answerId ?? null,
+        correctAnswers: question.solutions.map(
+          (slot) => question.answers[slot],
+        ),
+        previousRank: previousRanks.get(player.clientId) ?? null,
+        streak: player.streak,
+        totalPlayers: sortedPlayers.length,
+        behind: aheadPlayer ? aheadPlayer.points - player.points : null,
         ...this.lectureNote(),
       })
     })
@@ -354,6 +376,10 @@ export class RoundManager {
       ...question,
       questionNumber: this.currentQuestion + 1,
       responses: totalType,
+      resultsAt,
+      serverNow: resultsAt,
+      totalPlayers: sortedPlayers.length,
+      fastest: this.fastestRightAnswer(question, sortedPlayers),
     })
 
     this.questionsHistory.push({
@@ -366,9 +392,42 @@ export class RoundManager {
       })),
     })
 
+    this.previousPlaceKnown = this.leaderboard.length > 0
     this.leaderboard = sortedPlayers
     this.tempOldLeaderboard = oldLeaderboard
     this.playersAnswers = []
+  }
+
+  /** The player who gave a right answer soonest, for the results headline. */
+  private fastestRightAnswer(
+    question: Question,
+    players: ReadonlyArray<{ clientId: string; username: string }>,
+  ): { username: string; seconds: number } | null {
+    const rightAnswers = this.playersAnswers.filter(
+      (answer) =>
+        question.solutions.includes(answer.answerId) &&
+        answer.elapsedMs !== undefined,
+    )
+
+    if (rightAnswers.length === 0) {
+      return null
+    }
+
+    const quickest = rightAnswers.reduce((best, answer) =>
+      (answer.elapsedMs ?? Infinity) < (best.elapsedMs ?? Infinity)
+        ? answer
+        : best,
+    )
+    const player = players.find(
+      (candidate) => candidate.clientId === quickest.clientId,
+    )
+
+    return player
+      ? {
+          username: player.username,
+          seconds: Math.round((quickest.elapsedMs ?? 0) / 100) / 10,
+        }
+      : null
   }
 
   stop(): void {
@@ -410,10 +469,13 @@ export class RoundManager {
       clientId: player.clientId,
       answerId,
       points,
+      elapsedMs: Math.max(0, Date.now() - this.startTime),
     })
 
     this.opts.send(socket.id, STATUS.WAIT, {
       text: "game:waitingForAnswers",
+      answered: this.playersAnswers.length,
+      total: this.opts.players.count(),
     })
 
     socket
@@ -616,6 +678,54 @@ export class RoundManager {
     }
   }
 
+  // Each phone's own place, so nobody outside the top five is left guessing.
+  // A lecture game holds between questions on its own note instead.
+  private sendStandings(previous: Player[]): void {
+    if (this.opts.lecture) {
+      return
+    }
+
+    const previousRanks = new Map(
+      this.previousPlaceKnown
+        ? previous.map((player, index) => [player.clientId, index + 1])
+        : [],
+    )
+    const current = new Map(
+      this.opts.players.getAll().map((player) => [player.clientId, player.id]),
+    )
+
+    this.leaderboard.forEach((player, index) => {
+      const id = current.get(player.clientId)
+
+      if (!id) {
+        return
+      }
+
+      const ahead = this.leaderboard[index - 1]
+      const shown = new Set([0, index - 1, index, index + 1])
+      const ladder = this.leaderboard
+        .map((entry, rowIndex) => ({
+          rank: rowIndex + 1,
+          username: entry.username,
+          points: entry.points,
+          me: rowIndex === index,
+        }))
+        .filter((row) => shown.has(row.rank - 1))
+
+      this.opts.send(id, STATUS.SHOW_STANDING, {
+        rank: index + 1,
+        previousRank: previousRanks.get(player.clientId) ?? null,
+        points: player.points,
+        gained: (player as Player & { lastPoints?: number }).lastPoints ?? 0,
+        total: this.leaderboard.length,
+        ladder,
+        behind: ahead
+          ? { username: ahead.username, points: ahead.points - player.points }
+          : null,
+      })
+    })
+  }
+
   // A copy: sorting PlayerManager's own array would reorder it.
   private rankedPlayers(): Player[] {
     return [...this.opts.players.getAll()].sort((a, b) => b.points - a.points)
@@ -652,6 +762,8 @@ export class RoundManager {
         subject: this.opts.quizz.subject,
         top,
         rank: index + 1,
+        total: ranked.length,
+        points: player.points,
       })
     })
   }
@@ -725,6 +837,8 @@ export class RoundManager {
       oldLeaderboard: oldLeaderboard.slice(0, 5).map(toPublicPlayer),
       leaderboard: this.leaderboard.slice(0, 5).map(toPublicPlayer),
     })
+
+    this.sendStandings(oldLeaderboard)
 
     this.tempOldLeaderboard = null
   }

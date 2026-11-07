@@ -37,6 +37,25 @@ describe("gameConfigValidator", () => {
     })
 
     expect(result.managerPassword).toBe("secret")
-    expect(result.visuals?.soundTheme).toBe("classic")
+    expect(result.visuals?.soundTheme).toBe("show")
+  })
+
+  it("falls back an unknown show intensity without discarding password", () => {
+    const result = gameConfigValidator.parse({
+      managerPassword: "secret",
+      visuals: { showIntensity: "extreme" },
+    })
+
+    expect(result.managerPassword).toBe("secret")
+    expect(result.visuals?.showIntensity).toBe("full")
+  })
+
+  it("keeps a valid show intensity", () => {
+    const result = gameConfigValidator.parse({
+      managerPassword: "secret",
+      visuals: { showIntensity: "silent" },
+    })
+
+    expect(result.visuals?.showIntensity).toBe("silent")
   })
 })

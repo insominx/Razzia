@@ -6,6 +6,7 @@ import {
   useEvent,
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
+import { openRehearsal } from "@razzia/web/features/rehearse/draft"
 import QuizzBackgroundControl from "@razzia/web/features/quizz/components/QuizzBackgroundControl"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import { useNavigate } from "@tanstack/react-router"
@@ -14,8 +15,15 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 const QuizzEditorHeader = () => {
-  const { quizzId, subject, setSubject, questions, background, isDirty } =
-    useQuizzEditor()
+  const {
+    quizzId,
+    subject,
+    setSubject,
+    questions,
+    currentIndex,
+    background,
+    isDirty,
+  } = useQuizzEditor()
   const { socket } = useSocket()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -44,6 +52,15 @@ const QuizzEditorHeader = () => {
 
   const handleChangeSubject = (e: ChangeEvent<HTMLInputElement>) => {
     setSubject(e.target.value)
+  }
+
+  // The quiz as it stands on screen, saved or not, played on the real screens.
+  const handleRehearse = () => {
+    const opened = openRehearsal({ subject, questions, at: currentIndex })
+
+    if (!opened) {
+      toast.error(t("quizz:rehearse.unavailable"))
+    }
   }
 
   const handleSave = () => {
@@ -109,6 +126,13 @@ const QuizzEditorHeader = () => {
             {t("common:exit")}
           </Button>
         )}
+        <Button
+          className="bg-panel border-border text-text-body text-md border px-4 py-2 font-semibold"
+          onClick={handleRehearse}
+          title={t("quizz:rehearse.buttonHint")}
+        >
+          {t("quizz:rehearse.button")}
+        </Button>
         <Button className="text-md px-4 py-2" onClick={handleSave}>
           {t("common:save")}
         </Button>

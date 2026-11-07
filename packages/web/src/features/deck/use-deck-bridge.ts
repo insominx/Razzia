@@ -1,6 +1,7 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { LectureOutcome } from "@razzia/common/types/game"
 import { STATUS } from "@razzia/common/types/game/status"
+import { applyBackdrop } from "@razzia/web/features/deck/backdrop"
 import { isAllowedDeckOrigin } from "@razzia/web/features/deck/embed"
 import {
   forgetGame,
@@ -318,6 +319,12 @@ export const useDeckBridge = () => {
 
     if (command.type === "controls") {
       useManagerStore.getState().setHostControls(command.shown)
+
+      return
+    }
+
+    if (command.type === "backdrop") {
+      applyBackdrop(command.mode)
 
       return
     }

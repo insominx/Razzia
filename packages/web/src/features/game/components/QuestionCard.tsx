@@ -2,12 +2,15 @@ import type { QuestionMedia as QuestionMediaType } from "@razzia/common/types/ga
 import {
   QUESTION_CONTENT_ENTER_MS,
   QUESTION_SENTENCE_FADE_MS,
-  splitQuestionSentences,
 } from "@razzia/common/utils/question-transition"
 import QuestionMedia from "@razzia/web/components/QuestionMedia"
+import {
+  promptSentences,
+  promptVars,
+} from "@razzia/web/features/game/utils/type-tier"
 import clsx from "clsx"
 import { animate, motion, useMotionValue, useReducedMotion } from "motion/react"
-import { useLayoutEffect, useRef } from "react"
+import { useLayoutEffect, useMemo, useRef } from "react"
 
 const QUESTION_LAYOUT_ID = "game-question"
 
@@ -17,7 +20,15 @@ export const QUESTION_LAYOUT_MODE = "position" as const
 
 export const QUESTION_LAYOUT_TRANSITION_MS = QUESTION_CONTENT_ENTER_MS
 
-const CARD_GEOMETRY = "px-6 py-8 md:px-10 md:py-10"
+const CARD_GEOMETRY = "px-1 py-3 stage:p-0"
+
+/** The scene-setting lines: smaller, and a step back from the ask. */
+const CONTEXT_TYPE =
+  "block text-lg leading-snug font-medium text-text-body stage:text-(length:--rz-ctx) stage:leading-[1.18]"
+
+/** The real question: the largest thing on the screen. */
+const ASK_TYPE =
+  "block text-[1.625rem] leading-tight font-bold text-text-primary stage:text-(length:--rz-ask) stage:leading-[1.04] stage:tracking-[-0.015em]"
 
 interface Props {
   question: string
@@ -30,7 +41,9 @@ interface Props {
 
 /**
  * Stable question geometry shared by the prompt and answering screens, so the
- * text can translate between them without reflowing first.
+ * text can translate between them without reflowing first. Its type size is
+ * decided by the question text alone (`promptVars`), so it is the same size on
+ * every screen the question appears on.
  */
 const QuestionCard = ({
   question,
@@ -41,7 +54,8 @@ const QuestionCard = ({
   shouldLift = false,
 }: Props) => {
   const reducedMotion = useReducedMotion()
-  const sentences = splitQuestionSentences(question)
+  const sentences = useMemo(() => promptSentences(question), [question])
+  const vars = useMemo(() => promptVars(question), [question])
   const shownCount = reveal
     ? (visibleCount ?? sentences.length)
     : sentences.length
@@ -89,9 +103,10 @@ const QuestionCard = ({
     >
       <h2
         ref={stackRef}
-        className="text-text-primary flex w-full flex-col gap-3 text-center text-2xl font-bold md:text-4xl lg:text-5xl"
+        style={vars}
+        className="stage:gap-2 flex w-full flex-col gap-3 text-center text-balance"
       >
-        {sentences.map((sentence, index) => {
+        {sentences.map(({ lead, ask }, index) => {
           const visible = index < shownCount
 
           return (
@@ -100,7 +115,7 @@ const QuestionCard = ({
               ref={index === 0 ? firstSentenceRef : undefined}
               data-question-sentence=""
               data-question-sentence-state={visible ? "visible" : "reserved"}
-              className="block w-full whitespace-pre-line text-center text-balance"
+              className="block w-full text-center whitespace-pre-line"
               initial={reveal && !reducedMotion ? { opacity: 0 } : false}
               animate={{ opacity: visible ? 1 : 0 }}
               transition={{
@@ -108,7 +123,8 @@ const QuestionCard = ({
                 ease: "linear",
               }}
             >
-              {sentence}
+              {lead && <span className={CONTEXT_TYPE}>{lead}</span>}
+              {ask !== null && <span className={ASK_TYPE}>{ask}</span>}
             </motion.span>
           )
         })}

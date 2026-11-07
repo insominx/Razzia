@@ -48,7 +48,9 @@ export const restampReconnectStatus = <T extends StatusSnapshot>(
 ): T => {
   if (
     status.name !== STATUS.SELECT_ANSWER &&
-    status.name !== STATUS.SHOW_QUESTION
+    status.name !== STATUS.SHOW_QUESTION &&
+    status.name !== STATUS.SHOW_RESULT &&
+    status.name !== STATUS.SHOW_RESPONSES
   ) {
     return status
   }

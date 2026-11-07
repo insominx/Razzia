@@ -2,9 +2,10 @@ import { MEDIA_TYPES } from "@razzia/common/constants"
 import type { QuestionMedia } from "@razzia/common/types/game"
 import AlertDialog from "@razzia/web/components/AlertDialog"
 import { ANSWER_IDENTITY } from "@razzia/web/features/game/utils/constants"
+import { questionFitProblems } from "@razzia/web/features/game/utils/question-fit"
 import { type QuestionWithId } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
-import { Music, Trash2, Video } from "lucide-react"
+import { Music, Trash2, TriangleAlert, Video } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
 
@@ -44,6 +45,7 @@ const QuizzEditorCard = ({
   onDelete,
 }: Props) => {
   const { t } = useTranslation()
+  const problems = questionFitProblems(question)
 
   return (
     <div
@@ -60,6 +62,17 @@ const QuizzEditorCard = ({
       <span className="text-text-faint absolute top-2 left-2 text-xs font-semibold">
         {index + 1}
       </span>
+      {problems.length > 0 && (
+        <span
+          data-fit-warning={problems.join(" ")}
+          role="img"
+          aria-label={t("quizz:fitWarning.card")}
+          title={t("quizz:fitWarning.card")}
+          className="text-warning absolute bottom-1.5 left-1.5"
+        >
+          <TriangleAlert className="size-4" />
+        </span>
+      )}
       <p className="text-text-body line-clamp-2 text-center text-xs font-semibold wrap-break-word">
         {question.question || t("quizz:noQuestionYet")}
       </p>

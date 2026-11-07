@@ -25,6 +25,10 @@
       "techno": {
         "description": "テクノパック一式。回答中のテクノのベッドに加え、UI と表彰台の効果音もテクノになります。",
         "title": "テクノ"
+      },
+      "show": {
+        "title": "ショー",
+        "description": "ラウンドに合わせて生成されるスコア。読み上げ中は静かに、回答が開くとドロップ、結果発表でヒット。問題ごとに少しずつ上がります。"
       }
     },
     "invalidType": "画像ファイルを選択してください",
@@ -34,7 +38,22 @@
     "upload": "背景をアップロード",
     "uploading": "アップロード中",
     "globalDefaultHelp": "クイズ固有の背景がないゲームに使うグローバル既定背景です。",
-    "uploadLimits": "PNG / JPEG / WebP / GIF、最大 5 MB。"
+    "uploadLimits": "PNG / JPEG / WebP / GIF、最大 5 MB。",
+    "showIntensity": {
+      "label": "ショーの強さ",
+      "full": {
+        "title": "フル",
+        "description": "画面全体を満たす光と音のインパクト、最も選ばれた答えへのスポットライト、フルのスコア。"
+      },
+      "calm": {
+        "title": "穏やか",
+        "description": "全画面のインパクト、スポットライト、光線なし。結果はタイル上で示されます。音楽は12 dB小さく、回答中のグルーヴなし。"
+      },
+      "silent": {
+        "title": "消音",
+        "description": "穏やかモードで、音声は一切なし。"
+      }
+    }
   },
   "quizz": {
     "create": "クイズを作成",
@@ -47,7 +66,9 @@
     "pleaseCreate": "先にクイズを作成してください",
     "pleaseSelect": "クイズを選択してください",
     "startGame": "ゲーム開始",
-    "invalidJson": "無効なJSONファイルです"
+    "invalidJson": "無効なJSONファイルです",
+    "questionCount_one": "{{count}}問",
+    "questionCount_other": "{{count}}問"
   },
   "result": {
     "delete": "結果を削除",

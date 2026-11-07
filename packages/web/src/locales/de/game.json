@@ -2,8 +2,9 @@
   "correct": "Richtig!",
   "gamePinLabel": "Spiel-PIN:",
   "hud": {
-    "responses": "Antworten",
-    "time": "Zeit"
+    "responses": "Beantwortet",
+    "time": "Zeit",
+    "opensIn": "Öffnet in"
   },
   "joinInstruction": "Tritt dem Spiel bei auf",
   "leaderboard": "Bestenliste",
@@ -17,8 +18,6 @@
     "other": "{{rank}}. Platz"
   },
   "rankSuffix": ". Platz",
-  "resultBehind": ", hinter ",
-  "resultTop": "Du hast ",
   "startGame": "Spiel starten",
   "usernamePlaceholder": "Benutzername hier",
   "waitingForAnswers": "Warten auf die Antworten der Spieler",
@@ -34,5 +33,47 @@
   "yourAnswer": "Deine Antwort",
   "lectureNextQuestion": "Die nächste Frage kommt im Lauf der Vorlesung.",
   "lectureFinalStandings": "Der Endstand kommt am Ende der Vorlesung.",
-  "lectureJoinHint": "Mitmachen unter {{url}} · PIN {{pin}}"
+  "lectureJoinHint": "Mitmachen unter {{url}} · PIN {{pin}}",
+  "reveal": {
+    "time": "ZEIT",
+    "allIn": "ALLE FERTIG",
+    "headline": {
+      "crowdWrong": "Nur {{right}} von {{of}} wussten es. {{wrong}} sind auf {{letters}} hereingefallen.",
+      "crowdRight": "{{right}} von {{of}} wussten es.",
+      "everyone": "Alle wussten es.",
+      "nobody": "Niemand hat geantwortet."
+    },
+    "fastest": "Am schnellsten: {{name}}, {{seconds}} s"
+  },
+  "noAnswer": "Keine Antwort",
+  "itWas": "Es war",
+  "streak": "{{count}} in Folge",
+  "standing": "Du bist {{place}}",
+  "standingBehind": "Du bist {{place}}, hinter {{name}}",
+  "lockedIn": "Abgegeben",
+  "answeredOf": "{{answered}} von {{total}} dabei",
+  "standingUp": "▲{{count}} seit der letzten Frage",
+  "standingDown": "▼{{count}} seit der letzten Frage",
+  "standingGap": "{{points}} hinter {{name}}. Noch eine schnelle Antwort und du ziehst vorbei.",
+  "standingLeader": "Du führst. Weiter so.",
+  "finishedSummary": "{{points}} Punkte · {{rank}} von {{total}}",
+  "medal": {
+    "1": "Gold",
+    "2": "Silber",
+    "3": "Bronze"
+  },
+  "board": {
+    "newLeader": "{{name}} übernimmt die Führung von {{other}}",
+    "overtook": "{{name}} überholt {{other}}",
+    "enters": "{{name}} steigt in die Top 5 auf",
+    "biggestGain": "{{name}} hat am meisten geholt: +{{points}}",
+    "tight": "Nur {{points}} Punkte trennen {{name}} und {{other}}",
+    "leads": "{{name}} führt mit {{points}}"
+  },
+  "questionOf": "Frage {{number}} von {{total}}",
+  "finalQuestion": "Letzte Frage",
+  "go": "LOS",
+  "seatsMore": "+{{count}} weitere",
+  "youreIn": "Du bist dabei, {{name}}",
+  "playersHere": "{{count}} dabei"
 }

@@ -207,6 +207,21 @@ describe("useDeckBridge", () => {
     )
   })
 
+  it("lets the slide show through when the deck asks, and not otherwise", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+
+    expect(document.documentElement.dataset.backdrop).toBeUndefined()
+
+    sendCommand({ type: "backdrop", mode: "slide" })
+    expect(document.documentElement.dataset.backdrop).toBe("slide")
+
+    sendCommand({ type: "backdrop", mode: "own" })
+    expect(document.documentElement.dataset.backdrop).toBeUndefined()
+  })
+
   it("starts quiet and goes quiet again when the deck hides the page", () => {
     stubStorage()
     const { unmount } = renderHook(() => {

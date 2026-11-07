@@ -87,6 +87,51 @@ describe("restampReconnectStatus", () => {
     expect(showQuestionStatus.data.serverNow).toBe(1_100)
   })
 
+  it("refreshes serverNow on the staged verdict, so a reconnect lands at the right beat", () => {
+    const result: {
+      name: typeof STATUS.SHOW_RESULT
+      data: StatusDataMap["SHOW_RESULT"]
+    } = {
+      name: STATUS.SHOW_RESULT,
+      data: {
+        correct: true,
+        message: "game:correct",
+        points: 840,
+        myPoints: 9_640,
+        rank: 1,
+        aheadOfMe: null,
+        resultsAt: 5_000,
+        serverNow: 5_000,
+      },
+    }
+    const responses: {
+      name: typeof STATUS.SHOW_RESPONSES
+      data: StatusDataMap["SHOW_RESPONSES"]
+    } = {
+      name: STATUS.SHOW_RESPONSES,
+      data: {
+        questionNumber: 1,
+        question: "Which?",
+        responses: { 0: 3 },
+        solutions: [0],
+        answers: ["A", "B"],
+        resultsAt: 5_000,
+        serverNow: 5_000,
+      },
+    }
+
+    for (const status of [result, responses]) {
+      const restamped = restampReconnectStatus(status, 7_250)
+
+      expect(restamped).not.toBe(status)
+      expect(restamped.data).toMatchObject({
+        resultsAt: 5_000,
+        serverNow: 7_250,
+      })
+      expect(status.data.serverNow).toBe(5_000)
+    }
+  })
+
   it("leaves WAIT selected and unchanged", () => {
     const wait = {
       name: STATUS.WAIT,

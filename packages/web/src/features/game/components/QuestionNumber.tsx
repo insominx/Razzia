@@ -2,6 +2,7 @@ import {
   QUESTION_CONTENT_ENTER_MS,
   QUESTION_NUMBER_FADE_MS,
 } from "@razzia/common/utils/question-transition"
+import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import clsx from "clsx"
 import { motion, useReducedMotion } from "motion/react"
 import { useTranslation } from "react-i18next"
@@ -22,6 +23,19 @@ const QuestionNumber = ({
 }: Props) => {
   const { t } = useTranslation()
   const reducedMotion = useReducedMotion()
+  const total = useQuestionStore((state) => state.questionStates?.total)
+  // "Question 4 of 6", and "Final question" on the last; a quiz of one, or one
+  // whose length is not known, keeps the plain number.
+  const known = total !== undefined && total > 1
+  const label = (() => {
+    if (!known) {
+      return `${t("game:questionPrefix")}${questionNumber}`
+    }
+
+    return questionNumber === total
+      ? t("game:finalQuestion")
+      : t("game:questionOf", { number: questionNumber, total })
+  })()
 
   return (
     <motion.p
@@ -42,12 +56,11 @@ const QuestionNumber = ({
       data-question-number-layout={QUESTION_NUMBER_LAYOUT_ID}
       data-question-number-phase={intro ? "intro" : "settled"}
       className={clsx(
-        "text-text-primary text-center text-2xl font-bold md:text-3xl 2xl:text-4xl",
+        "text-text-muted stage:text-[1.75rem] text-center text-xl leading-none font-bold tracking-[0.12em] uppercase",
         className,
       )}
     >
-      {t("game:questionPrefix")}
-      {questionNumber}
+      {label}
     </motion.p>
   )
 }

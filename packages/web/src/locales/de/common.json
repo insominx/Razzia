@@ -22,5 +22,6 @@
     "unmute": "Stummschaltung aufheben",
     "volume": "Lautstärke"
   },
-  "submit": "Absenden"
+  "submit": "Absenden",
+  "reconnecting": "Verbindung wird wiederhergestellt…"
 }

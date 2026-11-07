@@ -25,6 +25,10 @@
       "techno": {
         "description": "Pack techno completo: base techno durante le risposte e suoni techno per interfaccia e podio.",
         "title": "Techno"
+      },
+      "show": {
+        "title": "Show",
+        "description": "Una colonna sonora generata che segue il round: sommessa durante la lettura, un drop quando si aprono le risposte e un colpo per il verdetto. Sale un po' a ogni domanda."
       }
     },
     "invalidType": "Scegli un file immagine",
@@ -34,7 +38,22 @@
     "upload": "Carica sfondo",
     "uploading": "Caricamento",
     "globalDefaultHelp": "Sfondo globale predefinito per le partite senza override del quiz.",
-    "uploadLimits": "PNG, JPEG, WebP o GIF fino a 5 MB."
+    "uploadLimits": "PNG, JPEG, WebP o GIF fino a 5 MB.",
+    "showIntensity": {
+      "label": "Intensità dello show",
+      "full": {
+        "title": "Completo",
+        "description": "Lampi e colpi sonori a tutto schermo, un faro sulla risposta più scelta e la colonna sonora completa."
+      },
+      "calm": {
+        "title": "Calmo",
+        "description": "Niente colpi a schermo intero, faro o fasci di luce. Il verdetto avviene sulla tessera. Musica 12 dB più bassa, senza groove durante le risposte."
+      },
+      "silent": {
+        "title": "Silenzioso",
+        "description": "Calmo, senza alcun audio."
+      }
+    }
   },
   "quizz": {
     "create": "Crea quiz",
@@ -47,7 +66,9 @@
     "pleaseCreate": "Per favore crea prima un quiz",
     "pleaseSelect": "Per favore seleziona un quiz",
     "startGame": "Inizia il gioco",
-    "invalidJson": "File JSON non valido"
+    "invalidJson": "File JSON non valido",
+    "questionCount_one": "{{count}} domanda",
+    "questionCount_other": "{{count}} domande"
   },
   "result": {
     "delete": "Elimina risultato",

@@ -1,9 +1,6 @@
+import Atmosphere from "@razzia/web/components/Atmosphere"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-
-vi.mock("@razzia/web/assets/background.png", () => ({
-  default: "/bundled-background.png",
-}))
 
 afterEach(() => {
   cleanup()
@@ -18,16 +15,6 @@ const getPhoto = (): HTMLImageElement => {
   }
 
   return photo
-}
-
-const getPhotoAtmosphere = (): HTMLDivElement => {
-  const atmosphere = getPhoto().parentElement
-
-  if (!(atmosphere instanceof HTMLDivElement)) {
-    throw new TypeError("Expected the photo to be inside an atmosphere layer")
-  }
-
-  return atmosphere
 }
 
 const setPhotoDimensions = (photo: HTMLImageElement) => {
@@ -49,58 +36,145 @@ const mockCanvasLuminance = (value: number) => {
   )
 }
 
-describe("Atmosphere", () => {
-  it("falls back to the bundled photo when the host image errors", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
+const activeMoods = (container: HTMLElement) =>
+  [...container.querySelectorAll("[data-mood][data-on]")].map(
+    (layer) => (layer as HTMLElement).dataset.mood,
+  )
+
+describe("Atmosphere backdrop", () => {
+  it("is made in code: no photo is downloaded by default", () => {
+    const { container } = render(<Atmosphere recipe="photo" />)
+
+    expect(screen.queryByRole("presentation", { hidden: true })).toBeNull()
+    expect(container.querySelector("img")).toBeNull()
+    expect(container.querySelector(".rz-backdrop")).not.toBeNull()
+  })
+
+  it("uses viewport placement by default and can stay inside a container", () => {
+    const { container, rerender } = render(<Atmosphere recipe="photo" />)
+
+    expect(container.firstElementChild).toHaveClass("fixed")
+    expect(container.firstElementChild).not.toHaveClass("absolute")
+
+    rerender(<Atmosphere recipe="photo" placement="container" />)
+
+    expect(container.firstElementChild).toHaveClass("absolute")
+    expect(container.firstElementChild).not.toHaveClass("fixed")
+  })
+
+  it("is hidden from assistive tech and never takes a click", () => {
+    const { container } = render(<Atmosphere recipe="photo" />)
+
+    expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true")
+    expect(container.firstElementChild).toHaveClass("pointer-events-none")
+  })
+})
+
+describe("Atmosphere mood", () => {
+  it("rests on the cool mood", () => {
+    const { container } = render(<Atmosphere recipe="photo" />)
+
+    expect(activeMoods(container)).toEqual(["cool"])
+  })
+
+  it("lights one mood at a time, with every mood present to crossfade", () => {
+    const { container, rerender } = render(
+      <Atmosphere recipe="photo" mood="teal" />,
+    )
+
+    expect(container.querySelectorAll("[data-mood]")).toHaveLength(5)
+    expect(activeMoods(container)).toEqual(["teal"])
+
+    rerender(<Atmosphere recipe="photo" mood="warm" />)
+
+    expect(activeMoods(container)).toEqual(["warm"])
+  })
+
+  it("opens and closes the show with beams, and only in the full show", () => {
+    const beamsOn = (container: HTMLElement) =>
+      container.querySelectorAll(".rz-beam[data-on]").length
+
+    const cool = render(<Atmosphere recipe="photo" mood="cool" />)
+    expect(beamsOn(cool.container)).toBe(0)
+    cleanup()
+
+    const teal = render(<Atmosphere recipe="photo" mood="teal" />)
+    expect(beamsOn(teal.container)).toBe(2)
+    cleanup()
+
+    const gold = render(<Atmosphere recipe="photo" mood="gold" />)
+    expect(beamsOn(gold.container)).toBe(2)
+    cleanup()
+
+    const calm = render(<Atmosphere recipe="photo" mood="gold" calm />)
+    expect(beamsOn(calm.container)).toBe(0)
+  })
+
+  it("sends up embers while the room runs warm, unless it is calm", () => {
+    const warm = render(<Atmosphere recipe="photo" mood="warm" />)
+    expect(warm.container.querySelectorAll(".rz-ember")).toHaveLength(12)
+    cleanup()
+
+    const cool = render(<Atmosphere recipe="photo" mood="cool" />)
+    expect(cool.container.querySelector("[data-embers]")).toBeNull()
+    cleanup()
+
+    const calm = render(<Atmosphere recipe="photo" mood="warm" calm />)
+    expect(calm.container.querySelector("[data-embers]")).toBeNull()
+  })
+
+  it("still lights the mood when calm: the picture stays", () => {
+    const { container } = render(<Atmosphere recipe="photo" mood="warm" calm />)
+
+    expect(activeMoods(container)).toEqual(["warm"])
+  })
+})
+
+describe("Atmosphere photo", () => {
+  it("shows an uploaded photo above the backdrop", () => {
+    const { container } = render(
+      <Atmosphere recipe="photo" backgroundUrl="/mine.jpg" />,
+    )
+    const img = getPhoto()
+
+    expect(img.getAttribute("src")).toBe("/mine.jpg")
+    // The bug this guards: an unpositioned image paints under the absolute
+    // layer behind it, so an upload was fetched and never seen.
+    expect(img).toHaveClass("absolute", "inset-0")
+    expect(img).toHaveClass("object-contain")
+
+    const layers = [...(container.firstElementChild?.children ?? [])]
+    expect(layers.indexOf(img)).toBeGreaterThan(
+      layers.findIndex((layer) => layer.classList.contains("rz-backdrop")),
+    )
+  })
+
+  it("falls back to the backdrop, not a bundled photo, when the image errors", () => {
     const { container } = render(
       <Atmosphere recipe="photo" backgroundUrl="/broken.jpg" />,
     )
 
-    const img = getPhoto()
-    expect(img.getAttribute("src")).toBe("/broken.jpg")
+    fireEvent.error(getPhoto())
 
-    fireEvent.error(img)
-    expect(img.getAttribute("src")).toBe("/bundled-background.png")
-    expect(container.querySelector("[data-atmosphere-scrim]")).not.toBeNull()
+    expect(container.querySelector("img")).toBeNull()
+    expect(container.querySelector(".rz-backdrop")).not.toBeNull()
+    expect(container.querySelector("[data-atmosphere-scrim]")).toBeNull()
   })
 
-  it("uses viewport placement by default", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
-    render(<Atmosphere recipe="photo" />)
-
-    expect(getPhotoAtmosphere()).toHaveClass("fixed")
-    expect(getPhotoAtmosphere()).not.toHaveClass("absolute")
-  })
-
-  it("can stay inside a positioned container", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
-    render(<Atmosphere recipe="photo" placement="container" />)
-
-    expect(getPhotoAtmosphere()).toHaveClass("absolute")
-    expect(getPhotoAtmosphere()).not.toHaveClass("fixed")
-  })
-
-  it("uses a token-driven photo scrim instead of covering the image with canvas", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
-    const { container } = render(<Atmosphere recipe="photo" />)
+  it("uses a token-driven scrim instead of covering the image with canvas", () => {
+    const { container } = render(
+      <Atmosphere recipe="photo" backgroundUrl="/mine.jpg" />,
+    )
     const scrim = container.querySelector("[data-atmosphere-scrim]")
-    const img = getPhoto()
 
     expect(scrim).not.toBeNull()
     expect(scrim).not.toHaveClass("bg-canvas")
     expect(scrim?.getAttribute("class")).toContain(
       "[background:var(--rz-scrim)]",
     )
-    expect(img).toHaveClass("object-contain")
   })
 
-  it("drops the photo scrim after a dark image loads", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
+  it("drops the photo scrim after a dark image loads", () => {
     const { container } = render(
       <Atmosphere recipe="photo" backgroundUrl="/dark.jpg" />,
     )
@@ -113,9 +187,7 @@ describe("Atmosphere", () => {
     expect(img).toHaveClass("[filter:var(--rz-dark-photo-lift)]")
   })
 
-  it("retains the scrim after a bright image loads", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
+  it("retains the scrim after a bright image loads", () => {
     const { container } = render(
       <Atmosphere recipe="photo" backgroundUrl="/bright.jpg" />,
     )
@@ -128,9 +200,7 @@ describe("Atmosphere", () => {
     expect(img).not.toHaveClass("[filter:var(--rz-dark-photo-lift)]")
   })
 
-  it("retains the scrim when canvas luminance is unavailable", async () => {
-    const Atmosphere = (await import("@razzia/web/components/Atmosphere"))
-      .default
+  it("retains the scrim when canvas luminance is unavailable", () => {
     const { container } = render(
       <Atmosphere recipe="photo" backgroundUrl="/unreadable.jpg" />,
     )
@@ -141,5 +211,14 @@ describe("Atmosphere", () => {
 
     expect(container.querySelector("[data-atmosphere-scrim]")).not.toBeNull()
     expect(img).not.toHaveClass("[filter:var(--rz-dark-photo-lift)]")
+  })
+})
+
+describe("Atmosphere ambient", () => {
+  it("is the plain auth and config recipe, with no mood to light", () => {
+    const { container } = render(<Atmosphere recipe="ambient" />)
+
+    expect(container.querySelector("[data-mood]")).toBeNull()
+    expect(container.querySelector(".bg-canvas")).not.toBeNull()
   })
 })

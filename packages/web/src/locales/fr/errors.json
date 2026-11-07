@@ -53,7 +53,9 @@
     "invalidDialect": "Le mode graphique n’est pas valide",
     "invalidSoundTheme": "Le thème sonore n’est pas valide",
     "soundThemeSetFailed": "Impossible de mettre à jour le thème sonore",
-    "unsupportedBackgroundType": "Utilisez une image PNG, JPEG, WebP ou GIF"
+    "unsupportedBackgroundType": "Utilisez une image PNG, JPEG, WebP ou GIF",
+    "invalidShowIntensity": "Choisissez Complet, Calme ou Silencieux",
+    "showIntensitySetFailed": "Impossible de modifier l'intensité du show"
   },
   "route": {
     "back": "Retour à l'accueil",

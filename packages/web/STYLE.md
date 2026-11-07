@@ -43,70 +43,73 @@ Semantic roles travel as accent / border / tint. Do not mix values across rows.
 
 ## Answer identity
 
-`ANSWER_IDENTITY` is the single A–D tile recipe: **accent stroke, tinted fill,
-`text-answer-*-ink`**. The dark tint is the accent composited at ~8% over
-`canvas` rather than an alpha, so a tile still occludes the photo Atmosphere
-behind it. `ink` is a separate role from `accent` because the light register
-needs a darkened letter to stay legible on the pale tint.
+An answer is a **letter block**: a solid square of its accent, the letter in
+`on-answer` (near black, at least 7.9:1 on every accent). Beside it sit the
+words in `text-primary` on **dark glass** (`glass`, `#101623`), a solid surface.
+Identity is the block and nothing else, so no tint or hairline carries it: a
+lit room lifts black to grey and would wash either one away. `AnswerTile` is the
+only component that draws it, reading the accent from one `--c` property.
 
-`ANSWER_BAR` is the strokeless `accent` fill. Use it only where the mark's
-_length_ carries the quantity, as the reveal chart's bars do: a tint there reads
-as empty, and a stroke reads as a frame around a track a few pixels tall.
+| answer | accent    | note                                 |
+| ------ | --------- | ------------------------------------ |
+| A      | `#ffb020` | amber                                |
+| B      | `#4aaeff` | blue                                 |
+| C      | `#ff82b9` | pink. Never green: green means right |
+| D      | `#d7dce6` | ice                                  |
 
-`ANSWER_INK` is identity carried by type alone — the chart's A–D letter, its
-percentage and its count sit beside the bar with no fill or stroke to lean on.
-A share of zero keeps `text-text-primary`; the percentage joins the slot's ink
-only once it has weight.
+Green and red mean only right and wrong, and urgency is orange (`warning`).
+Meaning roles must never identify answers, and answers never carry meaning,
+though a verdict may layer on top (the success frame and check on a correct
+tile). The accents are separated by at least 15 of colour difference under
+deuteranopia, and their brightness differs by 1.8x at most, so no answer pulls
+the eye.
 
-Meaning roles (`success` / `danger` / …) must never identify answers, though
-they may layer on top (the reveal check / cross). On the reveal chart that
-means a filled success disc on every solution (danger mark on the rest), a
-success-accent frame so a zero-share correct slot still reads as the answer,
-and the incorrect quantity receding and desaturating. The bar fill itself stays
-`ANSWER_BAR`.
+`ANSWER_IDENTITY` / `ANSWER_BAR` / `ANSWER_INK` (`accent` + `border` + `tint` +
+`ink` per answer) remain for the **studio** only: the quiz editor and result
+modal, where a tinted tile on the light register is fine. The game never uses
+them.
 
-Mono A/B/C/D badges sit on `border-current bg-canvas/25`, inheriting the ink.
+### Tile states
+
+`data-state` on the tile drives everything:
+
+- `locked`: shown, not yet answerable. The block is unlit (dark, low chroma) and
+  the words stay at `text-primary`. Never blur or dim answer copy.
+- `active`: answerable. The block is lit. Bright means go. A phone's tile gives
+  press feedback on `:active`, before the server replies.
+- `picked` / `faded`: this phone's own pick (white frame) and the others
+  stepping back. Set on the tap itself; a pick is sent once.
+- `result`: a vote count, no verdict yet. The share lands in the block and runs
+  along a rail under the words, so nothing crosses the copy.
+- `correct`: the success frame and glow plus a check badge. `wrong`: stepped
+  back to 55%.
+
+A tile is a real `button` only where somebody can tap it (a phone with answers
+open). On the projector and in results it is a plain panel, so it takes no
+hover or focus ring it has no use for.
 
 ### Answer reveal
 
-The shared player/manager answer grid reserves every 2–4 answer slot from its
-first paint. After a one-second pause, slots reveal in A–D order with a
-two-second opacity fade each. Each fade starts three seconds after the previous
-one, leaving a one-second beat after a fade completes.
+The shared answer grid reserves every 2–4 answer slot from its first paint.
+After a one-second pause, slots reveal in A–D order with a two-second opacity
+fade each. Each fade starts three seconds after the previous one, leaving a
+one-second beat after a fade completes.
 `@razzia/common/utils/answer-reveal` is the timing authority. The server owns
 the answering unlock, so visibility never opens submission, the timer HUD, or
-the answers music by itself. While revealed but locked, keep answer copy at
-`text-primary`, suppress hover movement, and render the identity border/tint on
-a separate decorative layer at low opacity with a 2 px blur and low saturation.
-Never blur the label or answer copy. When the server opens answering, transition
-every decorative layer together through a brief brightness/saturation overshoot
-before settling at its full identity surface as the timer begins. Locked tiles
-must have no hover motion or glow. Active tiles also stay positionally stable,
-but hover and keyboard focus immediately grow one soft A–D color-matched shadow
-around the panel. Render that glow as a dedicated identity-colored halo layer:
-reveal its strong 3 px edge immediately on hover/focus, then ease its 18 px blur
-and 1.03× expansion outward over 300 ms. Fade it quickly on exit. Do not rely
-on a delayed box-shadow interpolation, add a persistent second ring, or let the
-halo blur the panel or answer copy. Reduced-motion surfaces show every reserved
-slot immediately and snap between surface states while still waiting for that
-same server unlock. Protocol (same-status payload, `manager:unlockAnswers` vs
-`manager:abortQuiz`, reconnect restamp) is in
+the answers music by itself. Revealed tiles are `locked` until the server opens
+answering, then every block lights together as the timer begins. Reduced-motion
+surfaces show every reserved slot immediately and snap between states while
+still waiting for that same server unlock. Protocol (same-status payload,
+`manager:unlockAnswers` vs `manager:abortQuiz`, reconnect restamp) is in
 `docs/adr/0001-server-clocked-answer-reveal.md`.
-
-| identity   | accent    | dark border / tint / ink       | light border / tint / ink         |
-| ---------- | --------- | ------------------------------ | --------------------------------- |
-| `answer-a` | `#ffab24` | `#8a5a18` / `#1e1b17` / accent | `#fcd34d` / `#fffbeb` / `#b45309` |
-| `answer-b` | `#42aeff` | `#255f9c` / `#0e1b29` / accent | `#93c5fd` / `#eff6ff` / `#1d4ed8` |
-| `answer-c` | `#40d693` | `#1f6f4d` / `#0e1e20` / accent | `#86efac` / `#f0fdf4` / `#047857` |
-| `answer-d` | `#9370e7` | `#4a2f86` / `#151627` / accent | `#c4b5fd` / `#f5f3ff` / `#6d28d9` |
 
 ### Answer grid
 
-`ANSWER_GRID_TRACKS` + `answerSlotPlacement` lay out every A–D grid. Past the
-breakpoint the grid runs four tracks and each tile spans two, so the odd last
-tile of a three-answer question starts on track two and sits centred under the
-pair. Game screens break on the viewport (`sm`); the editor breaks on its
-`@container` (`@xl`) because its tiles sit between two side panels.
+`ANSWER_GRID_TRACKS` + `answerSlotPlacement` lay out every A–D grid. On the
+stage the grid runs four tracks and each tile spans two, so the odd last tile of
+a three-answer question starts on track two and sits centred under the pair. On
+a phone the tiles are one column, pinned under the prompt. The editor breaks on
+its `@container` (`@xl`) because its tiles sit between two side panels.
 
 ## Medals
 
@@ -120,13 +123,33 @@ gold `#f5c542` / `#9a7412`, silver `#c7d0dc` / `#6b7688`, bronze `#d08a4c` /
 ## Typography, motion, depth, radius
 
 - Space Grotesk display/body; JetBrains Mono for badges, codes, numerals.
-- Projection scale: host screens are read from across a room on 720p–1080p
-  projectors, so stage copy keeps growing past `md`. Answer copy is
-  `xl:text-2xl 2xl:text-3xl`; lobby PIN, join URL and QR, the HUD, the
-  leaderboard and the question label also step up at `lg`/`2xl`. Add large
-  steps only at `xl`+ so phones are unchanged.
-- HUD modules share one value slot (`h-14 md:h-16 2xl:h-24`, the ring's size),
-  so a ring readout and a boxed readout side by side keep one label baseline.
+- **The stage.** The host's game page composes like a slide. `useSurface` sets
+  `data-stage` on `<html>` for a landscape window 1024 px wide or more, and the
+  root font size becomes `min(100vw / 120, 100vh / 67.5)`: exactly 16 px at
+  1920x1080, 10.67 px at 1280x720. Every rem length scales with the frame, so
+  the projector sees one composition at any size. Style it with the `stage:`
+  variant, which applies only under `data-stage`. Do not use `xl:` / `2xl:` on
+  a stage screen, because a viewport breakpoint would give 1280 and 1920
+  different layouts. A narrow or portrait window, and every phone, fall back to
+  the base (phone) styles.
+- **Room-readable type.** Nothing the room has to read is under 2.6875 rem
+  (43 px at 1080p, the smallest the back row can make out). Only labels
+  (`text-xs`, the question label, HUD labels) may be smaller. Nothing important
+  sits in the bottom 8% of the frame (heads in the front rows hide it), so the
+  stage ends with a `5.4rem` spacer. The teacher's controls float over the top
+  corners and take no layout room.
+- **One type tier per question**, decided from its text alone
+  (`utils/type-tier.ts`), so the prompt keeps its size from the question screen
+  to the answers to the results and the shared-layout morph never reflows. The
+  prompt is context lines (smaller, `text-body`) over the **ask**, the last
+  line, which is the largest thing on screen. Answer copy steps 50 / 46 / 43 px
+  by the longest answer. The tiers are an estimate; the Director's fit report
+  measures the real layout of every real question and is the judge.
+- **Phones keep the answers on screen.** The phone page is one screen tall
+  (`h-dvh`): tiles are pinned under the prompt, which scrolls above them and
+  rests on the real question at its end. The stage page instead grows, so a
+  layout that does not fit shows as a page that scrolls and as a failure in the
+  fit report.
 - Dialogs and their overlays enter with `animate-rz-fade-in` (opacity only, so
   it composes with the centring translate). Toasts take the `surface` /
   `border` / `text-primary` roles in both registers.
@@ -155,22 +178,172 @@ gold `#f5c542` / `#9a7412`, silver `#c7d0dc` / `#6b7688`, bronze `#d08a4c` /
   Reduced motion sets the layout transition duration to zero.
 - Question text and media float directly on the atmosphere. The shared layout
   wrapper must not add a panel background, border, or rounded container.
-- On manager responses, keep a deliberate vertical gutter between the response
-  distribution and the answer-option cards (`gap-10`, increasing to
-  `md:gap-12`). Let the response content remain the flexible region so this
-  spacing comes from available whitespace instead of crowding or displacing the
-  option grid.
+- Manager results are the answer tiles themselves, with each share in its block
+  and on its rail, in the same place the grid sits while answering. The row
+  between the prompt and the grid is the clock while answering and the headline
+  in results, the same height in both so the screen changes in place.
 - Depth: accent `shadow-bloom-*` only. New radius: `rounded-rz-sm/md/lg/xl`.
-- `.rz-dotfield` is the only sanctioned decorative texture: a `--rz-dot`
-  radial-gradient grid, kept low-opacity so it recedes behind a photo.
 
 ## Atmosphere / scrim
 
-`<Atmosphere recipe="photo">`: canvas → `object-contain` image → optional `--rz-scrim` → content (`z-10`).
-`--rz-scrim` is a light center wash for bright photos. Dark uploads skip the wash and use `--rz-dark-photo-lift` so gold/rim detail stays visible.
-Photo atmosphere placement defaults to `viewport` (`fixed`) for live game screens.
-Use `placement="container"` (`absolute`) only inside a positioned, overflow-clipped preview such as `/dev/gallery`.
-`<Atmosphere recipe="ambient">` is the no-photo auth/config recipe.
+`<Atmosphere recipe="photo">` is the light behind the show, made in code: a deep
+navy gradient (`rz-backdrop`), one glow per **mood** (`rz-mood-*`) that
+crossfades as the game moves, and, in the full show only, beams (`rz-beam`) at
+the opening and the finale and embers (`rz-ember`) in the last seconds. There is
+**no photo by default**, so a phone downloads nothing for it. A teacher's
+uploaded background sits above the gradient and under the glow (the image is
+positioned, because an unpositioned one paints under the layer behind it and an
+upload would never show); its `--rz-scrim` wash for bright photos and
+`--rz-dark-photo-lift` for dark ones are unchanged. The light register (the
+studio) stays a plain canvas.
+
+Moods follow the game's status (`stores/mood.ts`): `teal` for the lobby and the
+title, `cool` while playing, `gold` for the finale. A screen may hold another
+with `useMoodOverride`: the room runs `warm` for the last five seconds of
+answering. Photo atmosphere placement defaults to `viewport` (`fixed`) for live
+game screens; use `placement="container"` (`absolute`) only inside a
+positioned, overflow-clipped preview. `<Atmosphere recipe="ambient">` is the
+no-photo auth/config recipe.
+
+## The line, the clock and the count
+
+- **The line** (`ChargeLine`) is one bar of light between the question and the
+  answers. It grows dim from the centre across the prompt's cooldown and the
+  answer reveal, so it is whole exactly when answering opens; it then goes
+  bright and burns in from both ends toward the clock for the length of the
+  window, turning hot for the last five seconds. On the stage it runs along the
+  bottom of the clock row; on a phone it crosses the top of the screen. It is
+  plain CSS over the server's stamps (`charge-line.ts`), so it needs no timer
+  and a screen that mounts late (or after a reconnect) starts partway along.
+- **The clock** counts to the answers opening ("Opens in 7"), then the time
+  left. In the last five seconds the digit swells, heats to `warning` and pulses
+  on every tick, and the room runs warm. **The count** is how many are in.
+  Each is one large number with one small label.
+- The question screen holds the same bottom structure the answers screen has
+  (the clock row, the room the tiles will fill, the bottom 8%), so the prompt
+  never moves when the answers arrive.
+
+## The reveal
+
+The verdict is staged on one server-stamped clock (`result-reveal.ts`,
+`docs/adr/0003-staged-result-reveal.md`), so the room and every phone land each
+beat together. Big moments go **brighter, not darker**: in a lit room a
+blackout dims the frame by a fifth, while a full-frame fill brightens it almost
+five times. So TIME, the verdict and the winner each take the whole frame in one
+solid colour with pure black type (`FrameHit`), and nothing moves or shakes over
+text.
+
+| beat     | at     | the projector                                                               | a phone                         |
+| -------- | ------ | --------------------------------------------------------------------------- | ------------------------------- |
+| TIME     | 0 s    | floods hot orange, "TIME" (or "ALL IN" if everyone answered)                | holds                           |
+| count    | 0.6 s  | rails grow from the letter blocks, smallest first; shares count up inside   | holds                           |
+| question | 2.25 s | everything but the most-picked answer goes dark; a heartbeat. Ties stay lit | holds                           |
+| strike   | 3.0 s  | the right answer floods the frame from its tile, holds, collapses into it   | colour and glyph, nothing else  |
+| settled  | 4.5 s  | the final grid; the headline ("Only 3 of 18 got it. 8 fell for B.")         | after 2 s: points, streak, rank |
+
+The flood always leaves the **right** tile, so the room reads whether the light
+stayed or jumped from what was lit during the question. A phone's colour is
+success green, danger red, or grey for no answer. Calm, Silent and reduced
+motion keep the schedule but drop the flood and the spotlight: the verdict
+happens on the tile, and TIME is said in the headline's place. A client that
+arrives after a beat (a reconnect, a woken phone, a lecture review) is settled:
+no flood, no sound, no buzz.
+
+## Phones
+
+A phone's own game, in three screens beside the verdict (and the tap itself).
+
+- **On the tap** (`Answers`): the tile you pressed is picked and the rest step
+  back, and a "Locked in" pill appears between the clock and the count at once,
+  before the server's own screen arrives.
+- **Locked in** (`Wait`): the tile you picked, held, with "Locked in" over it
+  and "N of M in" counting up as the room answers. Tapping it nudges it. Any
+  other wait (the lobby, a lecture hold) is the plain spinner; in the lobby it
+  also says "You're in, Ada" and how many are here.
+- **Standing** (`Standing`, `SHOW_STANDING`): sent to every phone when the host
+  shows the leaderboard, because `SHOW_LEADERBOARD` only reaches the host. Your
+  place, ▲/▼ since the last question (nothing after the first one, whose
+  "before" is only the join order), the leader and the players around you, and
+  the gap to the next one up.
+- **Ending** (`PlayerFinished`): a medal disc for ranks 1–3 with confetti that
+  bursts and stops, a plain place for everyone else, and points and place among
+  all who played.
+
+## Board and ceremony
+
+- **Leaderboard**: a bar race. A bar's length is a score, as a share of the
+  longest new bar. It holds the old standing 1.5 s, grows the bars and rolls the
+  odometers until 3 s (`BOARD_REORDER_MS`, the score's own overtake beat), swaps
+  the rows, marks who moved, and then says one thing (`boardCommentary`: new
+  leader, biggest climber, someone into the top five, biggest gain, a close
+  race, or who leads). It works for a room of one.
+- **Podium**: third, second, a roll, then first, on the score's clock
+  (`podiumTimes`, pulled earlier for each place nobody holds). Blocks are solid
+  medal colours risen on springs. First place takes the whole frame in gold with
+  the winner's name (`FrameHit kind="winner"`), then clears to the podium while
+  confetti bursts and stops. Calm and Silent keep the sequence but not the flood
+  or the confetti.
+
+## First impressions
+
+- **Lobby** (`Room`): the join address without its scheme, the PIN on split-flap
+  cards that flip in left to right, a QR, and a seat for every player that flips
+  solid as the name arrives. Names shrink in three steps as the room fills; up to
+  sixty seats are drawn (empty ones dashed) and the rest are counted as "+N more".
+  Kicking still goes through a confirmation.
+- **Start**: the title with a pass of light, then one lamp per second of the
+  countdown. **GO** belongs to the first round card (`useLaunchStore`), because
+  the lamps end exactly as it replaces them; a card nobody counted down to has
+  no GO.
+- **Round card** (`Prepared`): "Question 4 of 6" and "Final question" on the
+  last (also on the question and answer screens, so the label never changes under
+  the morph), the big number, and one pip per question; a deck of more than twelve
+  draws a progress bar.
+- **Join**: the PIN cell and the name field take focus on arrival, and a wrong
+  PIN or a refused name shakes the field. The wordmark is the brand colour.
+
+## The score
+
+Sound is one adaptive WebAudio score (`features/game/audio/`), not per-screen
+`useSound` calls. Screens ask for a scene (`score.start(...)`) or a cue
+(`score.cue(...)`); they never touch a context. Scenes are stamped from the
+server's clock, so the room's music and every phone's chord land together, and a
+screen that arrives late finds its beats in the past and plays nothing. A
+reviewed question is called with `silent: true` and cannot cut the live game's
+bed. The score rises a semitone each round (capped at five) and the final
+question adds a layer. The `classic` and `techno` packs play through the same
+calls via a legacy adapter, loaded when they are about to play and unloaded after.
+`show` is the default pack; it is a setting, so an old game keeps its own.
+Volume, mute and the deck's suppression still go through Howler's master gain.
+
+A question with its own audio or video keeps the answers bed out from under it,
+as the answers loop always did.
+
+## Rehearsal
+
+The quiz editor's **Rehearse** button saves what is on screen (unsaved edits
+included) to the browser's `localStorage` and opens `/rehearse` in a named tab.
+That page plays the draft through the real screens (`FrameStage`, the same
+composition the Director uses) in an iframe at the projector's true size, or a
+phone's, scaled to fit: the question, the answers, the count with the room
+right or wrong, and on the phone the locked-in screen and the three verdicts.
+Arrow keys step screens and questions, `R` plays a screen again, `P` swaps
+projector and phone; Show intensity applies. It needs no login and no game, it
+warns about a question the projector may not hold (`question-fit`), and a second
+Rehearse refreshes the open tab in place. Empty parts show a stand-in rather
+than an empty tile. The shared builders (`features/rehearse/screens.ts`) take a
+question, not a quiz id, which is what keeps the Director's real quiz text out
+of the production bundle.
+
+## Show intensity
+
+A per-game setting in the Visuals tab, snapshotted at game creation like the
+sound theme. **Full** is everything. **Calm** keeps the picture and drops the
+full-frame hits, the spotlight, beams and embers (the verdict happens on the
+tile); its music is 12 dB lower with no groove while answering. **Silent** is
+Calm with no audio. A device set to reduced motion gets Calm's visuals, and
+also drops the count animation; audio does not follow it. Read it with
+`useShowIntensity` / `useCalmVisuals`.
 
 ## Banned patterns
 
@@ -185,6 +358,6 @@ Use `placement="container"` (`absolute`) only inside a positioned, overflow-clip
 ## Recorded deviations
 
 1. Unknown persisted dialect falls back via `.catch(DEFAULT_DIALECT)` without discarding password/background.
-2. Celebration motion (confetti, spotlight, podium SFX schedule, frozen `anim-*`) stays as-is. Only the confetti colours changed: they are read from the answer, brand and gold tokens instead of the library's rainbow.
+2. The celebration is staged, not looped: the podium's roll, the winner's gold flood and a confetti burst that stops, and the same for a phone's top three. Confetti colours are read from the answer, brand and gold tokens instead of the library's rainbow.
 3. Quizzes never persist dialect or sound theme — only `GameVisualsConfig` may.
 4. Room QR modules stay black-on-white for scanner reliability.

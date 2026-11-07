@@ -35,5 +35,42 @@
     "title": "Ungespeicherte Änderungen verwerfen?",
     "description": "Deine Änderungen an diesem Quiz wurden nicht gespeichert.",
     "discard": "Verwerfen"
+  },
+  "fitWarning": {
+    "card": "Passt eventuell nicht auf den Beamer",
+    "prompt": "Diese Frage ist für den Beamer lang. Kürze sie oder teile sie in Sätze auf, sonst wird sie eventuell abgeschnitten.",
+    "answer": "Eine Antwort ist länger als 90 Zeichen und passt eventuell nicht in ihr Feld."
+  },
+  "rehearse": {
+    "button": "Probe",
+    "buttonHint": "Dieses Quiz so, wie es jetzt ist, auf Beamer und Handy durchspielen, auch mit ungespeicherten Änderungen",
+    "unavailable": "Der Browser hat den Entwurf nicht gespeichert, die Probe konnte daher nicht geöffnet werden.",
+    "title": "Probe: {{subject}}",
+    "empty": "Noch nichts zu proben. Öffne ein Quiz im Editor und wähle Probe.",
+    "previousQuestion": "Vorherige Frage",
+    "nextQuestion": "Nächste Frage",
+    "questionOf": "Frage {{current}} von {{total}}",
+    "view": {
+      "host": "Beamer",
+      "phone": "Handy"
+    },
+    "screens": {
+      "question": "Frage",
+      "answers": "Antworten offen",
+      "reveal": "Die Auszählung · Raum richtig",
+      "reveal-wrong": "Die Auszählung · Raum falsch",
+      "wait": "Abgegeben",
+      "verdict": "Richtig",
+      "verdict-wrong": "Falsch",
+      "verdict-none": "Keine Antwort"
+    },
+    "replay": "Nochmal",
+    "frameTitle": "Probebildschirm",
+    "keys": "← → Bildschirm · ↑ ↓ Frage · R nochmal · P Beamer oder Handy",
+    "placeholder": {
+      "subject": "Quiz ohne Titel",
+      "question": "Hier steht deine Frage",
+      "answer": "Antwort"
+    }
   }
 }

@@ -2,8 +2,10 @@ import { EVENTS } from "@razzia/common/constants"
 import type { ManagerMutationResponse } from "@razzia/common/types/manager"
 import {
   DEFAULT_DIALECT,
+  DEFAULT_SHOW_INTENSITY,
   DEFAULT_SOUND_THEME,
   type Dialect,
+  type ShowIntensity,
   type SoundTheme,
 } from "@razzia/common/types/visuals"
 import Button from "@razzia/web/components/Button"
@@ -41,6 +43,11 @@ const DIALECT_OPTIONS = [
 
 const SOUND_THEME_OPTIONS = [
   {
+    value: "show",
+    titleKey: "manager:visuals.soundTheme.show.title",
+    descriptionKey: "manager:visuals.soundTheme.show.description",
+  },
+  {
     value: "classic",
     titleKey: "manager:visuals.soundTheme.classic.title",
     descriptionKey: "manager:visuals.soundTheme.classic.description",
@@ -52,6 +59,28 @@ const SOUND_THEME_OPTIONS = [
   },
 ] as const satisfies ReadonlyArray<{
   value: SoundTheme
+  titleKey: string
+  descriptionKey: string
+}>
+
+const SHOW_INTENSITY_OPTIONS = [
+  {
+    value: "full",
+    titleKey: "manager:visuals.showIntensity.full.title",
+    descriptionKey: "manager:visuals.showIntensity.full.description",
+  },
+  {
+    value: "calm",
+    titleKey: "manager:visuals.showIntensity.calm.title",
+    descriptionKey: "manager:visuals.showIntensity.calm.description",
+  },
+  {
+    value: "silent",
+    titleKey: "manager:visuals.showIntensity.silent.title",
+    descriptionKey: "manager:visuals.showIntensity.silent.description",
+  },
+] as const satisfies ReadonlyArray<{
+  value: ShowIntensity
   titleKey: string
   descriptionKey: string
 }>
@@ -126,9 +155,13 @@ const ConfigVisuals = () => {
   const [pendingSoundTheme, setPendingSoundTheme] = useState<SoundTheme | null>(
     null,
   )
+  const [pendingShowIntensity, setPendingShowIntensity] =
+    useState<ShowIntensity | null>(null)
   const { t } = useTranslation()
   const activeDialect = game.visuals?.dialect ?? DEFAULT_DIALECT
   const activeSoundTheme = game.visuals?.soundTheme ?? DEFAULT_SOUND_THEME
+  const activeShowIntensity =
+    game.visuals?.showIntensity ?? DEFAULT_SHOW_INTENSITY
   const { uploading, uploadFile } = useBackgroundUpload({
     setGlobal: true,
     onSuccess: () => {
@@ -228,6 +261,25 @@ const ConfigVisuals = () => {
     )
   }
 
+  const handleShowIntensityChange = (showIntensity: ShowIntensity) => {
+    if (showIntensity === activeShowIntensity || pendingShowIntensity) {
+      return
+    }
+
+    setPendingShowIntensity(showIntensity)
+    socket.emit(
+      EVENTS.MANAGER.SHOW_INTENSITY_SET,
+      { showIntensity },
+      (response: ManagerMutationResponse) => {
+        setPendingShowIntensity(null)
+
+        if ("error" in response) {
+          toast.error(t(response.error))
+        }
+      },
+    )
+  }
+
   const openPicker = () => {
     if (!uploading) {
       fileInputRef.current?.click()
@@ -246,6 +298,14 @@ const ConfigVisuals = () => {
         pending={pendingDialect}
         options={DIALECT_OPTIONS}
         onChange={handleDialectChange}
+      />
+
+      <VisualChoiceGroup
+        label={t("manager:visuals.showIntensity.label")}
+        value={activeShowIntensity}
+        pending={pendingShowIntensity}
+        options={SHOW_INTENSITY_OPTIONS}
+        onChange={handleShowIntensityChange}
       />
 
       <VisualChoiceGroup

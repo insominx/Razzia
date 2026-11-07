@@ -8,6 +8,7 @@ import Question from "@razzia/web/features/game/components/states/Question"
 import Responses from "@razzia/web/features/game/components/states/Responses"
 import Result from "@razzia/web/features/game/components/states/Result"
 import Room from "@razzia/web/features/game/components/states/Room"
+import Standing from "@razzia/web/features/game/components/states/Standing"
 import Start from "@razzia/web/features/game/components/states/Start"
 import Wait from "@razzia/web/features/game/components/states/Wait"
 
@@ -54,6 +55,18 @@ export const ANSWER_INK = [
 export const ANSWERS_LABELS = ["A", "B", "C", "D"]
 
 /**
+ * The accent of each answer as a custom property. A tile sets `--c` from this
+ * once, and its letter block, rail, glow and flood all read `var(--c)`, so a
+ * tile is one identity however many layers carry it.
+ */
+export const ANSWER_COLOR_VARS = [
+  "--rz-answer-a",
+  "--rz-answer-b",
+  "--rz-answer-c",
+  "--rz-answer-d",
+] as const
+
+/**
  * Gold, silver and bronze for ranks 1–3 (index = rank − 1). Rank is the only
  * thing these colours mean; they never mark answers or correctness.
  */
@@ -69,25 +82,28 @@ export const MEDAL = [
  * question) can start on track two and sit centred under the pair above it
  * instead of hanging off the left edge. Pair with `answerSlotPlacement`.
  *
- * `viewport` breaks at `sm` for full-width game screens; `container` breaks on
- * the nearest `@container` for tiles squeezed between editor panels.
+ * `stage` is the projector's 2x2 and a phone's single column; `container`
+ * breaks on the nearest `@container` for tiles squeezed between editor panels.
  */
 export const ANSWER_GRID_TRACKS = {
-  viewport: "grid-cols-1 sm:grid-cols-4",
+  stage: "grid-cols-1 stage:grid-cols-4",
   container: "grid-cols-1 @xl:grid-cols-4",
 } as const
 
 type AnswerGridScope = keyof typeof ANSWER_GRID_TRACKS
 
 const ANSWER_SLOT_PLACEMENT = {
-  viewport: { pair: "sm:col-span-2", odd: "sm:col-span-2 sm:col-start-2" },
+  stage: {
+    pair: "stage:col-span-2",
+    odd: "stage:col-span-2 stage:col-start-2",
+  },
   container: { pair: "@xl:col-span-2", odd: "@xl:col-span-2 @xl:col-start-2" },
 } as const
 
 export const answerSlotPlacement = (
   index: number,
   count: number,
-  scope: AnswerGridScope = "viewport",
+  scope: AnswerGridScope = "stage",
 ): string =>
   count % 2 === 1 && index === count - 1
     ? ANSWER_SLOT_PLACEMENT[scope].odd
@@ -110,6 +126,7 @@ export const GAME_STATE_COMPONENTS = {
   [STATUS.WAIT]: Wait,
   [STATUS.SHOW_START]: Start,
   [STATUS.SHOW_RESULT]: Result,
+  [STATUS.SHOW_STANDING]: Standing,
   [STATUS.SHOW_PREPARED]: Prepared,
   [STATUS.FINISHED]: PlayerFinished,
 }
@@ -285,6 +302,7 @@ export const MANAGER_SKIP_BTN = {
   [STATUS.SHOW_QUESTION]: null,
   [STATUS.SELECT_ANSWER]: "common:skip",
   [STATUS.SHOW_RESULT]: null,
+  [STATUS.SHOW_STANDING]: null,
   [STATUS.SHOW_RESPONSES]: "common:next",
   [STATUS.SHOW_LEADERBOARD]: "common:next",
   [STATUS.FINISHED]: "common:exit",
