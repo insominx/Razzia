@@ -8,8 +8,10 @@ import {
   findQuiz,
   type FixtureRef,
   pickFor,
+  playersFor,
   statusFor,
 } from "@razzia/web/features/dev/fixtures"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import { createFakeSocket } from "@razzia/web/features/rehearse/fake-socket"
@@ -70,12 +72,14 @@ const Frame = ({
   const [seed] = useState<FrameSeed>(() => ({
     progress: progressOf(initial),
     pick: pickFor(initial),
+    players: playersFor(initial.fixture),
   }))
 
   useLayoutEffect(() => {
     const api: DirectorApi = {
       showFixture: (ref) => {
         useQuestionStore.getState().setQuestionStates(progressOf(ref))
+        useManagerStore.getState().setPlayers(playersFor(ref.fixture))
         seedPick(ref)
         flushSync(() =>
           setShown((previous) => ({

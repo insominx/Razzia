@@ -198,7 +198,8 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
                   data-player-chip
                   aria-label={t("game:kick.action", { name: player.username })}
                   className={clsx(
-                    "bg-brand text-on-accent rounded-rz-lg rz-seat-in group flex min-w-0 items-center gap-2 px-4 py-3 font-bold",
+                    "bg-brand text-on-accent rounded-rz-lg rz-seat-in group flex min-w-0 items-center gap-2 font-bold",
+                    tier.pad,
                     tier.text,
                   )}
                 >
@@ -226,7 +227,8 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
               data-seat-empty
               aria-hidden="true"
               className={clsx(
-                "border-border rounded-rz-lg border-2 border-dashed px-4 py-3 font-bold opacity-60",
+                "border-border rounded-rz-lg border-2 border-dashed font-bold opacity-60",
+                tier.pad,
                 tier.text,
               )}
             >

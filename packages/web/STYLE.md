@@ -288,9 +288,16 @@ A phone's own game, in three screens beside the verdict (and the tap itself).
 
 - **Lobby** (`Room`): the join address without its scheme, the PIN on split-flap
   cards that flip in left to right, a QR, and a seat for every player that flips
-  solid as the name arrives. Names shrink in three steps as the room fills; up to
-  sixty seats are drawn (empty ones dashed) and the rest are counted as "+N more".
-  Kicking still goes through a confirmation.
+  solid as the name arrives. Names shrink in four steps as the room fills (to 12,
+  30, 47 and then up to sixty players); up to sixty seats are drawn (empty ones
+  dashed) and the rest are counted as "+N more". The steps are set by what fits
+  the frame, measured at 1920×1080 where the frame is 67.5 rem tall and the bottom
+  5.4 rem stays clear: the last row ends by 60.4 rem at 47 players, and sixty in
+  the compact tier end by 55 rem. The Director's "Room · 30 players" and "Room ·
+  60 players" show the two fullest cases; measure a change to a step there, and
+  count the empty seats that fill the last row (the 48th player used to add a row
+  that pushed the header to the top edge). Kicking still goes through a
+  confirmation.
 - **Start**: the title with a pass of light, then one lamp per second of the
   countdown. **GO** belongs to the first round card (`useLaunchStore`), because
   the lamps end exactly as it replaces them; a card nobody counted down to has

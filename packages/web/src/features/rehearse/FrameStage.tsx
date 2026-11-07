@@ -1,5 +1,6 @@
 import { EVENTS } from "@razzia/common/constants"
 import { STATUS } from "@razzia/common/types/game/status"
+import type { PublicPlayer } from "@razzia/common/types/game"
 import type { ShowIntensity } from "@razzia/common/types/visuals"
 import GameWrapper from "@razzia/web/features/game/components/GameWrapper"
 import {
@@ -28,7 +29,7 @@ import {
   useSurfaceOverride,
 } from "@razzia/web/hooks/use-surface"
 import { MotionConfig } from "motion/react"
-import { useLayoutEffect, useMemo } from "react"
+import { useLayoutEffect, useMemo, useState } from "react"
 
 const FRAME_GAME_ID = "dev-frame"
 
@@ -47,6 +48,8 @@ export interface FrameSeed {
   progress: { current: number; total: number }
   /** What a phone that has already tapped a tile picked. */
   pick: { questionNumber: number; key: number; text: string } | null
+  /** Who is in the room; three players when left out. */
+  players?: readonly PublicPlayer[]
 }
 
 interface Props {
@@ -99,7 +102,11 @@ const FrameStage = ({
     [fake],
   )
 
-  // Seeded before the first paint: the screens read the seat they play as.
+  // The screens read the seat they play as, and the room's players, from the
+  // stores when they first render, so they are not drawn until these are seeded.
+  // The effect runs before the first paint and its state change renders at once.
+  const [seeded, setSeeded] = useState(false)
+
   useLayoutEffect(() => {
     // Only a phone has a seat; the projector does not play.
     if (view === "phone") {
@@ -109,12 +116,14 @@ const FrameStage = ({
     }
 
     useManagerStore.getState().setVisuals({ showIntensity: intensity })
-    useManagerStore.getState().setPlayers([...PLAYERS])
+    useManagerStore.getState().setPlayers([...(seed.players ?? PLAYERS)])
     useQuestionStore.getState().setQuestionStates(seed.progress)
 
     if (seed.pick) {
       usePlayerStore.getState().setLastAnswer(seed.pick)
     }
+
+    setSeeded(true)
 
     return () => {
       usePlayerStore.getState().reset()
@@ -141,6 +150,10 @@ const FrameStage = ({
       root.style.scrollbarWidth = ""
     }
   }, [view])
+
+  if (!seeded) {
+    return null
+  }
 
   const host = view === "host"
   const components = host

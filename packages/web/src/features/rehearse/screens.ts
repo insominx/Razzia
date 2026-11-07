@@ -14,6 +14,8 @@ export type ScreenView = "host" | "phone"
 /** Every screen the Director can show, each with the surfaces it exists on. */
 export const FIXTURES = [
   { id: "room", label: "Room", views: ["host"] },
+  { id: "room-30", label: "Room · 30 players", views: ["host"] },
+  { id: "room-60", label: "Room · 60 players", views: ["host"] },
   { id: "start", label: "Start", views: ["host", "phone"] },
   { id: "prepared", label: "Prepared", views: ["host", "phone"] },
   { id: "question", label: "Question", views: ["host", "phone"] },
@@ -66,6 +68,31 @@ export const PLAYERS: PublicPlayer[] = [
     streak: 1,
   },
 ]
+
+/** A full lobby for the Director: `count` players, one with a very long name. */
+export const crowd = (count: number): PublicPlayer[] =>
+  Array.from({ length: count }, (_, index) => ({
+    id: `dev-crowd-${index}`,
+    connected: true,
+    username:
+      index === 11
+        ? "Bartholomew-Alexander"
+        : `Player${String(index + 1).padStart(2, "0")}`,
+    points: 0,
+    streak: 0,
+  }))
+
+const CROWDS: Partial<Record<FixtureId, number>> = {
+  "room-30": 30,
+  "room-60": 60,
+}
+
+/** Who is in the room for a fixture: three players, or a crowd. */
+export const playersFor = (fixture: FixtureId): PublicPlayer[] => {
+  const count = CROWDS[fixture]
+
+  return count === undefined ? [...PLAYERS] : crowd(count)
+}
 
 /** The seat the phone frame plays as. */
 export const PHONE_PLAYER = { username: "Ada", points: 9_640 }
@@ -311,6 +338,11 @@ export const pickForQuestion = (
   return { questionNumber: at + 1, key, text: answers[key] }
 }
 
+const roomStatus = (): GameStatus => ({
+  name: STATUS.SHOW_ROOM,
+  data: { text: "game:waitingForPlayers", inviteCode: "426 426" },
+})
+
 /**
  * A screen in its settled state: every sentence read, every answer revealed
  * and unlocked. That is also what a reconnecting client is sent, which is why
@@ -327,10 +359,13 @@ export const statusForQuestion = (
 
   switch (fixture) {
     case "room":
-      return {
-        name: STATUS.SHOW_ROOM,
-        data: { text: "game:waitingForPlayers", inviteCode: "426 426" },
-      }
+      return roomStatus()
+
+    case "room-30":
+      return roomStatus()
+
+    case "room-60":
+      return roomStatus()
 
     case "start":
       return {

@@ -35,20 +35,27 @@ describe("pinCells", () => {
 })
 
 describe("seatTier", () => {
-  it("shrinks the names as the room fills, in three steps", () => {
-    const small = seatTier(5)
-    const mid = seatTier(20)
-    const full = seatTier(55)
+  it("shrinks the names as the room fills, in four steps", () => {
+    const tiers = [seatTier(5), seatTier(20), seatTier(40), seatTier(55)]
 
-    expect(small.minRem).toBeGreaterThan(mid.minRem)
-    expect(mid.minRem).toBeGreaterThan(full.minRem)
-    expect(new Set([small.text, mid.text, full.text]).size).toBe(3)
+    tiers.slice(1).forEach((tier, step) => {
+      expect(tiers[step].minRem).toBeGreaterThan(tier.minRem)
+    })
+
+    expect(new Set(tiers.map((tier) => tier.text)).size).toBe(4)
   })
 
   it("holds each tier up to its limit", () => {
     expect(seatTier(12)).toEqual(seatTier(1))
     expect(seatTier(30)).toEqual(seatTier(13))
-    expect(seatTier(60)).toEqual(seatTier(31))
+    expect(seatTier(47)).toEqual(seatTier(31))
+    expect(seatTier(60)).toEqual(seatTier(48))
+  })
+
+  it("makes a full room's rows shorter, not only its names smaller", () => {
+    // Four columns of the 31-to-47 tier overflowed the frame from 48 players:
+    // the compact tier has to shorten the row as well as narrow it.
+    expect(seatTier(60).pad).not.toBe(seatTier(47).pad)
   })
 })
 

@@ -8,6 +8,7 @@ import {
   allQuestions,
   crowdResponses,
   FIXTURES,
+  playersFor,
   QUIZ_LOAD_ERRORS,
   QUIZZES,
   statusFor,
@@ -39,6 +40,8 @@ describe("statusFor", () => {
   it("names the right game status for every fixture", () => {
     const expected: Record<string, string> = {
       room: STATUS.SHOW_ROOM,
+      "room-30": STATUS.SHOW_ROOM,
+      "room-60": STATUS.SHOW_ROOM,
       start: STATUS.SHOW_START,
       prepared: STATUS.SHOW_PREPARED,
       question: STATUS.SHOW_QUESTION,
@@ -170,5 +173,23 @@ describe("crowdResponses", () => {
     expect(
       crowdResponses({ answers: ["a", "b", "c"], solutions: [0, 2] }, "right"),
     ).toEqual({ 0: 12, 1: 3, 2: 12 })
+  })
+})
+
+describe("playersFor", () => {
+  it("seats the usual three, or a crowd for the full-room fixtures", () => {
+    expect(playersFor("room")).toHaveLength(3)
+    expect(playersFor("room-30")).toHaveLength(30)
+    expect(playersFor("room-60")).toHaveLength(60)
+  })
+
+  it("gives a crowd distinct ids and names, and one name too long for a seat", () => {
+    const crowd = playersFor("room-60")
+
+    expect(new Set(crowd.map((player) => player.id)).size).toBe(60)
+    expect(new Set(crowd.map((player) => player.username)).size).toBe(60)
+    expect(
+      Math.max(...crowd.map((player) => player.username.length)),
+    ).toBeGreaterThan(16)
   })
 })
