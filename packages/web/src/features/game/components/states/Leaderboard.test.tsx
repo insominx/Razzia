@@ -75,6 +75,31 @@ describe("Leaderboard", () => {
     expect(badges[3]).not.toHaveClass("bg-medal-gold")
   })
 
+  it("sets every name a step smaller when one is long, so the rows match", () => {
+    const board = [
+      { ...player("Christopher-James", 300), username: "Christopher-James" },
+      { ...player("Ana", 200), username: "Ana" },
+    ]
+    const { container } = render(
+      <Leaderboard data={{ oldLeaderboard: board, leaderboard: board }} />,
+    )
+
+    for (const name of container.querySelectorAll(".truncate")) {
+      expect(name).toHaveClass("text-3xl")
+    }
+  })
+
+  it("leaves the names full size when none is long", () => {
+    const board = [player("Ana", 300), player("Sam", 200)]
+    const { container } = render(
+      <Leaderboard data={{ oldLeaderboard: board, leaderboard: board }} />,
+    )
+
+    for (const name of container.querySelectorAll(".truncate")) {
+      expect(name).not.toHaveClass("text-3xl")
+    }
+  })
+
   it("holds the old standing, with each bar its share of the new longest", () => {
     const { container } = render(
       <Leaderboard

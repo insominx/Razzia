@@ -17,6 +17,14 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+/**
+ * When any name on the board is longer than this, every name is set a step smaller,
+ * so a long one (Christopher-James, Bartholomew-Alexander) shows whole in the name
+ * column instead of ending in an ellipsis, and the rows stay the same size as each
+ * other. The usernames the server accepts stop at twenty characters.
+ */
+const LONG_NAME = 14
+
 const CALM_EASE = [0.16, 1, 0.3, 1] as const
 
 interface Props {
@@ -112,6 +120,9 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
   const racing = beat !== "hold"
   const swapped = beat === "swapped" || beat === "told"
   const rows = swapped ? leaderboard : oldLeaderboard
+  const hasLongName = [...oldLeaderboard, ...leaderboard].some(
+    (player) => player.username.length > LONG_NAME,
+  )
   const longest = Math.max(1, ...leaderboard.map((player) => player.points))
   const commentary = boardCommentary(oldLeaderboard, leaderboard)
 
@@ -153,7 +164,14 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
                 {/* A name can be twenty characters and the bars do not need the
                     room, so the name gets a third of the row. */}
                 <span className="flex w-[34%] min-w-0 shrink-0 items-center gap-2">
-                  <span className="truncate">{username}</span>
+                  <span
+                    className={clsx(
+                      "truncate",
+                      hasLongName && "stage:text-[2rem] text-3xl",
+                    )}
+                  >
+                    {username}
+                  </span>
                   <StreakBadge streak={streak} />
                 </span>
 
