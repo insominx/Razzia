@@ -19,7 +19,7 @@ import {
   ANSWER_GRID_TRACKS,
   ANSWERS_LABELS,
   answerSlotPlacement,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import {
   analyzeCrowd,
   headlineFor,

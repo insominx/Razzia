@@ -11,7 +11,7 @@ import {
   boardCommentary,
   placeChange,
 } from "@razzia/web/features/game/utils/board"
-import { MEDAL } from "@razzia/web/features/game/utils/constants"
+import { MEDAL } from "@razzia/web/features/game/utils/game-constants"
 import clsx from "clsx"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useEffect, useState } from "react"

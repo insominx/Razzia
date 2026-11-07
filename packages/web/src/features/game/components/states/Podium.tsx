@@ -1,7 +1,7 @@
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import FrameHit from "@razzia/web/features/game/components/FrameHit"
 import { useCalmVisuals } from "@razzia/web/features/game/hooks/use-show-intensity"
-import { MEDAL } from "@razzia/web/features/game/utils/constants"
+import { MEDAL } from "@razzia/web/features/game/utils/game-constants"
 import {
   CONFETTI_MS,
   podiumTimes,

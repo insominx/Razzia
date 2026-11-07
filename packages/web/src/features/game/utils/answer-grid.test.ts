@@ -1,7 +1,7 @@
 import {
   ANSWER_GRID_TRACKS,
   answerSlotPlacement,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { describe, expect, it } from "vitest"
 
 describe("answer grid placement", () => {

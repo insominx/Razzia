@@ -6,7 +6,7 @@ import {
   type RoundStepId,
   scheduleAfter,
 } from "@razzia/web/features/dev/round"
-import { ANSWERS_LABELS } from "@razzia/web/features/game/utils/constants"
+import { ANSWERS_LABELS } from "@razzia/web/features/game/utils/game-constants"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 export interface LogEntry {

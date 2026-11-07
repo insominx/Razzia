@@ -21,7 +21,7 @@ import {
   SFX,
   sfxForTheme,
   sfxVolume,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import type { SoundTheme } from "@razzia/common/types/visuals"
 
 const classicPath = (sfx: LegacySfx): string => {

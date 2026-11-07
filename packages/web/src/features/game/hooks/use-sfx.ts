@@ -4,7 +4,7 @@ import {
 } from "@razzia/common/types/visuals"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
-import { sfxForTheme } from "@razzia/web/features/game/utils/constants"
+import { sfxForTheme } from "@razzia/web/features/game/utils/game-constants"
 import { useCallback } from "react"
 
 /**

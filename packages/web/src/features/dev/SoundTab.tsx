@@ -6,7 +6,7 @@ import {
   SFX,
   sfxForTheme,
   sfxVolume,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { Howl } from "howler"
 import { useEffect, useRef, useState } from "react"
 

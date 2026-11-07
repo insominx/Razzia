@@ -6,7 +6,7 @@ import {
   SFX,
   sfxForTheme,
   sfxVolume,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { describe, expect, it, vi } from "vitest"
 
 const { Howl, Howler } = vi.hoisted(() => ({

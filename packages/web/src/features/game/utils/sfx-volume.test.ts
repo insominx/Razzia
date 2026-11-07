@@ -4,7 +4,7 @@ import {
   sfxVolume,
   THEMED_SFX_FILES,
   THEMED_SFX_TRIM_DB,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { describe, expect, it } from "vitest"
 
 const CLASSIC_CUES = [

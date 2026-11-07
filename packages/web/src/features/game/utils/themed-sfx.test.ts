@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import {
   SFX,
   THEMED_SFX_FILES,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 
 // Vitest roots at `packages/web`, so the shipped assets sit under `public/`.
 const themesDir = resolve(process.cwd(), "public/sounds/themes")

@@ -23,7 +23,7 @@ import {
   ANSWER_GRID_TRACKS,
   answerSlotPlacement,
   FINAL_COUNTDOWN_SECONDS,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { HAPTIC, haptic } from "@razzia/web/features/game/utils/haptics"
 import { revealSegment } from "@razzia/web/features/game/utils/charge-line"
 import { answerVars } from "@razzia/web/features/game/utils/type-tier"

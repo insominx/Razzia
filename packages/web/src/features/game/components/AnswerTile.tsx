@@ -1,7 +1,7 @@
 import {
   ANSWER_COLOR_VARS,
   ANSWERS_LABELS,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import clsx from "clsx"
 import { Check } from "lucide-react"
 import type { CSSProperties, ReactNode } from "react"

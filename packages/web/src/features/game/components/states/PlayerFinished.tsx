@@ -1,7 +1,7 @@
 import type { CommonStatusDataMap } from "@razzia/common/types/game/status"
 import { useCalmVisuals } from "@razzia/web/features/game/hooks/use-show-intensity"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
-import { MEDAL } from "@razzia/web/features/game/utils/constants"
+import { MEDAL } from "@razzia/web/features/game/utils/game-constants"
 import { formatRank } from "@razzia/web/features/game/utils/rank"
 import clsx from "clsx"
 import { useEffect, useState } from "react"

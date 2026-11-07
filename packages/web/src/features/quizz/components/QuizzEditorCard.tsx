@@ -1,7 +1,7 @@
 import { MEDIA_TYPES } from "@razzia/common/constants"
 import type { QuestionMedia } from "@razzia/common/types/game"
 import AlertDialog from "@razzia/web/components/AlertDialog"
-import { ANSWER_IDENTITY } from "@razzia/web/features/game/utils/constants"
+import { ANSWER_IDENTITY } from "@razzia/web/features/game/utils/game-constants"
 import { questionFitProblems } from "@razzia/web/features/game/utils/question-fit"
 import { type QuestionWithId } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"

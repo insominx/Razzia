@@ -1,4 +1,4 @@
-import { ANSWERS_LABELS } from "@razzia/web/features/game/utils/constants"
+import { ANSWERS_LABELS } from "@razzia/web/features/game/utils/game-constants"
 
 /**
  * What the crowd did, and the one line that says so. The line is the speaker

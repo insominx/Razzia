@@ -1,5 +1,5 @@
 import { getAnswerRevealDuration } from "@razzia/common/utils/answer-reveal"
-import { FINAL_COUNTDOWN_SECONDS } from "@razzia/web/features/game/utils/constants"
+import { FINAL_COUNTDOWN_SECONDS } from "@razzia/web/features/game/utils/game-constants"
 
 /**
  * The line between the question and the answers. A dim line grows from the
