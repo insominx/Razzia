@@ -7,6 +7,8 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
 } from "react"
 import { io, Socket } from "socket.io-client"
@@ -117,19 +119,45 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useSocket = () => useContext(SocketContext)
 
+/**
+ * Calls `callback` for each `event` from the server.
+ *
+ * The socket is subscribed once, to a function that calls whichever callback the
+ * last committed render passed. Subscribing the callback itself each render left a
+ * gap: until the next passive effect ran, the socket still held an older render's
+ * handler, so a handler that read state from its closure saw stale state when events
+ * arrived in a burst (a lobby filling from many phones lost names that way).
+ *
+ * A handler that builds the next state from the current one must still not read it
+ * from the render: several events can arrive before the next render, so use a
+ * functional update, a store, or a ref the handler keeps current.
+ */
 export const useEvent = <E extends keyof ServerToClientEvents>(
   event: E,
   callback: ServerToClientEvents[E],
 ) => {
   const { socket } = useSocket()
+  const latest = useRef(callback)
+
+  // Before paint, so there is no moment when the subscription calls an older render.
+  useLayoutEffect(() => {
+    latest.current = callback
+  })
 
   useEffect(() => {
+    const handler = (...args: unknown[]) => {
+      // The event's own type is checked where the hook is called.
+      const call = latest.current as unknown as (...rest: unknown[]) => void
+
+      call(...args)
+    }
+
     // oxlint-disable-next-line no-explicit-any, no-unsafe-argument
-    socket.on(event, callback as any)
+    socket.on(event, handler as any)
 
     return () => {
       // oxlint-disable-next-line no-explicit-any, no-unsafe-argument
-      socket.off(event, callback as any)
+      socket.off(event, handler as any)
     }
-  }, [socket, event, callback])
+  }, [socket, event])
 }
