@@ -150,7 +150,9 @@ const Leaderboard = ({ data: { oldLeaderboard, leaderboard } }: Props) => {
               >
                 <RankBadge rank={index + 1} />
 
-                <span className="flex w-[22%] min-w-0 shrink-0 items-center gap-2">
+                {/* A name can be twenty characters and the bars do not need the
+                    room, so the name gets a third of the row. */}
+                <span className="flex w-[34%] min-w-0 shrink-0 items-center gap-2">
                   <span className="truncate">{username}</span>
                   <StreakBadge streak={streak} />
                 </span>
