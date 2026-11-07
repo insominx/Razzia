@@ -5,6 +5,7 @@ import {
   showIntensityValidator,
   soundThemeValidator,
 } from "@razzia/common/validators/visuals"
+import { ackOf, fieldsOf } from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { getGameConfig, updateGameConfig } from "@razzia/socket/services/config"
 import { verifyManagerAuth } from "@razzia/socket/services/manager-auth"
@@ -24,9 +25,13 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.MANAGER.GLOBAL_BACKGROUND_SET,
-    manager.withAuth(socket, ({ background }, callback) => {
+    manager.withAuth(socket, (request, callback) => {
+      const reply = ackOf(callback)
+
       try {
-        const result = backgroundRefValidator.safeParse(background)
+        const result = backgroundRefValidator.safeParse(
+          fieldsOf(request).background,
+        )
 
         if (!result.success) {
           throw new Error(result.error.issues[0].message)
@@ -34,7 +39,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
 
         setGlobalBackground(result.data)
         emitConfig(socket)
-        callback?.({ ok: true })
+        reply?.({ ok: true })
       } catch (error) {
         console.error("Failed to set global background:", error)
         const message =
@@ -42,7 +47,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.backgroundSetFailed"
 
-        callback?.({ error: message })
+        reply?.({ error: message })
       }
     }),
   )
@@ -50,22 +55,26 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR,
     manager.withAuth(socket, (callback) => {
+      const reply = ackOf(callback)
+
       try {
         clearGlobalBackground()
         emitConfig(socket)
-        callback?.({ ok: true })
+        reply?.({ ok: true })
       } catch (error) {
         console.error("Failed to clear global background:", error)
-        callback?.({ error: "errors:visuals.backgroundClearFailed" })
+        reply?.({ error: "errors:visuals.backgroundClearFailed" })
       }
     }),
   )
 
   socket.on(
     EVENTS.MANAGER.DIALECT_SET,
-    manager.withAuth(socket, ({ dialect }, callback) => {
+    manager.withAuth(socket, (request, callback) => {
+      const reply = ackOf(callback)
+
       try {
-        const result = dialectValidator.safeParse(dialect)
+        const result = dialectValidator.safeParse(fieldsOf(request).dialect)
 
         if (!result.success) {
           throw new Error(result.error.issues[0].message)
@@ -79,7 +88,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           },
         }))
         emitConfig(socket)
-        callback?.({ ok: true })
+        reply?.({ ok: true })
       } catch (error) {
         console.error("Failed to set dialect:", error)
         const message =
@@ -87,16 +96,20 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.dialectSetFailed"
 
-        callback?.({ error: message })
+        reply?.({ error: message })
       }
     }),
   )
 
   socket.on(
     EVENTS.MANAGER.SOUND_THEME_SET,
-    manager.withAuth(socket, ({ soundTheme }, callback) => {
+    manager.withAuth(socket, (request, callback) => {
+      const reply = ackOf(callback)
+
       try {
-        const result = soundThemeValidator.safeParse(soundTheme)
+        const result = soundThemeValidator.safeParse(
+          fieldsOf(request).soundTheme,
+        )
 
         if (!result.success) {
           throw new Error(result.error.issues[0].message)
@@ -110,7 +123,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           },
         }))
         emitConfig(socket)
-        callback?.({ ok: true })
+        reply?.({ ok: true })
       } catch (error) {
         console.error("Failed to set sound theme:", error)
         const message =
@@ -118,16 +131,20 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.soundThemeSetFailed"
 
-        callback?.({ error: message })
+        reply?.({ error: message })
       }
     }),
   )
 
   socket.on(
     EVENTS.MANAGER.SHOW_INTENSITY_SET,
-    manager.withAuth(socket, ({ showIntensity }, callback) => {
+    manager.withAuth(socket, (request, callback) => {
+      const reply = ackOf(callback)
+
       try {
-        const result = showIntensityValidator.safeParse(showIntensity)
+        const result = showIntensityValidator.safeParse(
+          fieldsOf(request).showIntensity,
+        )
 
         if (!result.success) {
           throw new Error(result.error.issues[0].message)
@@ -141,7 +158,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
           },
         }))
         emitConfig(socket)
-        callback?.({ ok: true })
+        reply?.({ ok: true })
       } catch (error) {
         console.error("Failed to set show intensity:", error)
         const message =
@@ -149,7 +166,7 @@ export const managerSocketHandlers = ({ socket }: SocketContext) => {
             ? error.message
             : "errors:visuals.showIntensitySetFailed"
 
-        callback?.({ error: message })
+        reply?.({ error: message })
       }
     }),
   )

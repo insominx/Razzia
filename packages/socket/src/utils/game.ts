@@ -7,7 +7,7 @@ export const withGame = (
   gameId: string | undefined,
   socket: Socket,
   callback: (_game: Game) => void | Promise<void>,
-): void => {
+): void | Promise<void> => {
   if (!gameId) {
     socket.emit("game:errorMessage", "errors:game.notFound")
 
@@ -23,7 +23,8 @@ export const withGame = (
     return
   }
 
-  callback(game)
+  // Handed back so a failing async action reaches the handler guard.
+  return callback(game)
 }
 
 const drawInviteCode = customAlphabet("0123456789", 6)

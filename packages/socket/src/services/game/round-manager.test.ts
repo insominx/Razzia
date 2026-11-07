@@ -1,5 +1,5 @@
 import { NO_TIME_LIMIT } from "@razzia/common/constants"
-import type { Player, Quizz } from "@razzia/common/types/game"
+import type { GameResult, Player, Quizz } from "@razzia/common/types/game"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
 import { STATUS } from "@razzia/common/types/game/status"
 import { getQuestionPromptRevealMs } from "@razzia/common/utils/question-transition"
@@ -754,5 +754,145 @@ describe("RoundManager players who drop out", () => {
       expect.objectContaining({ correct: true, points: 1_000 }),
     )
     expect(again.roomEmit).not.toHaveBeenCalled()
+  })
+})
+
+describe("RoundManager answers opened early", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stamps the moment answers really opened when the host skips the reveal", async () => {
+    const harness = createHarness()
+
+    await enterReveal(harness)
+    await vi.advanceTimersByTimeAsync(2_000)
+    harness.round.unlockAnswers(harness.managerSocket)
+    await flushAsync()
+
+    const opened = harness.broadcast.mock.calls.find(
+      ([status, data]) =>
+        status === STATUS.SELECT_ANSWER &&
+        (data as { answeringOpen: boolean }).answeringOpen,
+    )
+
+    expect(opened?.[1]).toMatchObject({
+      revealStartedAt: Date.parse("2026-08-26T17:00:05.950Z"),
+      unlockAt: Date.parse("2026-08-26T17:00:07.950Z"),
+      serverNow: Date.parse("2026-08-26T17:00:07.950Z"),
+    })
+  })
+})
+
+describe("RoundManager players level on points", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-08-26T17:00:00.000Z"))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // Four players, the first two level and nobody answering, so the order
+  // and the places hold: 1, 1, 3, 4.
+  const enterTiedResults = async (
+    harness: ReturnType<typeof createHarness>,
+  ) => {
+    ;["p3", "p4"].forEach((id, index) => {
+      harness.players.push(makePlayer(id, `Player ${index + 3}`))
+    })
+    harness.players.forEach((player, index) => {
+      player.points = [900, 900, 700, 600][index]
+    })
+    await enterResults(harness)
+  }
+
+  const rankOf = (
+    harness: ReturnType<typeof createHarness>,
+    id: string,
+    status: string,
+  ) => {
+    const [[, , data]] = sentStatuses(harness, id, status)
+
+    return (data as { rank: number }).rank
+  }
+
+  it("gives players level on points the same place on their result", async () => {
+    const harness = createHarness()
+
+    await enterTiedResults(harness)
+
+    expect(
+      ["p1", "p2", "p3", "p4"].map((id) =>
+        rankOf(harness, id, STATUS.SHOW_RESULT),
+      ),
+    ).toEqual([1, 1, 3, 4])
+  })
+
+  it("shares the place on the standings and their ladders", async () => {
+    const harness = createHarness(10, "Pick one", 2)
+
+    await enterTiedResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    const standing = (id: string) =>
+      sentStatuses(harness, id, STATUS.SHOW_STANDING)[0]?.[2] as {
+        rank: number
+        ladder: Array<{ rank: number; username: string; me: boolean }>
+      }
+
+    expect(["p1", "p2", "p3", "p4"].map((id) => standing(id).rank)).toEqual([
+      1, 1, 3, 4,
+    ])
+    expect(standing("p4").ladder.map(({ rank }) => rank)).toEqual([1, 3, 4])
+    expect(standing("p2").ladder).toEqual([
+      expect.objectContaining({ rank: 1, username: "One", me: false }),
+      expect.objectContaining({ rank: 1, username: "Two", me: true }),
+      expect.objectContaining({ rank: 3, username: "Player 3", me: false }),
+    ])
+  })
+
+  it("compares a tied player's place with the shared place before", async () => {
+    const harness = createHarness(10, "Pick one", 2)
+
+    await enterTiedResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+    harness.round.nextQuestion(harness.managerSocket)
+    await vi.advanceTimersByTimeAsync(20_000)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    const [, [, , second]] = sentStatuses(harness, "p2", STATUS.SHOW_RESULT)
+
+    expect(second).toMatchObject({ rank: 1, previousRank: 1 })
+  })
+
+  it("shares the place on the podium and in the saved result, still three on the podium", async () => {
+    const harness = createHarness()
+
+    await enterTiedResults(harness)
+    harness.round.showLeaderboard(harness.managerSocket)
+
+    const [[, , podium]] = sentStatuses(harness, "manager", STATUS.FINISHED)
+    const [[saved]] = harness.onGameFinished.mock.calls as [[GameResult]]
+
+    expect(
+      ["p1", "p2", "p3", "p4"].map((id) =>
+        rankOf(harness, id, STATUS.FINISHED),
+      ),
+    ).toEqual([1, 1, 3, 4])
+    expect((podium as { top: unknown[] }).top).toHaveLength(3)
+    expect(saved.players.map(({ rank }) => rank)).toEqual([1, 1, 3, 4])
+    expect(saved.players.map(({ username }) => username)).toEqual([
+      "One",
+      "Two",
+      "Player 3",
+      "Player 4",
+    ])
   })
 })

@@ -8,6 +8,7 @@ import {
 import type {
   Answer,
   GameResult,
+  GameUpdateQuestion,
   LectureOutcome,
   LectureState,
   Player,
@@ -82,6 +83,17 @@ interface UnlockContext {
   unlockAt: number
 }
 
+// The places of players already sorted by points. Players level on points
+// share a place and the next place skips one for each of them (1, 1, 3).
+const placesOf = (sorted: ReadonlyArray<{ points: number }>): number[] =>
+  sorted.reduce<number[]>((places, player, index) => {
+    const level = index > 0 && sorted[index - 1].points === player.points
+
+    places.push(level ? places[index - 1] : index + 1)
+
+    return places
+  }, [])
+
 export class RoundManager {
   private readonly opts: RoundManagerOptions
   private currentQuestion = 0
@@ -115,10 +127,16 @@ export class RoundManager {
     return this.phase === "idle"
   }
 
-  getReconnectInfo() {
+  // Where the game is, for every screen. A lecture deck plays questions in any
+  // order, so it also says which have been played: a phone has no other way to
+  // draw its pips or know the final question.
+  getReconnectInfo(): GameUpdateQuestion {
     return {
       current: this.currentQuestion + 1,
       total: this.opts.quizz.questions.length,
+      ...(this.opts.lecture
+        ? { played: [...this.played].sort((a, b) => a - b) }
+        : {}),
     }
   }
 
@@ -175,10 +193,9 @@ export class RoundManager {
 
     this.opts.onNewQuestion()
 
-    this.opts.io.to(this.opts.gameId).emit(EVENTS.GAME.UPDATE_QUESTION, {
-      current: this.currentQuestion + 1,
-      total: this.opts.quizz.questions.length,
-    })
+    this.opts.io
+      .to(this.opts.gameId)
+      .emit(EVENTS.GAME.UPDATE_QUESTION, this.getReconnectInfo())
 
     this.opts.broadcast(STATUS.SHOW_PREPARED, {
       totalAnswers: question.answers.length,
@@ -280,23 +297,34 @@ export class RoundManager {
       cooldown: question.cooldown,
       totalPlayer: this.opts.players.count(),
       revealStartedAt,
-      unlockAt,
+      // When the host skipped the reveal, the moment answers really opened.
+      // This payload is what a reconnecting screen gets back, and it times
+      // its burn line and music from here.
+      unlockAt: Math.min(unlockAt, serverNow),
       serverNow,
       answeringOpen: true,
     })
 
     await this.opts.cooldown.start(question.time)
 
-    if (
-      !this.started ||
-      generation !== this.questionGeneration ||
-      this.phase !== "answering"
-    ) {
+    if (!this.started || generation !== this.questionGeneration) {
+      return
+    }
+
+    this.closeAnswering()
+  }
+
+  // Ends answering and shows the results at once, whether the clock ran out,
+  // the host skipped, or everyone is in. A skip or the last answer closes it
+  // there and then, so no answer slips in before the results are stamped.
+  private closeAnswering(): void {
+    if (this.phase !== "answering") {
       return
     }
 
     this.phase = "results"
-    this.showResults(question)
+    this.opts.cooldown.abort()
+    this.showResults(this.opts.quizz.questions[this.currentQuestion])
   }
 
   private showResults(question: Question): void {
@@ -320,8 +348,12 @@ export class RoundManager {
     )
 
     const resultsAt = Date.now()
+    const previousPlaces = placesOf(this.leaderboard)
     const previousRanks = new Map(
-      this.leaderboard.map((player, index) => [player.clientId, index + 1]),
+      this.leaderboard.map((player, index) => [
+        player.clientId,
+        previousPlaces[index],
+      ]),
     )
     const sortedPlayers = currentPlayers
       .map((player) => {
@@ -344,9 +376,10 @@ export class RoundManager {
       .sort((a, b) => b.points - a.points)
 
     this.opts.players.replace(sortedPlayers)
+    const places = placesOf(sortedPlayers)
 
     sortedPlayers.forEach((player, index) => {
-      const rank = index + 1
+      const rank = places[index]
       const aheadPlayer = sortedPlayers[index - 1]
 
       this.opts.send(player.id, STATUS.SHOW_RESULT, {
@@ -430,6 +463,22 @@ export class RoundManager {
       : null
   }
 
+  // A kicked player leaves the boards, the podium and the saved result, and
+  // their answer leaves the count and the race for fastest.
+  forgetPlayer(clientId: string): void {
+    const others = (entry: { clientId: string }) => entry.clientId !== clientId
+
+    this.leaderboard = this.leaderboard.filter(others)
+    this.tempOldLeaderboard = this.tempOldLeaderboard?.filter(others) ?? null
+    this.playersAnswers = this.playersAnswers.filter(others)
+  }
+
+  // How many are in while answering is open, for a host back mid-question;
+  // null at any other time.
+  getAnswerCount(): number | null {
+    return this.phase === "answering" ? this.playersAnswers.length : null
+  }
+
   stop(): void {
     this.phase = "over"
     this.revealWaiter?.interrupt()
@@ -504,7 +553,7 @@ export class RoundManager {
       expected.length > 0 &&
       expected.every(({ clientId }) => answered.has(clientId))
     ) {
-      this.opts.cooldown.abort()
+      this.closeAnswering()
     }
   }
 
@@ -685,14 +734,19 @@ export class RoundManager {
       return
     }
 
+    const previousPlaces = placesOf(previous)
     const previousRanks = new Map(
       this.previousPlaceKnown
-        ? previous.map((player, index) => [player.clientId, index + 1])
+        ? previous.map((player, index) => [
+            player.clientId,
+            previousPlaces[index],
+          ])
         : [],
     )
     const current = new Map(
       this.opts.players.getAll().map((player) => [player.clientId, player.id]),
     )
+    const places = placesOf(this.leaderboard)
 
     this.leaderboard.forEach((player, index) => {
       const id = current.get(player.clientId)
@@ -705,15 +759,15 @@ export class RoundManager {
       const shown = new Set([0, index - 1, index, index + 1])
       const ladder = this.leaderboard
         .map((entry, rowIndex) => ({
-          rank: rowIndex + 1,
+          rank: places[rowIndex],
           username: entry.username,
           points: entry.points,
           me: rowIndex === index,
         }))
-        .filter((row) => shown.has(row.rank - 1))
+        .filter((_row, rowIndex) => shown.has(rowIndex))
 
       this.opts.send(id, STATUS.SHOW_STANDING, {
-        rank: index + 1,
+        rank: places[index],
         previousRank: previousRanks.get(player.clientId) ?? null,
         points: player.points,
         gained: (player as Player & { lastPoints?: number }).lastPoints ?? 0,
@@ -732,6 +786,8 @@ export class RoundManager {
   }
 
   private buildResult(ranked: Player[]): GameResult {
+    const places = placesOf(ranked)
+
     return {
       id: `${Date.now()}-${nanoid(8)}`,
       subject: this.opts.quizz.subject,
@@ -739,7 +795,7 @@ export class RoundManager {
       players: ranked.map((player, index) => ({
         username: player.username,
         points: player.points,
-        rank: index + 1,
+        rank: places[index],
       })),
       questions: this.questionsHistory,
     }
@@ -748,7 +804,9 @@ export class RoundManager {
   private endGame(ranked: Player[]): void {
     this.phase = "over"
 
+    // Still the first three entries, however they are placed.
     const top = ranked.slice(0, 3).map(toPublicPlayer)
+    const places = placesOf(ranked)
 
     this.opts.onGameFinished(this.buildResult(ranked))
 
@@ -761,20 +819,17 @@ export class RoundManager {
       this.opts.send(player.id, STATUS.FINISHED, {
         subject: this.opts.quizz.subject,
         top,
-        rank: index + 1,
+        rank: places[index],
         total: ranked.length,
         points: player.points,
       })
     })
   }
 
-  // Phones that reconnected during a long lecture hold have new socket ids,
-  // and the leaderboard matches its rows by id.
+  // A phone that reconnected since the results has a new socket id, in any
+  // game, and the leaderboard matches its rows by id: a stale one shows a
+  // player overtaking themselves.
   private withCurrentIds(players: Player[]): Player[] {
-    if (!this.opts.lecture) {
-      return players
-    }
-
     const ids = new Map(
       this.opts.players.getAll().map((player) => [player.clientId, player.id]),
     )
@@ -794,7 +849,7 @@ export class RoundManager {
       return
     }
 
-    this.opts.cooldown.abort()
+    this.closeAnswering()
   }
 
   unlockAnswers(socket: Socket): void {

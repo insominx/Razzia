@@ -1,4 +1,5 @@
 import { EVENTS } from "@razzia/common/constants"
+import { textOf } from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { deleteResult, getResultById } from "@razzia/socket/services/config"
 import manager, { emitConfig } from "@razzia/socket/services/manager"
@@ -6,7 +7,13 @@ import manager, { emitConfig } from "@razzia/socket/services/manager"
 export const resultsSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.RESULTS.GET,
-    manager.withAuth(socket, (id) => {
+    manager.withAuth(socket, (message) => {
+      const id = textOf(message)
+
+      if (id === undefined) {
+        return
+      }
+
       try {
         socket.emit(EVENTS.RESULTS.DATA, getResultById(id))
       } catch (error) {
@@ -17,7 +24,13 @@ export const resultsSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.RESULTS.DELETE,
-    manager.withAuth(socket, (id) => {
+    manager.withAuth(socket, (message) => {
+      const id = textOf(message)
+
+      if (id === undefined) {
+        return
+      }
+
       try {
         deleteResult(id)
         emitConfig(socket)

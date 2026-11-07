@@ -1,4 +1,5 @@
 import { EVENTS } from "@razzia/common/constants"
+import { fieldsOf, textOf } from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import {
   deleteQuizz,
@@ -16,7 +17,13 @@ import {
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
     EVENTS.QUIZZ.GET,
-    manager.withAuth(socket, (id) => {
+    manager.withAuth(socket, (message) => {
+      const id = textOf(message)
+
+      if (id === undefined) {
+        return
+      }
+
       try {
         const quizz = getQuizzById(id)
         const resolvedVisuals = resolveVisuals(quizz, getGameConfig())
@@ -52,7 +59,13 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.DELETE,
-    manager.withAuth(socket, (id) => {
+    manager.withAuth(socket, (message) => {
+      const id = textOf(message)
+
+      if (id === undefined) {
+        return
+      }
+
       try {
         const mutation = deleteQuizz(id)
         finalizeBackgroundMutation(mutation.previousBackground)
@@ -67,7 +80,13 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.UPDATE,
-    manager.withAuth(socket, ({ id, ...data }) => {
+    manager.withAuth(socket, (request) => {
+      const { id, ...data } = fieldsOf(request)
+
+      if (typeof id !== "string") {
+        return
+      }
+
       try {
         const mutation = updateQuizz(id, data)
         finalizeBackgroundMutation(

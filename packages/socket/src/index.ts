@@ -1,5 +1,6 @@
 import type { Server } from "@razzia/common/types/game/socket"
 import { gameSocketHandlers } from "@razzia/socket/handlers/game"
+import { guardHandlers } from "@razzia/socket/handlers/guard"
 import { managerSocketHandlers } from "@razzia/socket/handlers/manager"
 import { quizzSocketHandlers } from "@razzia/socket/handlers/quizz"
 import { resultsSocketHandlers } from "@razzia/socket/handlers/results"
@@ -60,6 +61,7 @@ io.on("connection", (socket) => {
     `A user connected: socketId: ${socket.id}, clientId: ${socket.handshake.auth.clientId}`,
   )
 
+  guardHandlers(socket)
   socketHandlers.forEach((handler) => {
     handler({ io, socket })
   })

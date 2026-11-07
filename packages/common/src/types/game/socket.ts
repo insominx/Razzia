@@ -61,10 +61,7 @@ export interface ServerToClientEvents {
   [EVENTS.GAME.START_COOLDOWN]: () => void
   [EVENTS.GAME.COOLDOWN]: (_count: number) => void
   [EVENTS.GAME.RESET]: (_message: string) => void
-  [EVENTS.GAME.UPDATE_QUESTION]: (_data: {
-    current: number
-    total: number
-  }) => void
+  [EVENTS.GAME.UPDATE_QUESTION]: (_data: GameUpdateQuestion) => void
   [EVENTS.GAME.PLAYER_ANSWER]: (_count: number) => void
 
   // Player events

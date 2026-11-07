@@ -1,5 +1,12 @@
 import { EVENTS } from "@razzia/common/constants"
 import { inviteCodeValidator } from "@razzia/common/validators/auth"
+import {
+  ackOf,
+  fieldsOf,
+  gameIdOf,
+  numberOf,
+  textOf,
+} from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { getGameConfig, getQuizz } from "@razzia/socket/services/config"
 import Game from "@razzia/socket/services/game"
@@ -45,7 +52,13 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     game.setPlayerDisconnected(socket.id)
   }
 
-  socket.on(EVENTS.PLAYER.RECONNECT, ({ gameId }) => {
+  socket.on(EVENTS.PLAYER.RECONNECT, (message) => {
+    const gameId = gameIdOf(message)
+
+    if (!gameId) {
+      return
+    }
+
     const game = registry.getPlayerGame(gameId, clientId)
 
     if (game) {
@@ -57,7 +70,13 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     socket.emit(EVENTS.GAME.RESET, "errors:game.notFound")
   })
 
-  socket.on(EVENTS.MANAGER.RECONNECT, ({ gameId }) => {
+  socket.on(EVENTS.MANAGER.RECONNECT, (message) => {
+    const gameId = gameIdOf(message)
+
+    if (!gameId) {
+      return
+    }
+
     const game = registry.getManagerGame(gameId, clientId)
 
     if (game) {
@@ -154,65 +173,88 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     socket.emit(EVENTS.GAME.SUCCESS_ROOM, game.gameId)
   })
 
-  socket.on(EVENTS.PLAYER.LOGIN, ({ gameId, data }) =>
-    withGame(gameId, socket, (game) => game.join(socket, data.username)),
+  socket.on(EVENTS.PLAYER.LOGIN, (message) => {
+    const { gameId, data } = fieldsOf(message)
+    const username = textOf(fieldsOf(data).username)
+
+    if (username === undefined) {
+      return
+    }
+
+    withGame(textOf(gameId), socket, (game) => game.join(socket, username))
+  })
+
+  socket.on(EVENTS.MANAGER.KICK_PLAYER, (message) => {
+    const playerId = textOf(fieldsOf(message).playerId)
+
+    if (playerId === undefined) {
+      return
+    }
+
+    withGame(gameIdOf(message), socket, (game) =>
+      game.kickPlayer(socket, playerId),
+    )
+  })
+
+  socket.on(EVENTS.MANAGER.START_GAME, (message) =>
+    withGame(gameIdOf(message), socket, (game) => game.start(socket)),
   )
 
-  socket.on(EVENTS.MANAGER.KICK_PLAYER, ({ gameId, playerId }) =>
-    withGame(gameId, socket, (game) => game.kickPlayer(socket, playerId)),
+  socket.on(EVENTS.PLAYER.SELECTED_ANSWER, (message) => {
+    const answerKey = numberOf(fieldsOf(fieldsOf(message).data).answerKey)
+
+    if (answerKey === undefined) {
+      return
+    }
+
+    withGame(gameIdOf(message), socket, (game) =>
+      game.selectAnswer(socket, answerKey),
+    )
+  })
+
+  socket.on(EVENTS.MANAGER.ABORT_QUIZ, (message) =>
+    withGame(gameIdOf(message), socket, (game) => game.abortRound(socket)),
   )
 
-  socket.on(EVENTS.MANAGER.START_GAME, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.start(socket)),
+  socket.on(EVENTS.MANAGER.UNLOCK_ANSWERS, (message) =>
+    withGame(gameIdOf(message), socket, (game) => game.unlockAnswers(socket)),
   )
 
-  socket.on(EVENTS.PLAYER.SELECTED_ANSWER, ({ gameId, data }) =>
-    withGame(gameId, socket, (game) =>
-      game.selectAnswer(socket, data.answerKey),
-    ),
+  socket.on(EVENTS.MANAGER.NEXT_QUESTION, (message) =>
+    withGame(gameIdOf(message), socket, (game) => game.nextRound(socket)),
   )
 
-  socket.on(EVENTS.MANAGER.ABORT_QUIZ, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.abortRound(socket)),
-  )
-
-  socket.on(EVENTS.MANAGER.UNLOCK_ANSWERS, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.unlockAnswers(socket)),
-  )
-
-  socket.on(EVENTS.MANAGER.NEXT_QUESTION, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.nextRound(socket)),
-  )
-
-  socket.on(EVENTS.MANAGER.SHOW_LEADERBOARD, ({ gameId }) =>
-    withGame(gameId, socket, (game) => game.showLeaderboard(socket)),
+  socket.on(EVENTS.MANAGER.SHOW_LEADERBOARD, (message) =>
+    withGame(gameIdOf(message), socket, (game) => game.showLeaderboard(socket)),
   )
 
   // The deck's lecture commands answer with their outcome. Any client can
   // leave the ack out, whatever the types say.
-  socket.on(EVENTS.MANAGER.PLAY_QUESTION, ({ gameId, index }, ack) =>
-    withGame(gameId, socket, (game) => {
+  socket.on(EVENTS.MANAGER.PLAY_QUESTION, (message, ack) =>
+    withGame(gameIdOf(message), socket, (game) => {
+      // Anything but a number is no index, which the game turns down.
+      const index = numberOf(fieldsOf(message).index) ?? Number.NaN
       const outcome = game.playQuestion(socket, index)
 
-      // oxlint-disable-next-line typescript/no-unnecessary-condition
-      if (typeof ack === "function") {
-        ack(outcome)
-      }
+      ackOf(ack)?.(outcome)
     }),
   )
 
-  socket.on(EVENTS.MANAGER.FINISH_GAME, ({ gameId }, ack) =>
-    withGame(gameId, socket, (game) => {
+  socket.on(EVENTS.MANAGER.FINISH_GAME, (message, ack) =>
+    withGame(gameIdOf(message), socket, (game) => {
       const outcome = game.finish(socket)
 
-      // oxlint-disable-next-line typescript/no-unnecessary-condition
-      if (typeof ack === "function") {
-        ack(outcome)
-      }
+      ackOf(ack)?.(outcome)
     }),
   )
 
-  socket.on(EVENTS.MANAGER.LEAVE, ({ gameId }) => {
+  socket.on(EVENTS.MANAGER.LEAVE, (message) => {
+    const gameId = gameIdOf(message)
+
+    if (!gameId) {
+      return
+    }
+
     const game = registry.getManagerGame(gameId, clientId)
 
     // Another tab of the same manager may leave a game it never ran.
@@ -222,7 +264,13 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     }
   })
 
-  socket.on(EVENTS.PLAYER.LEAVE, ({ gameId }) => {
+  socket.on(EVENTS.PLAYER.LEAVE, (message) => {
+    const gameId = gameIdOf(message)
+
+    if (!gameId) {
+      return
+    }
+
     const game = registry.getPlayerGame(gameId, clientId)
 
     if (game) {

@@ -61,6 +61,12 @@ export interface QuizzMeta {
 export interface GameUpdateQuestion {
   current: number
   total: number
+  /**
+   * Lecture games only: the 0-based questions played so far, this one
+   * included. A deck plays questions in any order, so a phone cannot tell
+   * from `current` which are done or whether this is the last.
+   */
+  played?: number[]
 }
 
 export interface PlayerAnswerRecord {

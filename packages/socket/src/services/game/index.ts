@@ -308,8 +308,11 @@ class Game {
   }
 
   kickPlayer(socket: Socket, playerId: string) {
-    if (this.playerManager.kick(socket, playerId)) {
+    const player = this.playerManager.findById(playerId)
+
+    if (player && this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
+      this.round.forgetPlayer(player.clientId)
       this.round.endIfEveryoneAnswered()
     }
   }
@@ -344,6 +347,14 @@ class Game {
       ...this.lecturePayload(),
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
+
+    // The answer count only arrives as answers come in; a host back mid-
+    // question would otherwise read 0 until the next one.
+    const answered = this.round.getAnswerCount()
+
+    if (answered !== null) {
+      socket.emit(EVENTS.GAME.PLAYER_ANSWER, answered)
+    }
 
     registry.reactivateGame(this.gameId)
     console.log(`Manager reconnected to game ${this.inviteCode}`)

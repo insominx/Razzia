@@ -209,9 +209,12 @@ describe("RoundManager lecture mode", () => {
     await vi.advanceTimersByTimeAsync(3_000)
 
     expect(preparedQuestionNumbers(harness)).toEqual([3])
+    // A phone learns which questions are done from this, as a deck plays them
+    // in any order.
     expect(harness.ioEmit).toHaveBeenCalledWith(EVENTS.GAME.UPDATE_QUESTION, {
       current: 3,
       total: 3,
+      played: [2],
     })
   })
 
@@ -331,8 +334,9 @@ describe("RoundManager lecture mode", () => {
       "Three",
     ])
     expect(sentTo(harness, "manager", STATUS.FINISHED)).toHaveLength(1)
+    // Level with One on no points, so sharing second place.
     expect(sentTo(harness, "p3", STATUS.FINISHED)).toEqual([
-      expect.objectContaining({ rank: 3 }),
+      expect.objectContaining({ rank: 2 }),
     ])
     expect(sentTo(harness, "p2", STATUS.FINISHED)).toEqual([
       expect.objectContaining({ rank: 1 }),
