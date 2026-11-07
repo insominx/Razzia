@@ -37,6 +37,10 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   const webUrl = window.location.origin
   const { players } = useManagerStore()
   const [playerList, setPlayerList] = useState<PublicPlayer[]>(players)
+  // Phones can join faster than this screen renders, and useEvent keeps an older
+  // render's handler subscribed until the next effect runs. So the handlers work
+  // from this, which every event keeps current, and never from `playerList`.
+  const seatedRef = useRef(players)
   const [totalPlayers, setTotalPlayers] = useState(0)
   const [qrOpen, setQrOpen] = useState(false)
   const qrContentRef = useRef<HTMLDivElement>(null)
@@ -50,18 +54,23 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
 
   useOnClickOutside({ ref: qrContentRef, handler: () => setQrOpen(false) })
 
+  const updateSeated = (seated: PublicPlayer[]) => {
+    seatedRef.current = seated
+    setPlayerList(seated)
+  }
+
+  const handlePlayerGone = (playerId: string) => {
+    updateSeated(seatedRef.current.filter((p) => p.id !== playerId))
+  }
+
   useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
-    setPlayerList([...playerList, player])
-    score.cue({ cue: "join", index: playerList.length })
+    score.cue({ cue: "join", index: seatedRef.current.length })
+    updateSeated([...seatedRef.current, player])
   })
 
-  useEvent(EVENTS.MANAGER.REMOVE_PLAYER, (playerId) => {
-    setPlayerList(playerList.filter((p) => p.id !== playerId))
-  })
+  useEvent(EVENTS.MANAGER.REMOVE_PLAYER, handlePlayerGone)
 
-  useEvent(EVENTS.MANAGER.PLAYER_KICKED, (playerId) => {
-    setPlayerList(playerList.filter((p) => p.id !== playerId))
-  })
+  useEvent(EVENTS.MANAGER.PLAYER_KICKED, handlePlayerGone)
 
   useEvent(EVENTS.GAME.TOTAL_PLAYERS, (total) => {
     setTotalPlayers(total)
