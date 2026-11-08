@@ -1,7 +1,14 @@
 services:
   razzia:
     image: ralex91/razzia:latest
+    # To run this checkout instead of the published image, uncomment:
+    # build: .
     ports:
       - "3000:3000"
     volumes:
       - ./config:/app/config
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256

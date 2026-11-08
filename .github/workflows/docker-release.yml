@@ -8,12 +8,17 @@ env:
     linux/amd64
     linux/arm64
 
+concurrency:
+  group: docker-release
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: ${{ !github.event.release.prerelease }}
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -43,7 +48,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
         with:
-          version: latest
+          version: v0.29.1
           install: true
           platforms: ${{ env.DOCKER_PLATFORMS }}
 

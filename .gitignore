@@ -20,3 +20,7 @@ web2
 .workflow/**/artifacts/
 .workflow/**/*.log
 *.log
+.env.*
+!.env.example
+*.pem
+*.key

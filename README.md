@@ -25,8 +25,8 @@ Choose one of the following deployment methods:
 
 ### Without Docker
 
-- Node.js : version 22 or higher
-- PNPM : version 10.16 or higher (learn more [here](https://pnpm.io/))
+- Node.js : version 22.12 or higher
+- PNPM : version 11 or higher (learn more [here](https://pnpm.io/))
 
 ### With Docker
 
