@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   deleteQuizz: vi.fn(),
+  saveQuizz: vi.fn(),
   restoreCommittedQuizz: vi.fn(),
   getGameConfig: vi.fn(),
   finalizeBackgroundMutation: vi.fn(),
@@ -15,7 +16,7 @@ vi.mock("@razzia/socket/services/config", () => ({
   restoreCommittedQuizz: mocks.restoreCommittedQuizz,
   getGameConfig: mocks.getGameConfig,
   getQuizzById: vi.fn(),
-  saveQuizz: vi.fn(),
+  saveQuizz: mocks.saveQuizz,
   updateQuizz: vi.fn(),
   getQuizzMeta: () => [],
   getResultsMeta: () => [],
@@ -202,5 +203,38 @@ describe("QUIZZ.RESTORE", () => {
     expect(ack).toHaveBeenCalledWith({ error: "errors:quizz.failedToRestore" })
     expect(() => restore(handlers, "quiz-1")).not.toThrow()
     expect(() => restore(handlers, "quiz-1", "nope")).not.toThrow()
+  })
+})
+
+describe("QUIZZ.SAVE", () => {
+  const save = (handlers: Map<string, Handler>, payload: unknown) => {
+    handlers.get(EVENTS.QUIZZ.SAVE)?.(payload as never)
+  }
+
+  beforeEach(() => {
+    mocks.saveQuizz.mockReset()
+    mocks.saveQuizz.mockReturnValue({ id: "quiz-new" })
+  })
+
+  it("hands the quiz's name to the save, apart from the quiz", async () => {
+    const { handlers, emit } = await connect()
+
+    save(handlers, { id: "quizz-abc12345", subject: "A" })
+
+    expect(mocks.saveQuizz).toHaveBeenCalledWith(
+      { subject: "A" },
+      "quizz-abc12345",
+    )
+    expect(emit).toHaveBeenCalledWith(EVENTS.QUIZZ.SAVE_SUCCESS, {
+      id: "quiz-new",
+    })
+  })
+
+  it("leaves a save with no name to be named by the server", async () => {
+    const { handlers } = await connect()
+
+    save(handlers, { subject: "A" })
+
+    expect(mocks.saveQuizz).toHaveBeenCalledWith({ subject: "A" }, undefined)
   })
 })

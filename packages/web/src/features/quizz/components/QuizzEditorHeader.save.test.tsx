@@ -2,7 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import QuizzEditorHeader from "@razzia/web/features/quizz/components/QuizzEditorHeader"
 import { QuizzEditorProvider } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import { memoryStorage } from "@razzia/web/test/memory-storage"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
@@ -73,6 +73,67 @@ describe("QuizzEditorHeader save", () => {
     fireEvent.click(screen.getByText("common:save"))
 
     expect(mocks.emit).toHaveBeenCalledTimes(1)
+  })
+
+  const newQuizz = () =>
+    render(
+      <QuizzEditorProvider
+        initialData={{
+          id: "",
+          subject: "Title",
+          questions: [
+            {
+              question: "One?",
+              answers: ["A", "B"],
+              solutions: [0],
+              cooldown: 5,
+              time: 20,
+            },
+          ],
+        }}
+      >
+        <QuizzEditorHeader />
+      </QuizzEditorProvider>,
+    )
+
+  const sentIds = () =>
+    mocks.emit.mock.calls.map(([, payload]) => (payload as { id: string }).id)
+
+  it("names a new quiz, and keeps that name through retries and edits", () => {
+    vi.useFakeTimers()
+    newQuizz()
+
+    fireEvent.click(screen.getByText("common:save"))
+    act(() => {
+      vi.advanceTimersByTime(10_000)
+    })
+    fireEvent.click(screen.getByText("common:save"))
+    act(() => {
+      vi.advanceTimersByTime(10_000)
+    })
+    fireEvent.change(
+      screen.getByPlaceholderText("quizz:titleQuizzPlaceholder"),
+      { target: { value: "Edited" } },
+    )
+    fireEvent.click(screen.getByText("common:save"))
+    vi.useRealTimers()
+
+    const [first, ...rest] = sentIds()
+
+    expect(first).toMatch(/^quizz-[0-9a-f]{24}$/u)
+    expect(rest).toEqual([first, first])
+  })
+
+  it("names two editors' new quizzes apart", () => {
+    newQuizz()
+    fireEvent.click(screen.getByText("common:save"))
+    cleanup()
+    newQuizz()
+    fireEvent.click(screen.getByText("common:save"))
+
+    const [one, two] = sentIds()
+
+    expect(one).not.toBe(two)
   })
 
   it.each([EVENTS.QUIZZ.SAVE_SUCCESS, EVENTS.QUIZZ.UPDATE_SUCCESS])(

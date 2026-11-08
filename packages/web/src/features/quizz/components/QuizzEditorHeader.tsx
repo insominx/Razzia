@@ -7,6 +7,7 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { openRehearsal } from "@razzia/web/features/rehearse/draft"
+import { newQuizzId } from "@razzia/web/features/quizz/new-quizz-id"
 import QuizzBackgroundControl from "@razzia/web/features/quizz/components/QuizzBackgroundControl"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import { useBlocker, useNavigate } from "@tanstack/react-router"
@@ -37,6 +38,7 @@ const QuizzEditorHeader = () => {
   const { t } = useTranslation()
   // A save sent and not yet answered: a second click must not send it again.
   const [saving, setSaving] = useState(false)
+  const [newId] = useState(newQuizzId)
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(
@@ -128,7 +130,14 @@ const QuizzEditorHeader = () => {
         visuals,
       })
     } else {
-      socket.emit(EVENTS.QUIZZ.SAVE, { subject, questions, visuals })
+      // Named once, when the editor opened: every try at saving this quiz,
+      // edited or not, lands on the same quiz.
+      socket.emit(EVENTS.QUIZZ.SAVE, {
+        id: newId,
+        subject,
+        questions,
+        visuals,
+      })
     }
   }
 

@@ -698,14 +698,30 @@ export const deleteResult = (id: string): void => {
   fs.unlinkSync(filePath)
 }
 
-export const saveQuizz = (data: unknown): QuizzBackgroundMutation => {
+// A new quiz is named by the editor that makes it, once, and every save of it
+// carries that name. Saving is then the same whether the quiz exists yet or
+// not, so a save sent again (a lost reply, a queued or double click, a restart
+// in between) lands on the same file and can never make a second quiz.
+const NEW_QUIZZ_ID = /^[A-Za-z0-9_-]{8,64}$/u
+
+export const saveQuizz = (
+  data: unknown,
+  requestedId?: unknown,
+): QuizzBackgroundMutation => {
   const result = quizzValidator.safeParse(data)
 
   if (!result.success) {
     throw new Error(result.error.issues[0].message)
   }
 
-  const id = normalizeFilename(result.data.subject)
+  if (
+    requestedId !== undefined &&
+    !(typeof requestedId === "string" && NEW_QUIZZ_ID.test(requestedId))
+  ) {
+    throw new Error("errors:quizz.failedToSave")
+  }
+
+  const id = requestedId ?? normalizeFilename(result.data.subject)
   const filePath = getConfigPath(`quizz/${id}.json`)
   const previous = fs.existsSync(filePath)
     ? readPreviousQuizzFile(filePath, `${id}.json`)

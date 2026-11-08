@@ -7,6 +7,7 @@ import {
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
 import { emitMutation } from "@razzia/web/features/manager/emit-mutation"
+import { newQuizzId } from "@razzia/web/features/quizz/new-quizz-id"
 import { useNavigate } from "@tanstack/react-router"
 import { RotateCcw, SquarePen, Trash2, Upload } from "lucide-react"
 import { type ChangeEvent, useRef, useState } from "react"
@@ -93,7 +94,12 @@ const ConfigManageQuizz = () => {
     reader.onload = (event) => {
       try {
         const data: unknown = JSON.parse(event.target?.result as string)
-        socket.emit(EVENTS.QUIZZ.SAVE, data)
+
+        // Named here, once per file picked, as the editor names a new quiz.
+        socket.emit(EVENTS.QUIZZ.SAVE, {
+          ...(typeof data === "object" && data !== null ? data : {}),
+          id: newQuizzId(),
+        })
       } catch {
         toast.error(t("manager:quizz.invalidJson"))
       }

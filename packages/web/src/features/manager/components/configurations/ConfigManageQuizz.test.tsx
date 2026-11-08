@@ -5,6 +5,7 @@ import {
   cleanup,
   fireEvent,
   render,
+  waitFor,
   screen,
   within,
 } from "@testing-library/react"
@@ -89,6 +90,43 @@ describe("ConfigManageQuizz import", () => {
       EVENTS.QUIZZ.SAVE,
       expect.anything(),
     )
+  })
+
+  const json = (body: object) =>
+    new File([JSON.stringify(body)], "quiz.json", { type: "application/json" })
+
+  it("names each import, so the server can tell a repeat from a new quiz", async () => {
+    const { container } = render(<ConfigManageQuizz />)
+
+    pick(container, json({ subject: "Imported" }))
+    pick(container, json({ subject: "Imported" }))
+
+    await waitFor(() => {
+      expect(mocks.emit).toHaveBeenCalledTimes(2)
+    })
+
+    const sent = mocks.emit.mock.calls as Array<
+      [string, { subject: string; id: string }]
+    >
+
+    expect(sent[0][0]).toBe(EVENTS.QUIZZ.SAVE)
+    expect(sent[0][1].subject).toBe("Imported")
+    expect(sent[0][1].id).toMatch(/^quizz-[0-9a-f]{24}$/u)
+    expect(sent[1][1].id).not.toBe(sent[0][1].id)
+  })
+
+  it("names the import itself, whatever id the file carries", async () => {
+    const { container } = render(<ConfigManageQuizz />)
+
+    pick(container, json({ subject: "Imported", id: "someone-elses-quiz" }))
+
+    await waitFor(() => {
+      expect(mocks.emit).toHaveBeenCalledTimes(1)
+    })
+
+    const [, payload] = mocks.emit.mock.calls[0] as [string, { id: string }]
+
+    expect(payload.id).toMatch(/^quizz-/u)
   })
 })
 

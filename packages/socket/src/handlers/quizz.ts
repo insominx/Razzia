@@ -45,9 +45,13 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.QUIZZ.SAVE,
-    manager.withAuth(socket, (data) => {
+    manager.withAuth(socket, (request) => {
+      // The editor names a new quiz once; see saveQuizz.
+      const { id, ...data } = fieldsOf(request)
+
       try {
-        const mutation = saveQuizz(data)
+        const mutation = saveQuizz(data, id)
+
         finalizeBackgroundMutation(
           mutation.previousBackground,
           mutation.background,

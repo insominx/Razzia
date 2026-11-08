@@ -225,3 +225,81 @@ describe("results store", () => {
     expect(meta.find((m) => m.id === "copy")?.playerCount).toBe(0)
   })
 })
+
+describe("a new quiz named by its editor", () => {
+  const quizzFiles = () =>
+    fs
+      .readdirSync(path.join(configRoot, "quizz"))
+      .filter((file) => file.endsWith(".json"))
+
+  it("is made once however many times the save is sent", async () => {
+    const { saveQuizz } = await import("@razzia/socket/services/config")
+
+    const first = saveQuizz(sampleQuiz("Once"), "quizz-abcdef0123")
+    const again = saveQuizz(sampleQuiz("Once"), "quizz-abcdef0123")
+
+    expect(first.id).toBe("quizz-abcdef0123")
+    expect(again.id).toBe(first.id)
+    expect(quizzFiles()).toEqual(["quizz-abcdef0123.json"])
+  })
+
+  it("takes the edits of a save sent again, still one quiz", async () => {
+    const { saveQuizz } = await import("@razzia/socket/services/config")
+
+    saveQuizz(sampleQuiz("Before"), "quizz-abcdef0123")
+    saveQuizz(sampleQuiz("After a rename"), "quizz-abcdef0123")
+
+    const saved = JSON.parse(
+      fs.readFileSync(
+        path.join(configRoot, "quizz", "quizz-abcdef0123.json"),
+        "utf8",
+      ),
+    ) as { subject: string }
+
+    expect(quizzFiles()).toHaveLength(1)
+    expect(saved.subject).toBe("After a rename")
+  })
+
+  it("stays one quiz across a server restart", async () => {
+    const first = (await import("@razzia/socket/services/config")).saveQuizz(
+      sampleQuiz("Restart"),
+      "quizz-abcdef0123",
+    )
+
+    vi.resetModules()
+    const again = (await import("@razzia/socket/services/config")).saveQuizz(
+      sampleQuiz("Restart"),
+      "quizz-abcdef0123",
+    )
+
+    expect(again.id).toBe(first.id)
+    expect(quizzFiles()).toHaveLength(1)
+  })
+
+  it("keeps different names apart, and names a save that brings none", async () => {
+    const { saveQuizz } = await import("@razzia/socket/services/config")
+
+    saveQuizz(sampleQuiz("Same"), "quizz-aaaaaaaa")
+    saveQuizz(sampleQuiz("Same"), "quizz-bbbbbbbb")
+    saveQuizz(sampleQuiz("Same"))
+    saveQuizz(sampleQuiz("Same"))
+
+    expect(quizzFiles()).toHaveLength(4)
+  })
+
+  it.each([
+    "../escape",
+    "a/b/c/d/e/f",
+    "short",
+    "has space here",
+    "x".repeat(65),
+    "",
+    7,
+    null,
+  ])("refuses the name %j and writes nothing", async (name) => {
+    const { saveQuizz } = await import("@razzia/socket/services/config")
+
+    expect(() => saveQuizz(sampleQuiz("Bad"), name)).toThrow()
+    expect(quizzFiles()).toEqual([])
+  })
+})
