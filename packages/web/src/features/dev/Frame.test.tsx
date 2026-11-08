@@ -14,7 +14,10 @@ vi.mock("@razzia/web/features/game/components/VolumeControl", () => ({
 }))
 
 vi.mock("@razzia/web/features/game/stores/sound", () => ({
-  useSoundStore: { getState: () => ({ bindSurface: vi.fn() }) },
+  useSoundStore: {
+    getState: () => ({ bindSurface: vi.fn() }),
+    subscribe: () => () => undefined,
+  },
 }))
 
 vi.mock("@razzia/web/hooks/use-surface", () => ({

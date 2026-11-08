@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   emit: vi.fn(),
   start: vi.fn(),
   cue: vi.fn(),
+  setPlayers: vi.fn(),
   players: [] as unknown[],
   handlers: new Map<string, (payload: unknown) => void>(),
 }))
@@ -19,7 +20,10 @@ vi.mock("@razzia/web/features/game/contexts/socket-context", () => ({
 }))
 
 vi.mock("@razzia/web/features/game/stores/manager", () => ({
-  useManagerStore: () => ({ gameId: "game-1", players: mocks.players }),
+  useManagerStore: Object.assign(
+    () => ({ gameId: "game-1", players: mocks.players }),
+    { getState: () => ({ setPlayers: mocks.setPlayers }) },
+  ),
 }))
 
 // The score has its own tests; here a screen is judged by what it asks of it.
@@ -77,6 +81,40 @@ describe("Room lobby", () => {
       [{ cue: "join", index: 0 }],
       [{ cue: "join", index: 1 }],
     ])
+  })
+
+  it("keeps the store's player list in step with the seats, so a host leaving a room with players in it is asked first", () => {
+    render(
+      <Room data={{ text: "game:waitingForPlayers", inviteCode: "123456" }} />,
+    )
+
+    join("p1", "Adaline")
+    join("p2", "Grace")
+
+    const lastCall = mocks.setPlayers.mock.calls.at(-1)?.[0] as Array<{
+      username: string
+    }>
+
+    expect(lastCall.map((p) => p.username)).toEqual(["Adaline", "Grace"])
+  })
+
+  it("gives a reconnected phone's seat its new id, without a new arrival", () => {
+    render(
+      <Room data={{ text: "game:waitingForPlayers", inviteCode: "123456" }} />,
+    )
+    join("p1", "Adaline")
+    join("p1-back", "Adaline")
+
+    expect(screen.getAllByText("Adaline")).toHaveLength(1)
+    expect(mocks.cue).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByText("Adaline"))
+    fireEvent.click(screen.getByText("game:kick.confirm"))
+
+    expect(mocks.emit).toHaveBeenCalledWith(EVENTS.MANAGER.KICK_PLAYER, {
+      gameId: "game-1",
+      playerId: "p1-back",
+    })
   })
 
   it("only kicks after the host confirms", () => {

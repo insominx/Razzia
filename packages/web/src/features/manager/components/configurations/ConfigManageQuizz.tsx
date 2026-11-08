@@ -6,17 +6,23 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
+import { emitMutation } from "@razzia/web/features/manager/emit-mutation"
 import { useNavigate } from "@tanstack/react-router"
 import { SquarePen, Trash2, Upload } from "lucide-react"
-import { type ChangeEvent, useRef } from "react"
+import { type ChangeEvent, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+
+// The socket server drops any message over 1 MB (and the connection with it),
+// so a bigger file is refused here, where the reason can be shown.
+const IMPORT_MAX_BYTES = 900_000
 
 const ConfigManageQuizz = () => {
   const { quizz } = useConfig()
   const { socket } = useSocket()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const { t } = useTranslation()
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
@@ -24,8 +30,22 @@ const ConfigManageQuizz = () => {
   })
 
   const handleDelete = (id: string) => () => {
-    socket.emit(EVENTS.QUIZZ.DELETE, id)
-    toast.success(t("manager:quizz.deleted"))
+    if (deletingId) {
+      return
+    }
+
+    setDeletingId(id)
+    emitMutation(socket, [EVENTS.QUIZZ.DELETE, id], (response) => {
+      setDeletingId(null)
+
+      if (!response) {
+        toast.error(t("errors:quizz.failedToDelete"))
+      } else if ("error" in response) {
+        toast.error(t(response.error))
+      } else {
+        toast.success(t("manager:quizz.deleted"))
+      }
+    })
   }
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
@@ -35,7 +55,18 @@ const ConfigManageQuizz = () => {
       return
     }
 
+    if (file.size > IMPORT_MAX_BYTES) {
+      toast.error(t("manager:quizz.importTooLarge"))
+      e.target.value = ""
+
+      return
+    }
+
     const reader = new FileReader()
+
+    reader.onerror = () => {
+      toast.error(t("manager:quizz.invalidJson"))
+    }
 
     reader.onload = (event) => {
       try {
@@ -83,7 +114,8 @@ const ConfigManageQuizz = () => {
             <p className="truncate">{q.subject}</p>
             <div className="flex gap-0.5">
               <button
-                className="text-text-muted hover:bg-panel hover:text-text-body rounded-rz-sm p-2"
+                className="text-text-muted hover:bg-panel hover:text-text-body rounded-rz-sm p-2 disabled:opacity-50"
+                disabled={deletingId === q.id}
                 onClick={() =>
                   navigate({
                     to: "/manager/quizz/$quizzId",
@@ -96,7 +128,11 @@ const ConfigManageQuizz = () => {
 
               <AlertDialog
                 trigger={
-                  <button className="hover:bg-danger-tint rounded-rz-sm p-2">
+                  <button
+                    className="hover:bg-danger-tint rounded-rz-sm p-2 disabled:opacity-50"
+                    disabled={deletingId !== null}
+                    aria-label={t("common:delete")}
+                  >
                     <Trash2 className="text-danger size-4" />
                   </button>
                 }

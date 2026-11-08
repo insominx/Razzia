@@ -485,6 +485,25 @@ describe("unlocking on a gesture (iOS)", () => {
     expect(ctx.resumed).toBe(1)
   })
 
+  it("listens again once the context is interrupted after it had run", async () => {
+    const { clock, ctx, gestures, score } = setup()
+
+    asleep(ctx)
+    gestures.dispatchEvent(new Event("pointerdown"))
+    await settle()
+    ctx.state = "running"
+    gestures.dispatchEvent(new Event("pointerdown"))
+
+    // An interruption: the pump's own resume is refused outside a gesture.
+    ctx.state = "suspended"
+    score.start(LOBBY)
+    clock.advance(1500)
+    const before = ctx.resumed
+    gestures.dispatchEvent(new Event("pointerdown"))
+
+    expect(ctx.resumed).toBe(before + 1)
+  })
+
   it("listens for a touch, a key and a pointer until the context runs", async () => {
     const { ctx, gestures } = setup()
 
@@ -572,6 +591,30 @@ describe("Howler's auto-suspend", () => {
 
     expect(howler.autoSuspend).toBe(true)
     expect(listeners.size).toBe(0)
+  })
+
+  it("is released when the page goes quiet mid-scene", () => {
+    const { clock, howler, score, setSound } = setup()
+
+    score.start(LOBBY)
+    expect(howler.autoSuspend).toBe(false)
+
+    setSound({ muted: true })
+    clock.advance(RELEASE_AFTER_IDLE_MS * 2)
+
+    expect(howler.autoSuspend).toBe(true)
+    expect(score.debug().holdingAutoSuspend).toBe(false)
+  })
+
+  it("is not released by a cue's timer while a scene is still pumped", () => {
+    const { clock, howler, score } = setup()
+
+    score.start(LOBBY)
+    score.cue({ cue: "pop", index: 0 })
+    clock.advance(RELEASE_AFTER_IDLE_MS + 1000)
+
+    expect(howler.autoSuspend).toBe(false)
+    expect(score.debug().pumping).toBe(true)
   })
 
   it("is not touched at all while muted", () => {

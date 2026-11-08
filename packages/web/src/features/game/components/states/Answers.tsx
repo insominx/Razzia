@@ -60,6 +60,16 @@ const Answers = ({ data }: Props) => {
 
   const [cooldown, setCooldown] = useState(time)
   const [totalAnswer, setTotalAnswer] = useState(0)
+  // A reconnect can hand this mounted screen the next question: its count and
+  // clock start over rather than showing the last question's.
+  const [countedQuestion, setCountedQuestion] = useState(questionNumber)
+
+  if (countedQuestion !== questionNumber) {
+    setCountedQuestion(questionNumber)
+    setCooldown(time)
+    setTotalAnswer(0)
+  }
+
   // Set on the tap itself: the press is felt before the server has answered.
   // It belongs to its question: a reconnect can land on the next one with this
   // screen still up, and an old pick must not lock (or answer) a new question.

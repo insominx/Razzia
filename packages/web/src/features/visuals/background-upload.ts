@@ -27,6 +27,12 @@ export const validateBackgroundFile = (
   return { ok: true }
 }
 
+const UPLOAD_FAILED = "errors:visuals.backgroundUploadFailed"
+
+export const toHeaderSafeName = (name: string): string =>
+  // oxlint-disable-next-line no-control-regex
+  name.replace(/[^ -~]/gu, "-")
+
 export const uploadBackgroundViaHttp = async (
   file: File,
   clientId: string,
@@ -47,21 +53,32 @@ export const uploadBackgroundViaHttp = async (
     headers: {
       "Content-Type": file.type,
       "X-Client-Id": clientId,
-      "X-File-Name": file.name,
+      // Header values must be Latin-1, so a name like "фото.jpg" would make
+      // fetch throw. The server only reads a sanitised base name from it.
+      "X-File-Name": toHeaderSafeName(file.name),
     },
     body: file,
+  }).catch(() => {
+    throw new Error(UPLOAD_FAILED)
   })
 
-  const payload = (await response.json()) as
-    | BackgroundUploadResponse
-    | { error: string }
+  // A proxy answers an unreachable upstream with an HTML page, not JSON.
+  let payload: BackgroundUploadResponse | { error: string } | null = null
+
+  try {
+    payload = (await response.json()) as
+      | BackgroundUploadResponse
+      | { error: string }
+  } catch {
+    payload = null
+  }
+
+  if (!payload || typeof payload !== "object") {
+    throw new Error(UPLOAD_FAILED)
+  }
 
   if (!response.ok || "error" in payload) {
-    throw new Error(
-      "error" in payload
-        ? payload.error
-        : "errors:visuals.backgroundUploadFailed",
-    )
+    throw new Error("error" in payload ? payload.error : UPLOAD_FAILED)
   }
 
   return payload

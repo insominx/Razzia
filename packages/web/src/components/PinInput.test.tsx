@@ -34,4 +34,15 @@ describe("PinInput", () => {
     expect(onChange).toHaveBeenCalledWith("1")
     expect(onSubmit).not.toHaveBeenCalled()
   })
+
+  it("clears a cell that is emptied without a Backspace key", () => {
+    const onChange = vi.fn()
+    const { container } = render(<PinInput value="123" onChange={onChange} />)
+
+    fireEvent.change(container.querySelectorAll("input")[1], {
+      target: { value: "" },
+    })
+
+    expect(onChange).toHaveBeenCalledWith("1 3")
+  })
 })

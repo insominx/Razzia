@@ -219,7 +219,9 @@ const RehearsalPage = () => {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // Each repeat would reload the whole frame again.
       if (
+        event.repeat ||
         event.ctrlKey ||
         event.metaKey ||
         event.altKey ||

@@ -1,6 +1,7 @@
 import "@fontsource-variable/jetbrains-mono/wght.css"
 import "@fontsource-variable/space-grotesk/wght.css"
 import Toaster from "@razzia/web/components/Toaster"
+import { expireDraft } from "@razzia/web/features/rehearse/draft"
 import { socketClient } from "@razzia/web/features/game/contexts/socket-context"
 // Side-effect import: applies the stored volume/mute to Howler's master gain
 // before the first sound mounts, on every route.
@@ -11,6 +12,9 @@ import { routeTree } from "@razzia/web/route.gen"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
+
+// The rehearsal draft holds a quiz's answers; one nobody reopens is dropped.
+expireDraft()
 
 const router = createRouter({ routeTree, context: { socket: socketClient } })
 

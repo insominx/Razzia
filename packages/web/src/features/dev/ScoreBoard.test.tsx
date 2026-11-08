@@ -16,7 +16,11 @@ const { score } = vi.hoisted(() => ({
 
 vi.mock("@razzia/web/features/game/audio", () => ({ score }))
 vi.mock("howler", () => ({
-  Howler: { ctx: { resume: vi.fn() }, volume: vi.fn(), mute: vi.fn() },
+  Howler: {
+    ctx: { resume: vi.fn(() => Promise.resolve()) },
+    volume: vi.fn(),
+    mute: vi.fn(),
+  },
 }))
 vi.mock("@razzia/web/features/dev/small-speakers", () => ({
   routeHowlerThroughSmallSpeakers: vi.fn(() => vi.fn()),

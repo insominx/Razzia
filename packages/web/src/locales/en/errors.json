@@ -1,12 +1,15 @@
 {
   "auth": {
     "invalidInviteCode": "Invalid invite code",
+    "usernameInvalid": "Username contains invalid characters",
+    "usernameTaken": "This username is already taken",
     "usernameTooLong": "Username cannot exceed 20 characters",
     "usernameTooShort": "Username cannot be less than 4 characters"
   },
   "game": {
     "alreadyStarted": "This game has already started",
     "expired": "Game expired",
+    "full": "This game is full",
     "kickedByManager": "You have been kicked by the manager",
     "managerAlreadyConnected": "Manager already connected",
     "managerDisconnected": "Manager disconnected",
@@ -19,6 +22,7 @@
   "manager": {
     "failedToReadConfig": "Failed to read game config",
     "invalidPassword": "Invalid password",
+    "tooManyAttempts": "Too many attempts. Try again later.",
     "passwordNotConfigured": "Manager password is not configured",
     "unauthorized": "You are not authorized"
   },
@@ -33,12 +37,16 @@
     "failedToSave": "Quizz is incomplete, make sure all questions have a title and at least one correct answer",
     "failedToUpdate": "Failed to update quizz",
     "invalidMediaUrl": "Media URL must be a valid URL",
+    "invalidSolution": "Solutions must be unique and match existing answers",
+    "invalidTime": "Time must be no limit or 1 to 600 seconds",
     "noQuestions": "A quizz must have at least one question",
     "notFound": "Quizz not found",
     "questionEmpty": "Question cannot be empty",
     "subjectEmpty": "Subject cannot be empty",
+    "textTooLong": "Text is too long",
     "tooFewAnswers": "A question must have at least 2 answers",
-    "tooManyAnswers": "A question cannot have more than 4 answers"
+    "tooManyAnswers": "A question cannot have more than 4 answers",
+    "tooManyQuestions": "A quizz cannot have more than 200 questions"
   },
   "visuals": {
     "backgroundClearFailed": "Failed to clear background",
@@ -61,5 +69,8 @@
     "back": "Go back home",
     "description": "An unexpected error occurred. Please try again.",
     "title": "Something went wrong"
+  },
+  "result": {
+    "failedToDelete": "Failed to delete result"
   }
 }

@@ -25,7 +25,8 @@ const Wait = ({ data: { text, answered, total } }: Props) => {
   const { t } = useTranslation()
   const lastAnswer = usePlayerStore((state) => state.lastAnswer)
   const player = usePlayerStore((state) => state.player)
-  const [here, setHere] = useState<number | undefined>(undefined)
+  const here = usePlayerStore((state) => state.playersHere) ?? undefined
+  const setHere = usePlayerStore((state) => state.setPlayersHere)
   const currentQuestion = useQuestionStore(
     (state) => state.questionStates?.current,
   )

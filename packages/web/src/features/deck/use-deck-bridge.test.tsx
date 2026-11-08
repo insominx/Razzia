@@ -468,6 +468,127 @@ describe("useDeckBridge", () => {
     })
   })
 
+  it("answers a command that arrives before any hello, and a replaced queued one", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+
+    sendCommand({ type: "play", question: 0 })
+    sendCommand({ type: "play", question: 1 })
+
+    expect(postedOf("result")).toEqual([
+      expect.objectContaining({ command: "play", outcome: "queued" }),
+      expect.objectContaining({
+        command: "play",
+        outcome: "ignored",
+        reason: "superseded",
+      }),
+      expect.objectContaining({ command: "play", outcome: "queued" }),
+    ])
+  })
+
+  it("answers a queued command when the deck closes the game", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    sendCommand({ type: "play", question: 2 })
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    expect(postedOf("result")).toContainEqual(
+      expect.objectContaining({
+        command: "play",
+        outcome: "ignored",
+        reason: "closed",
+      }),
+    )
+  })
+
+  it("does not accept the attached game for a different quiz", () => {
+    const storage = stubStorage()
+    mocks.router.pathname = "/manager/config"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    fire(EVENTS.MANAGER.GAME_CREATED, {
+      gameId: "g-1",
+      inviteCode: "123456",
+      visuals: {},
+    })
+    attachTo({ name: STATUS.SHOW_ROOM, data: {} })
+    expect(postedOf("result")).toContainEqual(
+      expect.objectContaining({ command: "ensureGame", outcome: "accepted" }),
+    )
+    postMessage.mockClear()
+
+    sendCommand({ type: "ensureGame", quiz: "other-quiz" })
+
+    expect(postedOf("result")).not.toContainEqual(
+      expect.objectContaining({ command: "ensureGame", outcome: "accepted" }),
+    )
+    expect(storage.getItem("razzia_deck_games") ?? "").not.toContain(
+      "other-quiz",
+    )
+    expect(mocks.navigate).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "/manager/config" }),
+    )
+  })
+
+  it("closes a game that was created after the deck had already left", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    mocks.router.pathname = "/manager/config"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "hello" })
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    fire(EVENTS.MANAGER.GAME_CREATED, {
+      gameId: "g-orphan",
+      inviteCode: "123456",
+      visuals: {},
+    })
+
+    expect(mocks.socket.emit).toHaveBeenCalledWith(EVENTS.MANAGER.LEAVE, {
+      gameId: "g-orphan",
+    })
+    expect(storage.getItem("razzia_deck_games") ?? "").not.toContain("g-orphan")
+  })
+
+  it("lets an open dialog keep Escape and Space", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+
+    const dialog = document.createElement("div")
+    dialog.setAttribute("role", "alertdialog")
+    const button = document.createElement("button")
+    dialog.append(button)
+    document.body.append(dialog)
+    const escape = new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    })
+
+    act(() => {
+      button.dispatchEvent(escape)
+    })
+    dialog.remove()
+
+    expect(postedOf("key")).toEqual([])
+    expect(escape.defaultPrevented).toBe(false)
+  })
+
   it("forgets one game's results when another game starts", () => {
     act(() => {
       useManagerStore.getState().setGameId("g-1")

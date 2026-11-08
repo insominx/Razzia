@@ -74,9 +74,10 @@ const Standing = ({
         className="flex w-full flex-col gap-2"
         aria-label={t("game:leaderboard")}
       >
-        {ladder.map((row) => (
+        {ladder.map((row, index) => (
           <li
-            key={row.rank}
+            // Level players share a place, so the place cannot be the key.
+            key={index}
             data-standing-row={row.me ? "me" : "other"}
             className={clsx(
               "rounded-rz-md flex items-center gap-3 px-4 py-3 text-lg font-semibold",

@@ -159,7 +159,12 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
   // to HTML5 Audio, so the guard is real and the lint rule is working from a
   // wrong type.
   unlock: () => {
+    // A closed context rejects resume(); there is nothing to resume then.
     // oxlint-disable-next-line typescript/no-unnecessary-condition
-    void Howler.ctx?.resume()
+    if (!Howler.ctx || Howler.ctx.state === "closed") {
+      return
+    }
+
+    Howler.ctx.resume().catch(() => undefined)
   },
 }))

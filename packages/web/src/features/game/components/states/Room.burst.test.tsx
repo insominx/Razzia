@@ -12,7 +12,10 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock("@razzia/web/features/game/stores/manager", () => ({
-  useManagerStore: () => ({ gameId: "game-1", players: mocks.players }),
+  useManagerStore: Object.assign(
+    () => ({ gameId: "game-1", players: mocks.players }),
+    { getState: () => ({ setPlayers: vi.fn() }) },
+  ),
 }))
 
 vi.mock("@razzia/web/features/game/audio/score", () => ({

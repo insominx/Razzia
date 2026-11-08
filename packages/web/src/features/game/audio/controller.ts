@@ -171,6 +171,7 @@ export const createScore = (deps: ControllerDeps): Score => {
   let pump: unknown = undefined
   let ticks = 0
   let held = false
+  let disposed = false
   let previousAutoSuspend = true
   let releaseTimer: unknown = undefined
   let unsubscribe: (() => void) | null = null
@@ -233,6 +234,13 @@ export const createScore = (deps: ControllerDeps): Score => {
     if (held && releaseTimer === undefined) {
       releaseTimer = timers.setTimeout(() => {
         releaseTimer = undefined
+
+        // A scene still being pumped needs the context awake; the pump asks
+        // for the release itself once it has nothing left to say.
+        if (pump !== undefined) {
+          return
+        }
+
         release()
       }, RELEASE_AFTER_IDLE_MS)
     }
@@ -249,6 +257,9 @@ export const createScore = (deps: ControllerDeps): Score => {
     const { ctx } = howler
 
     if (ctx && ctx.state !== "running" && ctx.state !== "closed") {
+      // A timer's resume is refused outside a gesture after an interruption;
+      // the next tap must be able to do it.
+      armUnlocking()
       ctx.resume().catch(() => undefined)
     }
   }
@@ -278,6 +289,16 @@ export const createScore = (deps: ControllerDeps): Score => {
         }
       })
       .catch(() => undefined)
+  }
+
+  const armUnlocking = (): void => {
+    if (disposed) {
+      return
+    }
+
+    for (const type of GESTURES) {
+      deps.gestures?.addEventListener(type, unlockOnGesture, true)
+    }
   }
 
   const stopUnlocking = (): void => {
@@ -336,6 +357,8 @@ export const createScore = (deps: ControllerDeps): Score => {
 
     if (engine && graph?.ctx !== ctx) {
       teardownEngine()
+      // The new context starts out asleep on some phones.
+      armUnlocking()
     }
 
     if (!engine) {
@@ -465,6 +488,8 @@ export const createScore = (deps: ControllerDeps): Score => {
 
     if (!sounding) {
       quiet()
+      // Nothing pumps now, and nothing else would let the context sleep.
+      release()
 
       return
     }
@@ -516,9 +541,7 @@ export const createScore = (deps: ControllerDeps): Score => {
     }
   }
 
-  for (const type of GESTURES) {
-    deps.gestures?.addEventListener(type, unlockOnGesture, true)
-  }
+  armUnlocking()
 
   return {
     configure: (next) => {
@@ -634,6 +657,7 @@ export const createScore = (deps: ControllerDeps): Score => {
     },
 
     dispose: () => {
+      disposed = true
       stopEverything(0)
       live.clear()
       teardownEngine()

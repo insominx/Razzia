@@ -61,6 +61,7 @@ const RehearsalFrame = ({ view, fixture, q, intensity }: Props) => {
     const forward = (event: KeyboardEvent) => {
       if (
         REHEARSAL_KEYS.has(event.key) &&
+        !event.repeat &&
         !event.ctrlKey &&
         !event.metaKey &&
         !event.altKey

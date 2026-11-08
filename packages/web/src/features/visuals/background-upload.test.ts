@@ -67,3 +67,57 @@ describe("uploadBackgroundViaHttp", () => {
     )
   })
 })
+
+describe("uploadBackgroundViaHttp failures", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("sends a header-safe name for a non-Latin-1 file name", async () => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) => {
+      // The real fetch throws when a header value holds such a character.
+      void new Headers(init.headers)
+
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ ref: {}, url: "/u.png" }),
+      })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const file = new File(["ok"], "фото 日本 .png", { type: "image/png" })
+
+    await expect(
+      uploadBackgroundViaHttp(file, "client-1"),
+    ).resolves.toBeDefined()
+  })
+
+  it("maps a non-JSON proxy page to the upload failure key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.reject(new SyntaxError("Unexpected token <")),
+      }),
+    )
+
+    const file = new File(["ok"], "a.png", { type: "image/png" })
+
+    await expect(uploadBackgroundViaHttp(file, "client-1")).rejects.toThrow(
+      "errors:visuals.backgroundUploadFailed",
+    )
+  })
+
+  it("maps a network failure to the upload failure key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+    )
+
+    const file = new File(["ok"], "a.png", { type: "image/png" })
+
+    await expect(uploadBackgroundViaHttp(file, "client-1")).rejects.toThrow(
+      "errors:visuals.backgroundUploadFailed",
+    )
+  })
+})

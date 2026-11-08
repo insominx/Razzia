@@ -57,6 +57,9 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   const updateSeated = (seated: PublicPlayer[]) => {
     seatedRef.current = seated
     setPlayerList(seated)
+    // The store holds the lobby too: the page asks it before it lets the host
+    // leave a room that has players in it, and a remount seeds from it.
+    useManagerStore.getState().setPlayers(seated)
   }
 
   const handlePlayerGone = (playerId: string) => {
@@ -64,6 +67,18 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   }
 
   useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
+    // A phone that came back under a new socket id is the same seat: it takes
+    // the new id (Kick and leave go by it) and is not a new arrival.
+    if (seatedRef.current.some((p) => p.username === player.username)) {
+      updateSeated(
+        seatedRef.current.map((p) =>
+          p.username === player.username ? player : p,
+        ),
+      )
+
+      return
+    }
+
     score.cue({ cue: "join", index: seatedRef.current.length })
     updateSeated([...seatedRef.current, player])
   })

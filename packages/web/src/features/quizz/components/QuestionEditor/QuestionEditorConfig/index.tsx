@@ -1,5 +1,6 @@
 import * as Switch from "@radix-ui/react-switch"
 import { NO_TIME_LIMIT } from "@razzia/common/constants"
+import { QUIZZ_LIMITS } from "@razzia/common/validators/quizz"
 import ConfigField from "@razzia/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigField"
 import ConfigNumberInput from "@razzia/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigNumberInput"
 import ConfigSection from "@razzia/web/features/quizz/components/QuestionEditor/QuestionEditorConfig/ConfigSection"
@@ -36,6 +37,7 @@ const QuestionEditorConfig = () => {
           <ConfigNumberInput
             value={currentQuestion.cooldown}
             min={3}
+            max={15}
             onChange={handleUpdateQuestion("cooldown")}
           />
           <ConfigField.Description>
@@ -62,6 +64,7 @@ const QuestionEditorConfig = () => {
             <ConfigNumberInput
               value={currentQuestion.time}
               min={5}
+              max={QUIZZ_LIMITS.MAX_TIME}
               onChange={handleUpdateQuestion("time")}
             />
           )}

@@ -22,7 +22,7 @@ const PlayerAuthPage = () => {
   }, [connect, isConnected])
 
   useEvent("game:errorMessage", (message) => {
-    toast.error(t(message))
+    toast.error(t(message), { id: message })
   })
 
   if (player) {

@@ -20,7 +20,7 @@ const StudioLoader = () => (
 
 function RouteComponent() {
   const { socket, isConnected } = useSocket()
-  const { config, setConfig } = useManagerStore()
+  const { config, setConfig, reset } = useManagerStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -33,11 +33,18 @@ function RouteComponent() {
     setConfig(data)
   })
 
+  // The server no longer knows this login: the cached quizzes and results
+  // must not stay behind to pass the guards when Back returns here.
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
-    navigate({ to: "/manager" })
+    reset()
+    // Unsaved edits cannot be saved by a host the server no longer knows, so
+    // the editor's leave prompt must not hold them here.
+    navigate({ to: "/manager", ignoreBlocker: true })
   })
 
-  if (!isConnected || !config) {
+  // Only until the config first arrives: a reconnect blip must not unmount the
+  // editor and the quiz being written in it.
+  if (!config) {
     return <StudioLoader />
   }
 

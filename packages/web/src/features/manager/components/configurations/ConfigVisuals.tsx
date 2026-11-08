@@ -1,5 +1,4 @@
 import { EVENTS } from "@razzia/common/constants"
-import type { ManagerMutationResponse } from "@razzia/common/types/manager"
 import {
   DEFAULT_DIALECT,
   DEFAULT_SHOW_INTENSITY,
@@ -11,6 +10,7 @@ import {
 import Button from "@razzia/web/components/Button"
 import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
+import { emitMutation } from "@razzia/web/features/manager/emit-mutation"
 import { useBackgroundUpload } from "@razzia/web/features/visuals/use-background-upload"
 import clsx from "clsx"
 import { Image, Trash2, Upload } from "lucide-react"
@@ -18,6 +18,7 @@ import {
   type ChangeEvent,
   type DragEvent,
   type KeyboardEvent,
+  useEffect,
   useRef,
   useState,
 } from "react"
@@ -147,7 +148,10 @@ const VisualChoiceGroup = <T extends string>({
 
 const ConfigVisuals = () => {
   const { game } = useConfig()
-  const { socket } = useSocket()
+  const { socket, isConnected } = useSocket()
+  // Bumped on every disconnect, so an answer that belongs to the old
+  // connection cannot clear what a newer request is waiting on.
+  const connection = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [clearing, setClearing] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -162,6 +166,19 @@ const ConfigVisuals = () => {
   const activeSoundTheme = game.visuals?.soundTheme ?? DEFAULT_SOUND_THEME
   const activeShowIntensity =
     game.visuals?.showIntensity ?? DEFAULT_SHOW_INTENSITY
+
+  useEffect(() => {
+    if (isConnected) {
+      return
+    }
+
+    connection.current += 1
+    setClearing(false)
+    setPendingDialect(null)
+    setPendingSoundTheme(null)
+    setPendingShowIntensity(null)
+  }, [isConnected])
+
   const { uploading, uploadFile } = useBackgroundUpload({
     setGlobal: true,
     onSuccess: () => {
@@ -206,19 +223,24 @@ const ConfigVisuals = () => {
   }
 
   const handleClear = () => {
+    const generation = connection.current
+
     setClearing(true)
-    socket.emit(
-      EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR,
-      (response: ManagerMutationResponse) => {
-        setClearing(false)
-
-        if ("error" in response) {
-          toast.error(t(response.error))
-
-          return
+    emitMutation(
+      socket,
+      [EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR],
+      (response) => {
+        if (generation === connection.current) {
+          setClearing(false)
         }
 
-        toast.success(t("manager:visuals.cleared"))
+        if (!response) {
+          toast.error(t("errors:visuals.backgroundClearFailed"))
+        } else if ("error" in response) {
+          toast.error(t(response.error))
+        } else {
+          toast.success(t("manager:visuals.cleared"))
+        }
       },
     )
   }
@@ -228,14 +250,20 @@ const ConfigVisuals = () => {
       return
     }
 
-    setPendingDialect(dialect)
-    socket.emit(
-      EVENTS.MANAGER.DIALECT_SET,
-      { dialect },
-      (response: ManagerMutationResponse) => {
-        setPendingDialect(null)
+    const generation = connection.current
 
-        if ("error" in response) {
+    setPendingDialect(dialect)
+    emitMutation(
+      socket,
+      [EVENTS.MANAGER.DIALECT_SET, { dialect }],
+      (response) => {
+        if (generation === connection.current) {
+          setPendingDialect(null)
+        }
+
+        if (!response) {
+          toast.error(t("errors:visuals.dialectSetFailed"))
+        } else if ("error" in response) {
           toast.error(t(response.error))
         }
       },
@@ -247,14 +275,20 @@ const ConfigVisuals = () => {
       return
     }
 
-    setPendingSoundTheme(soundTheme)
-    socket.emit(
-      EVENTS.MANAGER.SOUND_THEME_SET,
-      { soundTheme },
-      (response: ManagerMutationResponse) => {
-        setPendingSoundTheme(null)
+    const generation = connection.current
 
-        if ("error" in response) {
+    setPendingSoundTheme(soundTheme)
+    emitMutation(
+      socket,
+      [EVENTS.MANAGER.SOUND_THEME_SET, { soundTheme }],
+      (response) => {
+        if (generation === connection.current) {
+          setPendingSoundTheme(null)
+        }
+
+        if (!response) {
+          toast.error(t("errors:visuals.soundThemeSetFailed"))
+        } else if ("error" in response) {
           toast.error(t(response.error))
         }
       },
@@ -266,14 +300,20 @@ const ConfigVisuals = () => {
       return
     }
 
-    setPendingShowIntensity(showIntensity)
-    socket.emit(
-      EVENTS.MANAGER.SHOW_INTENSITY_SET,
-      { showIntensity },
-      (response: ManagerMutationResponse) => {
-        setPendingShowIntensity(null)
+    const generation = connection.current
 
-        if ("error" in response) {
+    setPendingShowIntensity(showIntensity)
+    emitMutation(
+      socket,
+      [EVENTS.MANAGER.SHOW_INTENSITY_SET, { showIntensity }],
+      (response) => {
+        if (generation === connection.current) {
+          setPendingShowIntensity(null)
+        }
+
+        if (!response) {
+          toast.error(t("errors:visuals.showIntensitySetFailed"))
+        } else if ("error" in response) {
           toast.error(t(response.error))
         }
       },

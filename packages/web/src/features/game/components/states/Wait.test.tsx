@@ -128,6 +128,18 @@ describe("Wait", () => {
     expect(tile()?.classList.contains("rz-nudge")).toBe(true)
   })
 
+  it("shows a head count that arrived before the screen did", () => {
+    usePlayerStore.getState().setPlayersHere(7)
+
+    const { container } = render(
+      <Wait data={{ text: "game:waitingForPlayers" }} />,
+    )
+
+    expect(container.querySelector("[data-players-here]")?.textContent).toBe(
+      'game:playersHere:{"count":7}',
+    )
+  })
+
   it("tells a player in the lobby they are in, and how many are here", () => {
     usePlayerStore.getState().setPlayer({ username: "Ada", points: 0 })
 

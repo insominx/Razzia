@@ -35,6 +35,7 @@ import {
   type PropsWithChildren,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from "react"
 import toast from "react-hot-toast"
@@ -46,6 +47,14 @@ import { useTranslation } from "react-i18next"
  * must not leave the host without one.
  */
 export const NEXT_RETRY_MS = 4_000
+
+/**
+ * After the screen or its command changes, a click is still the one aimed at
+ * the old screen: a double click, or Enter held on the focused button, lands
+ * here a moment after the server's answer. Skip becomes Abort on the very next
+ * screen, so that second click would end the question it just opened.
+ */
+export const SCREEN_SETTLE_MS = 600
 
 type Props = PropsWithChildren & {
   statusName: Status | undefined
@@ -130,7 +139,8 @@ const GameWrapper = ({
   })
 
   useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
-    toast.error(t(message))
+    // One toast per error: mashed buttons replace it instead of stacking.
+    toast.error(t(message), { id: message })
     console.log(t(message))
     setIsDisabled(false)
   })
@@ -141,6 +151,19 @@ const GameWrapper = ({
   useEffect(() => {
     setIsDisabled(false)
   }, [nextActionKey, statusName, managerStatus, isConnected])
+
+  const changedAt = useRef<number | null>(null)
+  const seenFirstScreen = useRef(false)
+
+  useEffect(() => {
+    if (!seenFirstScreen.current) {
+      seenFirstScreen.current = true
+
+      return
+    }
+
+    changedAt.current = Date.now()
+  }, [nextActionKey, statusName, managerStatus])
 
   useEffect(() => {
     if (!isDisabled) {
@@ -155,6 +178,14 @@ const GameWrapper = ({
   }, [isDisabled])
 
   const handleNext = () => {
+    if (
+      isDisabled ||
+      (changedAt.current !== null &&
+        Date.now() - changedAt.current < SCREEN_SETTLE_MS)
+    ) {
+      return
+    }
+
     setIsDisabled(true)
     onNext?.()
   }
@@ -193,6 +224,7 @@ const GameWrapper = ({
                         "pointer-events-none": isDisabled,
                       },
                     )}
+                    disabled={isDisabled}
                     onClick={handleNext}
                   >
                     {t(next)}

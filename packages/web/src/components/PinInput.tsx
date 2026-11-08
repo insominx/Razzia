@@ -76,7 +76,11 @@ const PinInput = ({
     (index: number) => (e: ChangeEvent<HTMLInputElement>) => {
       const char = e.target.value.replace(/\D/gu, "").slice(-1)
 
+      // Emptied without a Backspace key (soft keyboards, cut, autofill): the
+      // cell is cleared, or the controlled input would snap back to its digit.
       if (!char) {
+        update(index, "")
+
         return
       }
 

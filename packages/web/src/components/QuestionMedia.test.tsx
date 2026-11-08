@@ -1,6 +1,7 @@
 import QuestionMedia from "@razzia/web/components/QuestionMedia"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { useSoundStore } from "@razzia/web/features/game/stores/sound"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 const image = { type: "image", url: "https://example.com/a.png" } as const
 
@@ -53,5 +54,31 @@ describe("QuestionMedia", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toBe(
       "https://example.com/b.png",
     )
+  })
+})
+
+describe("QuestionMedia suppression", () => {
+  afterEach(() => {
+    cleanup()
+    act(() => useSoundStore.getState().setSuppressed(false))
+    vi.restoreAllMocks()
+  })
+
+  it("pauses a playing video when the page is suppressed", () => {
+    const pause = vi
+      .spyOn(HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => undefined)
+
+    render(
+      <QuestionMedia
+        media={{ type: "video", url: "https://example.com/a.mp4" }}
+      />,
+    )
+
+    expect(pause).not.toHaveBeenCalled()
+
+    act(() => useSoundStore.getState().setSuppressed(true))
+
+    expect(pause).toHaveBeenCalled()
   })
 })

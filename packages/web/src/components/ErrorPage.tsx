@@ -1,6 +1,9 @@
 import Background from "@razzia/web/components/Background"
 import Button from "@razzia/web/components/Button"
 import Card from "@razzia/web/components/Card"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { usePlayerStore } from "@razzia/web/features/game/stores/player"
+import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import { useRouter } from "@tanstack/react-router"
 import { CircleX } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -8,6 +11,15 @@ import { useTranslation } from "react-i18next"
 const ErrorPage = ({ error }: { error: Error }) => {
   const { t } = useTranslation()
   const router = useRouter()
+
+  // Going home leaves the game, so the stores must not keep it: a kept player
+  // would show the name form for a game that is gone.
+  const handleBack = () => {
+    usePlayerStore.getState().reset()
+    useManagerStore.getState().reset()
+    useQuestionStore.getState().setQuestionStates(null)
+    router.navigate({ to: "/" })
+  }
 
   return (
     <Background>
@@ -26,9 +38,7 @@ const ErrorPage = ({ error }: { error: Error }) => {
             {error.message}
           </pre>
         )}
-        <Button onClick={() => router.navigate({ to: "/" })}>
-          {t("errors:route.back")}
-        </Button>
+        <Button onClick={handleBack}>{t("errors:route.back")}</Button>
       </Card>
     </Background>
   )

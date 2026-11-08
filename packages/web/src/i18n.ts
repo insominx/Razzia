@@ -35,4 +35,15 @@ i18n
     interpolation: { escapeValue: false },
   })
 
+// The index.html says "en"; screen readers, translation prompts and CJK font
+// choice follow this attribute, so it tracks the language in use.
+const syncDocumentLanguage = () => {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = i18n.resolvedLanguage ?? "en"
+  }
+}
+
+syncDocumentLanguage()
+i18n.on("languageChanged", syncDocumentLanguage)
+
 export default i18n

@@ -120,7 +120,11 @@ export const parseDraft = (
   try {
     const parsed = savedDraftSchema.safeParse(JSON.parse(raw))
 
-    if (!parsed.success || now - parsed.data.savedAt >= DRAFT_TTL_MS) {
+    // A time ahead of now (a clock that was set forward, or an edited entry)
+    // would otherwise never run out.
+    const age = parsed.success ? now - parsed.data.savedAt : 0
+
+    if (!parsed.success || age < 0 || age >= DRAFT_TTL_MS) {
       return null
     }
 
@@ -142,7 +146,15 @@ export const clearDraft = () => {
 
 /** Reads the draft, and removes one that is past its time or unreadable. */
 export const loadDraft = (): Draft | null => {
-  const raw = storage()?.getItem(REHEARSAL_KEY) ?? null
+  let raw: string | null = null
+
+  try {
+    raw = storage()?.getItem(REHEARSAL_KEY) ?? null
+  } catch {
+    // Storage that refuses a read has no draft to give.
+    return null
+  }
+
   const draft = parseDraft(raw)
 
   if (raw && !draft) {
@@ -150,6 +162,14 @@ export const loadDraft = (): Draft | null => {
   }
 
   return draft
+}
+
+/**
+ * Drops a draft that is past its time. Run once when the app starts, so one
+ * that nobody opens again does not stay in the browser indefinitely.
+ */
+export const expireDraft = (): void => {
+  loadDraft()
 }
 
 /** False when the browser would not keep it, so the caller can say so. */

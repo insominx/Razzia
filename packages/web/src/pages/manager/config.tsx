@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react"
 
 const ManagerConfigPage = () => {
   const { isConnected } = useSocket()
-  const { setConfig, config } = useManagerStore()
+  const { setConfig, config, reset } = useManagerStore()
   const navigate = useNavigate()
   const hadConfig = useRef(false)
 
@@ -39,7 +39,10 @@ const ManagerConfigPage = () => {
     setConfig(data)
   })
 
+  // The server no longer knows this login: the cached quizzes and results
+  // must not stay behind to pass the guards when Back returns here.
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
+    reset()
     navigate({ to: "/manager" })
   })
 

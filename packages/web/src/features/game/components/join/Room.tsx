@@ -11,6 +11,9 @@ import { useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+const PENDING_RETRY_MS = 4_000
+const PIN_LENGTH = 6
+
 const Room = () => {
   const { socket, isConnected } = useSocket()
   const { join, resetStatus } = usePlayerStore()
@@ -19,24 +22,47 @@ const Room = () => {
   const [shake, setShake] = useState(0)
   const { pin } = useSearch({ from: "/(auth)/" })
   const hasJoinedRef = useRef(false)
+  // A PIN sent and not yet answered: a double tap must not send it twice.
+  const pending = useRef(false)
   const { t } = useTranslation()
 
   const handleJoin = () => {
-    socket.emit(EVENTS.PLAYER.JOIN, invitation.replace(/\s/gu, ""))
+    const cleaned = invitation.replace(/\s/gu, "")
+
+    // A partial or gappy PIN cannot be right; do not spend a round trip on it.
+    if (cleaned.length !== PIN_LENGTH) {
+      setShake((count) => count + 1)
+
+      return
+    }
+
+    if (pending.current) {
+      return
+    }
+
+    pending.current = true
+    // A send lost on a dropped connection must not lock the form for good.
+    setTimeout(() => {
+      pending.current = false
+    }, PENDING_RETRY_MS)
+    socket.emit(EVENTS.PLAYER.JOIN, cleaned)
   }
 
   useEvent(EVENTS.GAME.SUCCESS_ROOM, (gameId) => {
+    pending.current = false
     join(gameId)
   })
 
   // A wrong PIN shakes the cells (the message itself is the toast's).
   useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
+    pending.current = false
     setShake((count) => count + 1)
   })
 
   // A player already in a started game goes straight back to it; the game
   // page reconnects when it opens without a status.
   useEvent(EVENTS.GAME.SUCCESS_REJOIN, (gameId) => {
+    pending.current = false
     resetStatus()
     navigate({ to: "/party/$gameId", params: { gameId } })
   })

@@ -10,8 +10,10 @@ import {
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 
 import { useNavigate } from "@tanstack/react-router"
-import { type KeyboardEvent, useState } from "react"
+import { type KeyboardEvent, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+
+const SUBMIT_RETRY_MS = 4_000
 
 const Username = () => {
   const { socket } = useSocket()
@@ -19,13 +21,21 @@ const Username = () => {
   const navigate = useNavigate()
   const [username, setUsername] = useState("")
   const [shake, setShake] = useState(0)
+  // What was sent, and that it has not been answered yet: the server answers
+  // the name it got, and a second send would only draw an error over the lobby.
+  const submitted = useRef<string | null>(null)
   const { t } = useTranslation()
 
   const handleLogin = () => {
-    if (!gameId) {
+    if (!gameId || submitted.current !== null) {
       return
     }
 
+    submitted.current = username
+    // A send lost on a dropped connection must not lock the form for good.
+    setTimeout(() => {
+      submitted.current = null
+    }, SUBMIT_RETRY_MS)
     socket.emit(EVENTS.PLAYER.LOGIN, { gameId, data: { username } })
   }
 
@@ -35,9 +45,24 @@ const Username = () => {
     }
   }
 
+  // The head count goes by before the lobby screen is there to hear it.
+  useEvent(EVENTS.GAME.TOTAL_PLAYERS, (count) => {
+    usePlayerStore.getState().setPlayersHere(count)
+  })
+
   // A taken or refused name shakes the field (the message is the toast's).
-  useEvent(EVENTS.GAME.ERROR_MESSAGE, () => {
+  useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
+    submitted.current = null
     setShake((count) => count + 1)
+
+    // The game this PIN named is gone or has begun: asking again cannot work,
+    // so the PIN form comes back.
+    if (
+      message === "errors:game.notFound" ||
+      message === "errors:game.alreadyStarted"
+    ) {
+      usePlayerStore.getState().reset()
+    }
   })
 
   useEvent(
@@ -45,7 +70,8 @@ const Username = () => {
     ({ gameId: joinedGameId, visuals, waitText }) => {
       setVisuals(visuals)
       setStatus(STATUS.WAIT, { text: waitText ?? "game:waitingForPlayers" })
-      login(username)
+      login(submitted.current ?? username)
+      submitted.current = null
 
       navigate({ to: "/party/$gameId", params: { gameId: joinedGameId } })
     },

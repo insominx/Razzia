@@ -61,6 +61,7 @@
     "deleteConfirm": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
     "deleted": "Cuestionario eliminado",
     "import": "Importar cuestionario desde JSON",
+    "importTooLarge": "El archivo del cuestionario es demasiado grande para importarlo (máx. 900 KB)",
     "none": "Aún no se ha creado ningún cuestionario",
     "notFound": "No se encontró ningún cuestionario",
     "pleaseCreate": "Por favor crea un cuestionario primero",

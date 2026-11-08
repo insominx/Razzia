@@ -1,12 +1,15 @@
 {
   "auth": {
     "invalidInviteCode": "Code d'invitation invalide",
+    "usernameInvalid": "Le pseudo contient des caractères invalides",
+    "usernameTaken": "Ce pseudo est déjà pris",
     "usernameTooLong": "Le pseudo ne peut pas dépasser 20 caractères",
     "usernameTooShort": "Le pseudo doit faire au moins 4 caractères"
   },
   "game": {
     "alreadyStarted": "Cette partie a déjà commencé",
     "expired": "La partie a expiré",
+    "full": "Cette partie est complète",
     "kickedByManager": "Vous avez été expulsé par le manager",
     "managerAlreadyConnected": "Un manager est déjà connecté",
     "managerDisconnected": "Le manager s'est déconnecté",
@@ -19,6 +22,7 @@
   "manager": {
     "failedToReadConfig": "Impossible de lire la configuration",
     "invalidPassword": "Mot de passe invalide",
+    "tooManyAttempts": "Trop de tentatives. Réessayez plus tard.",
     "passwordNotConfigured": "Mot de passe manager non configuré",
     "unauthorized": "Vous n'êtes pas autorisé"
   },
@@ -33,12 +37,16 @@
     "failedToSave": "Le quizz est incomplet, vérifiez que chaque question a un titre et au moins une bonne réponse",
     "failedToUpdate": "La mise à jour du quizz a echoué",
     "invalidMediaUrl": "L'URL du média doit être une URL valide",
+    "invalidSolution": "Les solutions doivent être uniques et correspondre à des réponses existantes",
+    "invalidTime": "Le temps doit être illimité ou de 1 à 600 secondes",
     "noQuestions": "Un quizz doit avoir au moins une question",
     "notFound": "Quizz introuvable",
     "questionEmpty": "La question ne peut pas être vide",
     "subjectEmpty": "Le sujet ne peut pas être vide",
+    "textTooLong": "Le texte est trop long",
     "tooFewAnswers": "Une question doit avoir au moins 2 réponses",
-    "tooManyAnswers": "Une question ne peut pas avoir plus de 4 réponses"
+    "tooManyAnswers": "Une question ne peut pas avoir plus de 4 réponses",
+    "tooManyQuestions": "Un quizz ne peut pas avoir plus de 200 questions"
   },
   "visuals": {
     "backgroundClearFailed": "Impossible de supprimer l’arrière-plan",
@@ -61,5 +69,8 @@
     "back": "Retour à l'accueil",
     "description": "Une erreur inattendue s'est produite. Veuillez réessayer.",
     "title": "Une erreur est survenue"
+  },
+  "result": {
+    "failedToDelete": "Impossible de supprimer le résultat"
   }
 }

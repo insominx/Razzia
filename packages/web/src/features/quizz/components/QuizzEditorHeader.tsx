@@ -9,10 +9,18 @@ import {
 import { openRehearsal } from "@razzia/web/features/rehearse/draft"
 import QuizzBackgroundControl from "@razzia/web/features/quizz/components/QuizzBackgroundControl"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
-import { useNavigate } from "@tanstack/react-router"
-import { type ChangeEvent, useEffect } from "react"
+import { useBlocker, useNavigate } from "@tanstack/react-router"
+import {
+  type ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+
+const SAVE_RETRY_MS = 10_000
 
 const QuizzEditorHeader = () => {
   const {
@@ -27,6 +35,18 @@ const QuizzEditorHeader = () => {
   const { socket } = useSocket()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  // A save sent and not yet answered: a second click must not send it again.
+  const [saving, setSaving] = useState(false)
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (retryTimer.current) {
+        clearTimeout(retryTimer.current)
+      }
+    },
+    [],
+  )
 
   // Reloading or closing the tab with unsaved edits asks first; in-app exits
   // go through the confirmation below instead.
@@ -46,8 +66,34 @@ const QuizzEditorHeader = () => {
     }
   }, [isDirty])
 
+  // Back, Forward and any other in-app exit with unsaved edits ask first.
+  // The tab-close prompt above already covers a reload, so the blocker leaves
+  // it out.
+  const shouldBlockLeave = useCallback(() => isDirty, [isDirty])
+  const blocker = useBlocker({
+    shouldBlockFn: shouldBlockLeave,
+    withResolver: true,
+    enableBeforeUnload: false,
+  })
+
+  // Exit asks through its own dialog (or has nothing to ask), so it must not
+  // be asked again by the blocker.
   const handleExit = () => {
-    navigate({ to: "/manager" })
+    navigate({ to: "/manager", ignoreBlocker: true })
+  }
+
+  const handleLeaveDialogChange = (open: boolean) => {
+    // Settling an already settled blocker is a no-op, so this is safe after a
+    // confirm too.
+    if (!open && blocker.status === "blocked") {
+      blocker.reset()
+    }
+  }
+
+  const handleConfirmLeave = () => {
+    if (blocker.status === "blocked") {
+      blocker.proceed()
+    }
   }
 
   const handleChangeSubject = (e: ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +110,14 @@ const QuizzEditorHeader = () => {
   }
 
   const handleSave = () => {
+    if (saving) {
+      return
+    }
+
+    setSaving(true)
+    // A save lost on a dropped connection must not lock the button for good.
+    retryTimer.current = setTimeout(() => setSaving(false), SAVE_RETRY_MS)
+
     const visuals = background ? { background } : undefined
 
     if (quizzId) {
@@ -80,15 +134,22 @@ const QuizzEditorHeader = () => {
 
   useEvent(EVENTS.QUIZZ.SAVE_SUCCESS, () => {
     toast.success(t("quizz:quizzSaved"))
-    navigate({ to: "/manager/config" })
+    // Saved: isDirty is still true at this moment, but nothing is lost.
+    navigate({ to: "/manager/config", ignoreBlocker: true })
   })
 
   useEvent(EVENTS.QUIZZ.UPDATE_SUCCESS, (_data) => {
     toast.success(t("quizz:quizzUpdated"))
-    navigate({ to: "/manager/config" })
+    // Saved: isDirty is still true at this moment, but nothing is lost.
+    navigate({ to: "/manager/config", ignoreBlocker: true })
   })
 
   useEvent(EVENTS.QUIZZ.ERROR, (message) => {
+    if (retryTimer.current) {
+      clearTimeout(retryTimer.current)
+    }
+
+    setSaving(false)
     toast.error(t(message))
   })
 
@@ -133,10 +194,22 @@ const QuizzEditorHeader = () => {
         >
           {t("quizz:rehearse.button")}
         </Button>
-        <Button className="text-md px-4 py-2" onClick={handleSave}>
+        <Button
+          className="text-md px-4 py-2"
+          onClick={handleSave}
+          disabled={saving}
+        >
           {t("common:save")}
         </Button>
       </div>
+      <ConfirmDialog
+        open={blocker.status === "blocked"}
+        onOpenChange={handleLeaveDialogChange}
+        title={t("quizz:unsaved.title")}
+        description={t("quizz:unsaved.description")}
+        confirmLabel={t("quizz:unsaved.discard")}
+        onConfirm={handleConfirmLeave}
+      />
     </header>
   )
 }

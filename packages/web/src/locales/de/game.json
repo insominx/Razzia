@@ -76,5 +76,10 @@
   "seatsMore": "+{{count}} weitere",
   "youreIn": "Du bist dabei, {{name}}",
   "playersHere": "{{count}} dabei",
-  "standingLevel": "Gleichauf mit {{name}}. Noch eine schnelle Antwort und du ziehst vorbei."
+  "standingLevel": "Gleichauf mit {{name}}. Noch eine schnelle Antwort und du ziehst vorbei.",
+  "leave": {
+    "title": "Raum schließen?",
+    "description": "Wenn du gehst, ist das Spiel für alle darin beendet.",
+    "confirm": "Raum schließen"
+  }
 }

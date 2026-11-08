@@ -1,6 +1,6 @@
 import QuizzEditorCard from "@razzia/web/features/quizz/components/QuizzEditorCard"
 import type { QuestionWithId } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
-import { cleanup, render } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("react-i18next", () => ({
@@ -54,5 +54,37 @@ describe("QuizzEditorCard fit warning", () => {
       "aria-label",
       "quizz:fitWarning.card",
     )
+  })
+})
+
+describe("QuizzEditorCard delete dialog", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("does not select the card when the dialog is cancelled or confirmed", () => {
+    const onClick = vi.fn()
+    const onDelete = vi.fn()
+    render(
+      <QuizzEditorCard
+        question={make()}
+        index={0}
+        isActive={false}
+        canDelete
+        onClick={onClick}
+        onDelete={onDelete}
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText("quizz:question.deleteQuestion"))
+    fireEvent.click(screen.getByText("common:cancel"))
+
+    expect(onClick).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByLabelText("quizz:question.deleteQuestion"))
+    fireEvent.click(screen.getByText("common:delete"))
+
+    expect(onDelete).toHaveBeenCalledTimes(1)
+    expect(onClick).not.toHaveBeenCalled()
   })
 })

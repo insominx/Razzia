@@ -11,6 +11,7 @@ import { STATUS, type Status } from "@razzia/common/types/game/status"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import GameWrapper, {
   NEXT_RETRY_MS,
+  SCREEN_SETTLE_MS,
 } from "@razzia/web/features/game/components/GameWrapper"
 import { score } from "@razzia/web/features/game/audio/score"
 import { useLaunchStore } from "@razzia/web/features/game/stores/launch"
@@ -197,6 +198,7 @@ describe("GameWrapper manager action acknowledgement", () => {
   })
 
   it("re-enables Skip when the same status changes command identity", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] })
     const onNext = vi.fn()
     const { rerender } = render(
       <GameWrapper
@@ -226,8 +228,35 @@ describe("GameWrapper manager action acknowledgement", () => {
     )
 
     await waitFor(() => expect(skip).not.toHaveClass("pointer-events-none"))
+    // The double click: the server's answer has just changed what Skip means,
+    // and this click was aimed at the screen before it.
+    fireEvent.click(skip)
+    expect(onNext).toHaveBeenCalledTimes(1)
+
+    vi.setSystemTime(Date.now() + SCREEN_SETTLE_MS)
     fireEvent.click(skip)
     expect(onNext).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
+  })
+
+  it("blocks keyboard activation while a click is waiting for the server", () => {
+    cleanup()
+    const onNext = vi.fn()
+    render(
+      <GameWrapper
+        statusName={STATUS.SELECT_ANSWER}
+        nextActionKey={EVENTS.MANAGER.UNLOCK_ANSWERS}
+        onNext={onNext}
+        manager
+      >
+        <div>Answers</div>
+      </GameWrapper>,
+    )
+    const skip = screen.getByRole("button", { name: "common:skip" })
+
+    fireEvent.click(skip)
+
+    expect(skip).toBeDisabled()
   })
 })
 

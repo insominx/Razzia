@@ -76,5 +76,10 @@
   "seatsMore": "+{{count}} de plus",
   "youreIn": "Vous y êtes, {{name}}",
   "playersHere": "{{count}} présents",
-  "standingLevel": "À égalité avec {{name}}. Encore une réponse rapide et vous le dépassez."
+  "standingLevel": "À égalité avec {{name}}. Encore une réponse rapide et vous le dépassez.",
+  "leave": {
+    "title": "Fermer la salle ?",
+    "description": "Si vous partez, la partie se termine pour tous ceux qui s'y trouvent.",
+    "confirm": "Fermer la salle"
+  }
 }

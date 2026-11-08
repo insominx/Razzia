@@ -159,6 +159,19 @@ describe("RehearsalPage", () => {
     expect(frame().searchParams.get("n")).not.toBe(before)
   })
 
+  it("does not reload the frame on every repeat of a held key", () => {
+    localStorage.setItem(REHEARSAL_KEY, draft())
+    render(<RehearsalPage />)
+
+    const before = frame().searchParams.get("n")
+
+    fireEvent.keyDown(window, { key: "r", repeat: true })
+    fireEvent.keyDown(window, { key: "ArrowRight", repeat: true })
+
+    expect(frame().searchParams.get("n")).toBe(before)
+    expect(frame().searchParams.get("fixture")).toBe("answers")
+  })
+
   it("takes keys from the frame it holds", () => {
     localStorage.setItem(REHEARSAL_KEY, draft())
     render(<RehearsalPage />)

@@ -3,8 +3,13 @@ import { Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 const ResultModalStats = () => {
-  const { correctPct, answeredCount, totalPlayers } = useResultModal()
+  const { questionResult, correctPct, answeredCount, participantCount } =
+    useResultModal()
   const { t } = useTranslation()
+
+  if (!questionResult) {
+    return null
+  }
 
   return (
     <div className="divide-border border-border bg-panel flex shrink-0 divide-x border-b">
@@ -49,7 +54,7 @@ const ResultModalStats = () => {
         <div className="flex items-center gap-2">
           <Users className="text-info size-4" />
           <span className="text-sm font-semibold">
-            {answeredCount}/{totalPlayers}
+            {answeredCount}/{participantCount}
           </span>
         </div>
       </div>

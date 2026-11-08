@@ -96,27 +96,35 @@ const QuizzEditorCard = ({
       </div>
 
       {canDelete && (
-        <AlertDialog
-          trigger={
-            // Hover-only reveal left touch screens with no way to delete; the
-            // button now also shows on the active card and on coarse pointers.
-            <button
-              type="button"
-              aria-label={t("quizz:question.deleteQuestion")}
-              onClick={(e) => e.stopPropagation()}
-              className={clsx(
-                "bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 p-1 transition group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
-                isActive ? "opacity-100" : "opacity-0",
-              )}
-            >
-              <Trash2 className="size-3.5" />
-            </button>
-          }
-          title={t("quizz:question.deleteQuestion")}
-          description={t("quizz:question.deleteQuestionConfirm")}
-          confirmLabel={t("common:delete")}
-          onConfirm={onDelete}
-        />
+        // The dialog is portaled, but React still bubbles its events to this
+        // card (select it) and to the drag wrapper around it (start a drag).
+        <div
+          className="contents"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <AlertDialog
+            trigger={
+              // Hover-only reveal left touch screens with no way to delete; the
+              // button now also shows on the active card and on coarse pointers.
+              <button
+                type="button"
+                aria-label={t("quizz:question.deleteQuestion")}
+                onClick={(e) => e.stopPropagation()}
+                className={clsx(
+                  "bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 p-1 transition group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+                  isActive ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            }
+            title={t("quizz:question.deleteQuestion")}
+            description={t("quizz:question.deleteQuestionConfirm")}
+            confirmLabel={t("common:delete")}
+            onConfirm={onDelete}
+          />
+        </div>
       )}
     </div>
   )

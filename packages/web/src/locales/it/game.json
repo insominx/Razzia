@@ -76,5 +76,10 @@
   "seatsMore": "+{{count}} altri",
   "youreIn": "Sei dentro, {{name}}",
   "playersHere": "{{count}} presenti",
-  "standingLevel": "Pari con {{name}}. Ancora una risposta veloce e lo superi."
+  "standingLevel": "Pari con {{name}}. Ancora una risposta veloce e lo superi.",
+  "leave": {
+    "title": "Chiudere la stanza?",
+    "description": "Se esci, la partita termina per tutti quelli che sono dentro.",
+    "confirm": "Chiudi la stanza"
+  }
 }

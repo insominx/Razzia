@@ -1,6 +1,7 @@
 import {
   clearDraft,
   type Draft,
+  expireDraft,
   loadDraft,
   openRehearsal,
   parseDraft,
@@ -190,6 +191,38 @@ describe("how long a draft lasts", () => {
 
   const draft: Draft = { subject: "Quiz", at: 0, questions: [question()] }
   const HOUR = 60 * 60 * 1_000
+
+  it("expires a draft dated in the future", () => {
+    localStorage.setItem(
+      REHEARSAL_KEY,
+      JSON.stringify({ ...draft, savedAt: Date.now() + 1e12 }),
+    )
+
+    expect(loadDraft()).toBeNull()
+    expect(localStorage.getItem(REHEARSAL_KEY)).toBeNull()
+  })
+
+  it("drops an old draft at startup without anyone opening it", () => {
+    saveDraft(draft)
+    vi.advanceTimersByTime(4 * HOUR + 1)
+    expect(localStorage.getItem(REHEARSAL_KEY)).not.toBeNull()
+
+    expireDraft()
+
+    expect(localStorage.getItem(REHEARSAL_KEY)).toBeNull()
+  })
+
+  it("gives no draft, and does not throw, when storage refuses a read", () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new Error("denied")
+      },
+      removeItem: () => undefined,
+    })
+
+    expect(() => loadDraft()).not.toThrow()
+    expect(loadDraft()).toBeNull()
+  })
 
   it("lasts through an afternoon of rehearsing", () => {
     saveDraft(draft)

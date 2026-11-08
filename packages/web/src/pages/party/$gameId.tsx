@@ -1,4 +1,5 @@
 import { EVENTS } from "@razzia/common/constants"
+import GameScreenBoundary from "@razzia/web/features/game/components/GameScreenBoundary"
 import GameWrapper from "@razzia/web/features/game/components/GameWrapper"
 import {
   socketClient,
@@ -46,6 +47,11 @@ const PlayerGamePage = () => {
     }
   }, [gameIdParam])
 
+  // On a reconnect the count follows the screen in one burst.
+  useEvent(EVENTS.GAME.TOTAL_PLAYERS, (count) => {
+    usePlayerStore.getState().setPlayersHere(count)
+  })
+
   useEvent(
     EVENTS.PLAYER.SUCCESS_RECONNECT,
     ({
@@ -74,7 +80,7 @@ const PlayerGamePage = () => {
     navigate({ to: "/", replace: true })
     reset()
     setQuestionStates(null)
-    toast.error(t(message))
+    toast.error(t(message), { id: message })
   })
 
   if (!gameIdParam) {
@@ -92,7 +98,14 @@ const PlayerGamePage = () => {
       backgroundUrl={visuals.backgroundUrl}
     >
       {CurrentComponent && status && (
-        <CurrentComponent data={status.data as never} />
+        <GameScreenBoundary
+          resetKey={status}
+          onRecover={() =>
+            socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
+          }
+        >
+          <CurrentComponent data={status.data as never} />
+        </GameScreenBoundary>
       )}
     </GameWrapper>
   )
@@ -102,6 +115,9 @@ export const Route = createFileRoute("/party/$gameId")({
   component: PlayerGamePage,
   onLeave: ({ params: { gameId } }) => {
     socketClient.emit(EVENTS.PLAYER.LEAVE, { gameId })
-    usePlayerStore.getState().resetStatus()
+    // The player is out of the game, so nothing of it may linger: a kept
+    // player would send the join page to the name form for a game they left.
+    usePlayerStore.getState().reset()
+    useQuestionStore.getState().setQuestionStates(null)
   },
 })

@@ -32,6 +32,42 @@ describe("Standing", () => {
     cleanup()
   })
 
+  it("keeps every row when neighbours are level on a place", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined)
+    const level = (username: string, me = false) => ({
+      rank: 1,
+      username,
+      points: 500,
+      me,
+    })
+    const { container, rerender } = render(
+      <Standing
+        data={{
+          ...base,
+          rank: 1,
+          ladder: [level("Ada"), level("Me", true), level("Lin"), level("Raj")],
+        }}
+      />,
+    )
+
+    rerender(
+      <Standing
+        data={{
+          ...base,
+          rank: 1,
+          ladder: [level("Ada"), level("Me", true), level("Lin")],
+        }}
+      />,
+    )
+
+    expect(container.querySelectorAll("[data-standing-row]")).toHaveLength(3)
+    expect(
+      container.querySelector('[data-standing-row="me"]')?.textContent,
+    ).toContain("Me")
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+
   it("shows the player's own place and who is around it", () => {
     const { container } = render(<Standing data={base} />)
 

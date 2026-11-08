@@ -11,7 +11,10 @@ vi.mock("@razzia/web/features/game/components/VolumeControl", () => ({
 }))
 
 vi.mock("@razzia/web/features/game/stores/sound", () => ({
-  useSoundStore: { getState: () => ({ bindSurface: vi.fn() }) },
+  useSoundStore: {
+    getState: () => ({ bindSurface: vi.fn() }),
+    subscribe: () => () => undefined,
+  },
 }))
 
 vi.mock("@razzia/web/hooks/use-surface", () => ({
@@ -92,6 +95,7 @@ describe("RehearsalFrame", () => {
     fireEvent.keyDown(window, { key: "ArrowRight" })
     fireEvent.keyDown(window, { key: "x" })
     fireEvent.keyDown(window, { key: "r", ctrlKey: true })
+    fireEvent.keyDown(window, { key: "ArrowRight", repeat: true })
 
     expect(post).toHaveBeenCalledTimes(1)
     expect(post).toHaveBeenCalledWith(

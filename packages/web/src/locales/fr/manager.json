@@ -61,6 +61,7 @@
     "deleteConfirm": "Supprimer \"{{name}}\" ? Cette action est irréversible.",
     "deleted": "Quizz supprimé",
     "import": "Importer un quizz (JSON)",
+    "importTooLarge": "Le fichier du quiz est trop volumineux pour être importé (900 Ko max.)",
     "none": "Aucun quizz créé",
     "notFound": "Aucun quizz trouvé",
     "pleaseCreate": "Veuillez d'abord créer un quizz",

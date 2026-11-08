@@ -11,6 +11,10 @@ const ResultModalTable = () => {
   const { questionResult, getPlayerPoints } = useResultModal()
   const { t } = useTranslation()
 
+  if (!questionResult) {
+    return null
+  }
+
   return (
     <table className="w-full text-sm">
       <thead className="bg-panel sticky top-0">
@@ -67,7 +71,7 @@ const ResultModalTable = () => {
                 )}
               </td>
               <td className="text-text-body px-4 py-2.5 text-right font-semibold">
-                {getPlayerPoints(pa.playerName)}
+                {getPlayerPoints(pa.playerName) ?? "—"}
               </td>
             </tr>
           )

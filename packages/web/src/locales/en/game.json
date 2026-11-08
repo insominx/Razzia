@@ -80,5 +80,10 @@
   "seatsMore": "+{{count}} more",
   "youreIn": "You're in, {{name}}",
   "playersHere": "{{count}} here",
-  "standingLevel": "Level with {{name}}. One more fast answer and you pass them."
+  "standingLevel": "Level with {{name}}. One more fast answer and you pass them.",
+  "leave": {
+    "title": "Close the room?",
+    "description": "Leaving ends the game for everyone in it.",
+    "confirm": "Close the room"
+  }
 }

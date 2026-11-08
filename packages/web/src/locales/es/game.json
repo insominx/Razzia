@@ -76,5 +76,10 @@
   "seatsMore": "+{{count}} más",
   "youreIn": "Estás dentro, {{name}}",
   "playersHere": "{{count}} aquí",
-  "standingLevel": "Empatado con {{name}}. Una respuesta rápida más y lo pasas."
+  "standingLevel": "Empatado con {{name}}. Una respuesta rápida más y lo pasas.",
+  "leave": {
+    "title": "¿Cerrar la sala?",
+    "description": "Si te vas, la partida termina para todos los que están dentro.",
+    "confirm": "Cerrar la sala"
+  }
 }

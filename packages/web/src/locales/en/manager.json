@@ -61,6 +61,7 @@
     "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "deleted": "Quizz deleted",
     "import": "Import quizz from JSON",
+    "importTooLarge": "Quizz file is too large to import (max 900 KB)",
     "none": "No quizz created yet",
     "notFound": "No quizz found",
     "pleaseCreate": "Please create a quizz first",

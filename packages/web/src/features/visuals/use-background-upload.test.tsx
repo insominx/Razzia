@@ -80,4 +80,22 @@ describe("useBackgroundUpload", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1)
     expect(result.current.uploading).toBe(false)
   })
+
+  it("never passes a raw browser error to the translator", async () => {
+    uploadBackgroundViaHttp.mockRejectedValue(new TypeError("Failed to fetch"))
+
+    const { useBackgroundUpload } =
+      await import("@razzia/web/features/visuals/use-background-upload")
+    const { result } = renderHook(() => useBackgroundUpload())
+
+    await act(async () => {
+      await result.current.uploadFile(
+        new File(["ok"], "a.png", { type: "image/png" }),
+      )
+    })
+
+    expect(toastError).toHaveBeenCalledWith(
+      "errors:visuals.backgroundUploadFailed",
+    )
+  })
 })

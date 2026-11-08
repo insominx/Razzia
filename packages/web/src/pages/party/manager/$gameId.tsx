@@ -1,6 +1,8 @@
 import { EVENTS } from "@razzia/common/constants"
 import { STATUS } from "@razzia/common/types/game/status"
+import ConfirmDialog from "@razzia/web/components/AlertDialog"
 import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
+import GameScreenBoundary from "@razzia/web/features/game/components/GameScreenBoundary"
 import GameWrapper from "@razzia/web/features/game/components/GameWrapper"
 import Responses from "@razzia/web/features/game/components/states/Responses"
 import {
@@ -15,10 +17,36 @@ import {
   getManagerSkipEvent,
   isKeyOf,
 } from "@razzia/web/features/game/utils/constants"
-import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
-import { useEffect } from "react"
+import {
+  createFileRoute,
+  useBlocker,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router"
+import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+
+// Leaving closes the room for everyone, so it is confirmed once players are in
+// or a question has started. An empty lobby, a finished game and a lecture deck
+// (which drives the game itself) leave without asking.
+const hostShouldConfirmLeave = () => {
+  if (IS_DECK_EMBED) {
+    return false
+  }
+
+  const { gameId, status, players, lecture } = useManagerStore.getState()
+
+  if (!gameId || !status) {
+    return false
+  }
+
+  if (status.name === STATUS.FINISHED || lecture?.finished) {
+    return false
+  }
+
+  return players.length > 0 || status.name !== STATUS.SHOW_ROOM
+}
 
 const ManagerGamePage = () => {
   const navigate = useNavigate()
@@ -39,10 +67,31 @@ const ManagerGamePage = () => {
   } = useManagerStore()
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
+  // The lobby Exit button asks through the same dialog as a router leave.
+  const [exitAsked, setExitAsked] = useState(false)
+  const blocker = useBlocker({
+    shouldBlockFn: hostShouldConfirmLeave,
+    withResolver: true,
+    disabled: IS_DECK_EMBED,
+    // Closing the tab is left alone.
+    enableBeforeUnload: false,
+  })
   // A lecture deck showing a played question's results again, over the live
   // screen; the game's own controls wait until the review ends.
   const reviewed = review === null ? undefined : responses[review]
   const nextAction = status && !reviewed ? getManagerSkipEvent(status) : null
+
+  // The live screen is only hidden under a review, and hiding does not stop
+  // a question's audio or video: it would play on under the review slide.
+  useEffect(() => {
+    if (reviewed) {
+      for (const media of document.querySelectorAll<HTMLMediaElement>(
+        "[data-live-screen] audio, [data-live-screen] video",
+      )) {
+        media.pause()
+      }
+    }
+  }, [reviewed])
 
   useEvent(EVENTS.GAME.STATUS, ({ name, data }) => {
     if (name in GAME_STATE_COMPONENTS_MANAGER) {
@@ -93,22 +142,27 @@ const ManagerGamePage = () => {
       return
     }
 
-    navigate({ to: "/manager/config", replace: true })
+    navigate({ to: "/manager/config", replace: true, ignoreBlocker: true })
     reset()
     setQuestionStates(null)
-    toast.error(t(message))
+    toast.error(t(message), { id: message })
   })
+
+  // The page's own exits: the game is already closed or about to be, and the
+  // blocker must not ask again. Replace: Back must not reopen it.
+  const leave = () => {
+    navigate({ to: "/manager/config", replace: true, ignoreBlocker: true })
+    reset()
+    setQuestionStates(null)
+  }
 
   const handleSkip = () => {
     if (!status) {
       return
     }
 
-    // Leaving closes the game, so replace: Back must not reopen it.
     if (status.name === STATUS.FINISHED) {
-      navigate({ to: "/manager/config", replace: true })
-      reset()
-      setQuestionStates(null)
+      leave()
 
       return
     }
@@ -123,9 +177,35 @@ const ManagerGamePage = () => {
   }
 
   const handleBack = () => {
-    navigate({ to: "/manager/config", replace: true })
-    reset()
-    setQuestionStates(null)
+    if (hostShouldConfirmLeave()) {
+      setExitAsked(true)
+
+      return
+    }
+
+    leave()
+  }
+
+  const handleConfirmLeave = () => {
+    if (blocker.status === "blocked") {
+      blocker.proceed()
+    } else {
+      leave()
+    }
+  }
+
+  const handleLeaveDialogChange = (open: boolean) => {
+    if (open) {
+      return
+    }
+
+    // Settling an already settled blocker is a no-op, so this is safe after a
+    // confirm too.
+    if (blocker.status === "blocked") {
+      blocker.reset()
+    }
+
+    setExitAsked(false)
   }
 
   const CurrentComponent =
@@ -134,25 +214,44 @@ const ManagerGamePage = () => {
       : null
 
   return (
-    <GameWrapper
-      statusName={reviewed ? STATUS.SHOW_RESPONSES : status?.name}
-      backgroundUrl={visuals.backgroundUrl}
-      onNext={status && !reviewed ? handleSkip : undefined}
-      nextActionKey={nextAction}
-      onBack={
-        status?.name === STATUS.SHOW_ROOM && !reviewed ? handleBack : undefined
-      }
-      manager
-    >
-      {CurrentComponent && status && (
-        // Hidden, not unmounted, under a review: its timer and answer count
-        // keep running, and nothing replays when the review ends.
-        <div data-live-screen className={reviewed ? "hidden" : "contents"}>
-          <CurrentComponent data={status.data as never} />
-        </div>
-      )}
-      {reviewed && <Responses key={`review-${review}`} data={reviewed} />}
-    </GameWrapper>
+    <>
+      <GameWrapper
+        statusName={reviewed ? STATUS.SHOW_RESPONSES : status?.name}
+        backgroundUrl={visuals.backgroundUrl}
+        onNext={status && !reviewed ? handleSkip : undefined}
+        nextActionKey={nextAction}
+        onBack={
+          status?.name === STATUS.SHOW_ROOM && !reviewed
+            ? handleBack
+            : undefined
+        }
+        manager
+      >
+        {CurrentComponent && status && (
+          // Hidden, not unmounted, under a review: its timer and answer count
+          // keep running, and nothing replays when the review ends.
+          <div data-live-screen className={reviewed ? "hidden" : "contents"}>
+            <GameScreenBoundary
+              resetKey={status}
+              onRecover={() =>
+                socket.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
+              }
+            >
+              <CurrentComponent data={status.data as never} />
+            </GameScreenBoundary>
+          </div>
+        )}
+        {reviewed && <Responses key={`review-${review}`} data={reviewed} />}
+      </GameWrapper>
+      <ConfirmDialog
+        open={exitAsked || blocker.status === "blocked"}
+        onOpenChange={handleLeaveDialogChange}
+        title={t("game:leave.title")}
+        description={t("game:leave.description")}
+        confirmLabel={t("game:leave.confirm")}
+        onConfirm={handleConfirmLeave}
+      />
+    </>
   )
 }
 

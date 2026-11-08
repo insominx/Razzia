@@ -8,24 +8,55 @@ interface Props {
   onChange: (_value: number) => void
 }
 
+const clamp = (num: number, min?: number, max?: number) =>
+  Math.min(max ?? num, Math.max(min ?? num, num))
+
 const ConfigNumberInput = ({ value, min, max, onChange }: Props) => {
   const [input, setInput] = useState(String(value))
 
+  // Follow the value when it changes from outside, but never rewrite what is
+  // being typed into something that already means the same number.
   useEffect(() => {
-    setInput(String(value))
+    setInput((current) =>
+      Number(current) === value && current.trim() !== ""
+        ? current
+        : String(value),
+    )
   }, [value])
 
+  // Typing is left alone: clamping each keystroke turned "10" into "5" then
+  // "50" for a minimum of 5. Only whole numbers already in range are passed
+  // on; the rest is settled when the field is left.
   const handleChange = (raw: string) => {
     setInput(raw)
 
-    const num = Number(raw)
-
-    if (raw === "" || isNaN(num)) {
+    if (!/^\d+$/u.test(raw)) {
       return
     }
 
-    const clamped = Math.min(max ?? num, Math.max(min ?? num, num))
-    onChange(clamped)
+    const num = Number(raw)
+
+    if (num === clamp(num, min, max)) {
+      onChange(num)
+    }
+  }
+
+  const handleBlur = () => {
+    const num = Number(input)
+
+    if (input.trim() === "" || !Number.isFinite(num)) {
+      setInput(String(value))
+
+      return
+    }
+
+    const settled = clamp(Math.round(num), min, max)
+
+    setInput(String(settled))
+
+    if (settled !== value) {
+      onChange(settled)
+    }
   }
 
   return (
@@ -36,7 +67,8 @@ const ConfigNumberInput = ({ value, min, max, onChange }: Props) => {
       max={max}
       value={input}
       onChange={(e) => handleChange(e.target.value)}
-      onBlur={() => setInput(String(value))}
+      step={1}
+      onBlur={handleBlur}
       className="w-full"
     />
   )

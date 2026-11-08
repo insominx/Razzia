@@ -73,13 +73,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    socketClient.on("connect", () => setIsConnected(true))
-    socketClient.on("disconnect", () => setIsConnected(false))
-    socketClient.on("connect_error", (err) => {
+    const handleConnect = () => setIsConnected(true)
+    const handleDisconnect = () => setIsConnected(false)
+    const handleConnectError = (err: Error) => {
       console.error("Connection error:", err.message)
-    })
+    }
+
+    socketClient.on("connect", handleConnect)
+    socketClient.on("disconnect", handleDisconnect)
+    socketClient.on("connect_error", handleConnectError)
 
     return () => {
+      // Remounting must not stack a second set of listeners on the socket.
+      socketClient.off("connect", handleConnect)
+      socketClient.off("disconnect", handleDisconnect)
+      socketClient.off("connect_error", handleConnectError)
       socketClient.disconnect()
     }
   }, [])

@@ -76,5 +76,10 @@
   "seatsMore": "ほか{{count}}人",
   "youreIn": "{{name}}さん、参加できました",
   "playersHere": "{{count}}人が参加中",
-  "standingLevel": "{{name}}さんと同点です。次の素早い正解で追い抜けます。"
+  "standingLevel": "{{name}}さんと同点です。次の素早い正解で追い抜けます。",
+  "leave": {
+    "title": "ルームを閉じますか？",
+    "description": "退出すると、参加している全員のゲームが終了します。",
+    "confirm": "ルームを閉じる"
+  }
 }

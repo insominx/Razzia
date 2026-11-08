@@ -71,6 +71,9 @@ export const useDeckBridge = () => {
     useManagerStore()
 
   const [deckOrigin, setDeckOrigin] = useState<string | null>(null)
+  // The same origin, written the moment a message arrives: a reply sent from
+  // that message, and the retry's timer, would otherwise see an older render's.
+  const deckOriginRef = useRef<string | null>(null)
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
   const [attached, setAttached] = useState(false)
   const [players, setPlayers] = useState(0)
@@ -92,6 +95,10 @@ export const useDeckBridge = () => {
   const retryTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const retryFailed = useRef<(() => void) | null>(null)
   const lastPosted = useRef("")
+  // The game this page is attached to, and the quiz it was made or resumed for.
+  const gameQuiz = useRef<{ gameId: string; quiz: string } | null>(null)
+  // When a leave went out with a create still on the wire.
+  const abandonedCreateAt = useRef<number | null>(null)
 
   const state = buildBridgeState({
     connected: isConnected,
@@ -112,7 +119,10 @@ export const useDeckBridge = () => {
   const stateRef = useRef(state)
 
   const post = useCallback(
-    (body: BridgeMessageBody, origin: string | null = deckOrigin) => {
+    (
+      body: BridgeMessageBody,
+      origin: string | null = deckOriginRef.current,
+    ) => {
       if (!origin) {
         return
       }
@@ -122,7 +132,7 @@ export const useDeckBridge = () => {
         origin,
       )
     },
-    [deckOrigin],
+    [],
   )
 
   const stopRetry = useCallback(() => {
@@ -223,6 +233,24 @@ export const useDeckBridge = () => {
       )
   }
 
+  // A command answered "queued" gets its final answer even when it is dropped.
+  const settleQueued = (reason: string, origin?: string) => {
+    const entry = queued.current
+    queued.current = null
+
+    if (entry) {
+      post(
+        {
+          type: "result",
+          command: entry.command.type,
+          outcome: "ignored",
+          reason,
+        },
+        origin,
+      )
+    }
+  }
+
   const runRound = (command: RoundCommand) => {
     const plan = planRoundCommand(command, {
       attached,
@@ -231,6 +259,7 @@ export const useDeckBridge = () => {
     })
 
     if (plan.kind === "queue") {
+      settleQueued("superseded")
       queued.current = { command, at: Date.now() }
       post({ type: "result", command: command.type, outcome: "queued" })
 
@@ -258,9 +287,16 @@ export const useDeckBridge = () => {
   }
 
   // Leaving the game's page closes a lecture game this connection manages.
-  const leaveGame = (gameQuiz: string) => {
-    forgetGame({ storage: localStorageOrNull(), quiz: gameQuiz })
-    queued.current = null
+  const leaveGame = (quizId: string) => {
+    forgetGame({ storage: localStorageOrNull(), quiz: quizId })
+    settleQueued("closed")
+
+    // A create already on the wire cannot be called back; its game is closed
+    // when it is announced.
+    if (createSentAt.current !== null) {
+      abandonedCreateAt.current = Date.now()
+    }
+
     createSentAt.current = null
     setEnsure(null)
     setPending(null)
@@ -283,7 +319,7 @@ export const useDeckBridge = () => {
     origin: string,
   ) => {
     held.current = next
-    queued.current = null
+    settleQueued("superseded", origin)
     setEnsure(null)
     setPending(null)
     post({ type: "result", command, outcome: "queued" }, origin)
@@ -328,6 +364,8 @@ export const useDeckBridge = () => {
   }
 
   const handleCommand = (command: DeckCommand, origin: string) => {
+    deckOriginRef.current = origin
+
     if (deckOrigin !== origin) {
       setDeckOrigin(origin)
     }
@@ -464,6 +502,7 @@ export const useDeckBridge = () => {
       setAttached(false)
       // The created game would be announced to the connection that is gone.
       createSentAt.current = null
+      abandonedCreateAt.current = null
     }
   }, [isConnected, socket])
 
@@ -493,6 +532,7 @@ export const useDeckBridge = () => {
   // login: the host logs in again, then the create goes out again.
   useEvent(EVENTS.MANAGER.UNAUTHORIZED, () => {
     createSentAt.current = null
+    abandonedCreateAt.current = null
     setLoggedIn(false)
   })
 
@@ -503,12 +543,28 @@ export const useDeckBridge = () => {
   })
 
   useEvent(EVENTS.MANAGER.GAME_CREATED, ({ gameId: createdId }) => {
+    const abandonedAt = abandonedCreateAt.current
+    abandonedCreateAt.current = null
+
+    // The deck left before this game came back: it asked for none that is
+    // still wanted, so close it rather than attach to it.
+    if (abandonedAt !== null && Date.now() - abandonedAt < CREATE_TIMEOUT_MS) {
+      socket.emit(EVENTS.MANAGER.LEAVE, { gameId: createdId })
+      // After the page's own move to the new lobby.
+      setTimeout(() => {
+        navigate({ to: CONFIG_PATH, replace: true })
+      }, 0)
+
+      return
+    }
+
     if (createSentAt.current !== null && quiz.current) {
       rememberGame({
         storage: localStorageOrNull(),
         quiz: quiz.current,
         gameId: createdId,
       })
+      gameQuiz.current = { gameId: createdId, quiz: quiz.current }
     }
 
     createSentAt.current = null
@@ -521,6 +577,10 @@ export const useDeckBridge = () => {
   })
 
   useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
+    if (message === "errors:quizz.notFound") {
+      abandonedCreateAt.current = null
+    }
+
     if (message !== "errors:quizz.notFound" || createSentAt.current === null) {
       return
     }
@@ -584,7 +644,7 @@ export const useDeckBridge = () => {
     // through to creating a new one on the next pass.
     if (ensure.restart === "always") {
       forgetGame({ storage, quiz: ensure.quiz })
-      queued.current = null
+      settleQueued("closed")
       setEnsure({ quiz: ensure.quiz })
       setAttached(false)
       setPlayers(0)
@@ -602,8 +662,13 @@ export const useDeckBridge = () => {
 
     if (attached && gameId) {
       const restart = ensure.restart === "ifFinished" && finished
+      const owner = gameQuiz.current
+      // Hosting another quiz's game: this one cannot play that quiz's questions.
+      const foreign = owner?.gameId === gameId && owner.quiz !== ensure.quiz
 
-      if (lecture && !restart) {
+      if (lecture && !restart && !foreign) {
+        gameQuiz.current = { gameId, quiz: ensure.quiz }
+
         if (remembered !== gameId) {
           rememberGame({ storage, quiz: ensure.quiz, gameId })
         }
@@ -618,6 +683,11 @@ export const useDeckBridge = () => {
       // A finished lecture, or a game this deck did not start: leaving its
       // page closes it, then a new lecture game is created.
       forgetGame({ storage, quiz: ensure.quiz })
+
+      if (foreign) {
+        forgetGame({ storage, quiz: owner.quiz })
+      }
+
       setAttached(false)
       navigate({ to: CONFIG_PATH, replace: true })
 
