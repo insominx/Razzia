@@ -56,16 +56,42 @@ export const getConfigPath = (path = "") => {
     : resolve(process.cwd(), "../../config", path)
 }
 
+// Without CONFIG_PATH the folder is "../../config" from the working directory,
+// which is only the project's when the server runs from packages/socket. From
+// anywhere else it is some other folder, and creating a placeholder game.json
+// there would answer every login with "password not configured" while the real
+// file sits untouched. Creating is refused unless the folder is next to the
+// workspace; one that already exists is used as it is.
+const assertMayCreateConfig = () => {
+  if (process.env.CONFIG_PATH) {
+    return
+  }
+
+  const workspaceRoot = resolve(process.cwd(), "../..")
+
+  if (!fs.existsSync(join(workspaceRoot, "pnpm-workspace.yaml"))) {
+    throw new Error(
+      `Refusing to create a config folder at ${getConfigPath()}: it is not inside the project. Set CONFIG_PATH, or start the server from packages/socket.`,
+    )
+  }
+}
+
 export const initConfig = () => {
   const isConfigFolderExists = fs.existsSync(getConfigPath())
 
+  console.log(`Config folder: ${getConfigPath()}`)
+
   if (!isConfigFolderExists) {
+    assertMayCreateConfig()
     fs.mkdirSync(getConfigPath())
   }
 
   const isGameConfigExists = fs.existsSync(getConfigPath("game.json"))
 
   if (!isGameConfigExists) {
+    console.warn(
+      `No game.json in ${getConfigPath()}: creating one with the placeholder password. Logins stay refused until managerPassword is set there. If you already set it, the server is using the wrong config folder.`,
+    )
     writeFileAtomic(
       getConfigPath("game.json"),
       JSON.stringify(

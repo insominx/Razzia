@@ -61,6 +61,7 @@
     "invalidDialect": "Le mode graphique n’est pas valide",
     "invalidSoundTheme": "Le thème sonore n’est pas valide",
     "soundThemeSetFailed": "Impossible de mettre à jour le thème sonore",
+    "tooManyPendingBackgrounds": "Trop d’arrière-plans importés sont en attente d’utilisation. Réessayez plus tard",
     "unsupportedBackgroundType": "Utilisez une image PNG, JPEG, WebP ou GIF",
     "invalidShowIntensity": "Choisissez Complet, Calme ou Silencieux",
     "showIntensitySetFailed": "Impossible de modifier l'intensité du show"

@@ -253,20 +253,114 @@ describe("background lifecycle", () => {
     expect(fs.existsSync(agedPath)).toBe(false)
   })
 
-  it("preserves every current-process pending upload even after grace", async () => {
+  it("protects a pending upload only until its pending TTL expires", async () => {
     const {
+      BACKGROUND_PENDING_TTL_MS,
       getBackgroundAssetPath,
       storeBackgroundAsset,
       sweepBackgroundAssets,
     } = await import("@razzia/socket/services/visuals")
-    const uploaded = storeBackgroundAsset("pending.png", pngBytes)
+    const uploaded = storeBackgroundAsset("pending.png", pngBytes, "client-a")
     const uploadedPath = getBackgroundAssetPath(uploaded.ref.path) ?? ""
     const old = new Date(Date.now() - 2 * 60 * 60 * 1000)
     fs.utimesSync(uploadedPath, old, old)
 
+    // Still within the TTL: kept even though the file itself is aged.
     sweepBackgroundAssets()
 
     expect(fs.existsSync(uploadedPath)).toBe(true)
+
+    // An abandoned upload is no longer exempt once the TTL has passed.
+    const realNow = Date.now()
+    vi.spyOn(Date, "now").mockReturnValue(realNow + BACKGROUND_PENDING_TTL_MS)
+
+    sweepBackgroundAssets()
+
+    expect(fs.existsSync(uploadedPath)).toBe(false)
+  })
+
+  it("stops counting expired pending uploads against the caps", async () => {
+    const {
+      BACKGROUND_PENDING_TTL_MS,
+      MAX_PENDING_BACKGROUNDS_PER_CLIENT,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+
+    for (
+      let index = 0;
+      index < MAX_PENDING_BACKGROUNDS_PER_CLIENT;
+      index += 1
+    ) {
+      storeBackgroundAsset("fill.png", pngBytes, "client-a")
+    }
+
+    expect(() =>
+      storeBackgroundAsset("over.png", pngBytes, "client-a"),
+    ).toThrow("errors:visuals.tooManyPendingBackgrounds")
+
+    const realNow = Date.now()
+    vi.spyOn(Date, "now").mockReturnValue(realNow + BACKGROUND_PENDING_TTL_MS)
+
+    expect(() =>
+      storeBackgroundAsset("again.png", pngBytes, "client-a"),
+    ).not.toThrow()
+  })
+
+  it("caps pending uploads per client without blocking other clients", async () => {
+    const {
+      MAX_PENDING_BACKGROUNDS_PER_CLIENT,
+      getBackgroundAssetPath,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const paths: string[] = []
+
+    for (
+      let index = 0;
+      index < MAX_PENDING_BACKGROUNDS_PER_CLIENT;
+      index += 1
+    ) {
+      paths.push(storeBackgroundAsset("a.png", pngBytes, "client-a").ref.path)
+    }
+
+    const before = fs.readdirSync(
+      path.dirname(getBackgroundAssetPath(paths[0]) ?? ""),
+    ).length
+
+    expect(() => storeBackgroundAsset("a.png", pngBytes, "client-a")).toThrow(
+      "errors:visuals.tooManyPendingBackgrounds",
+    )
+    // Rejected before anything touched the disk.
+    expect(
+      fs.readdirSync(path.dirname(getBackgroundAssetPath(paths[0]) ?? "")),
+    ).toHaveLength(before)
+    expect(() =>
+      storeBackgroundAsset("b.png", pngBytes, "client-b"),
+    ).not.toThrow()
+  })
+
+  it("caps total pending uploads across clients and frees slots when adopted", async () => {
+    const {
+      MAX_PENDING_BACKGROUNDS_TOTAL,
+      finalizeBackgroundMutation,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const refs = []
+
+    for (let index = 0; index < MAX_PENDING_BACKGROUNDS_TOTAL; index += 1) {
+      refs.push(
+        storeBackgroundAsset("t.png", pngBytes, `client-${index % 10}`).ref,
+      )
+    }
+
+    expect(() =>
+      storeBackgroundAsset("t.png", pngBytes, "client-fresh"),
+    ).toThrow("errors:visuals.tooManyPendingBackgrounds")
+
+    finalizeBackgroundMutation(undefined, refs[0])
+
+    expect(() =>
+      storeBackgroundAsset("t.png", pngBytes, "client-fresh"),
+    ).not.toThrow()
   })
 
   it("uses zero grace at startup to reclaim an abandoned upload", async () => {
@@ -371,6 +465,50 @@ describe("serveConfigAsset", () => {
 })
 
 describe("serveBackgroundUpload", () => {
+  it("rejects an upload over the pending cap before reading the body", async () => {
+    const {
+      MAX_PENDING_BACKGROUNDS_PER_CLIENT,
+      serveBackgroundUpload,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    vi.spyOn(console, "error").mockImplementation(() => undefined)
+
+    for (
+      let index = 0;
+      index < MAX_PENDING_BACKGROUNDS_PER_CLIENT;
+      index += 1
+    ) {
+      storeBackgroundAsset("fill.png", pngBytes, "manager-1")
+    }
+
+    const onSpy = vi.fn()
+    const request = {
+      url: "/config-assets/backgrounds",
+      method: "POST",
+      headers: { "x-client-id": "manager-1" },
+      on: onSpy,
+      destroy: () => undefined,
+    } as unknown as IncomingMessage
+    let status = 0
+    let body = ""
+    const response = {
+      writeHead: (code: number) => {
+        status = code
+      },
+      end: (payload?: string) => {
+        body = payload ?? ""
+      },
+    } as unknown as ServerResponse
+
+    await serveBackgroundUpload(request, response, () => true)
+
+    expect(status).toBe(400)
+    expect(JSON.parse(body)).toEqual({
+      error: "errors:visuals.tooManyPendingBackgrounds",
+    })
+    expect(onSpy).not.toHaveBeenCalled()
+  })
+
   it("stores only by default and can set global via query", async () => {
     const { serveBackgroundUpload } =
       await import("@razzia/socket/services/visuals")

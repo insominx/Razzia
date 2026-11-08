@@ -31,7 +31,52 @@ export const BACKGROUND_ASSETS_PUBLIC_PREFIX = "/config-assets/backgrounds"
 
 export const BACKGROUND_ORPHAN_GRACE_MS = 60 * 60 * 1000
 
-const pendingBackgroundAssetPaths = new Set<string>()
+// An upload that was never saved into a config stays protected from the sweep
+// for this long, then it is orphaned like any other unreferenced file.
+export const BACKGROUND_PENDING_TTL_MS = BACKGROUND_ORPHAN_GRACE_MS
+
+export const MAX_PENDING_BACKGROUNDS_PER_CLIENT = 20
+
+export const MAX_PENDING_BACKGROUNDS_TOTAL = 100
+
+interface PendingBackgroundUpload {
+  clientId: string
+  uploadedAt: number
+}
+
+const pendingBackgroundAssets = new Map<string, PendingBackgroundUpload>()
+
+const prunePendingBackgroundAssets = (): void => {
+  const now = Date.now()
+
+  for (const [path, pending] of pendingBackgroundAssets) {
+    if (now - pending.uploadedAt >= BACKGROUND_PENDING_TTL_MS) {
+      pendingBackgroundAssets.delete(path)
+    }
+  }
+}
+
+// Throws before any bytes are stored or read once a client (or the server as a
+// whole) holds too many uploads that no config has adopted yet.
+export const assertPendingBackgroundCapacity = (clientId = ""): void => {
+  prunePendingBackgroundAssets()
+
+  if (pendingBackgroundAssets.size >= MAX_PENDING_BACKGROUNDS_TOTAL) {
+    throw new Error("errors:visuals.tooManyPendingBackgrounds")
+  }
+
+  let owned = 0
+
+  for (const pending of pendingBackgroundAssets.values()) {
+    if (pending.clientId === clientId) {
+      owned += 1
+    }
+  }
+
+  if (owned >= MAX_PENDING_BACKGROUNDS_PER_CLIENT) {
+    throw new Error("errors:visuals.tooManyPendingBackgrounds")
+  }
+}
 
 // Backgrounds a running game still shows. Its url was resolved when the game
 // was created, so the saved config no longer vouches for it once the manager
@@ -106,7 +151,10 @@ export const getBackgroundAssetUrl = (
 export const storeBackgroundAsset = (
   fileName: string,
   data: Buffer,
+  clientId = "",
 ): { ref: BackgroundRef; url: string } => {
+  assertPendingBackgroundCapacity(clientId)
+
   if (data.byteLength === 0) {
     throw new Error("errors:visuals.emptyBackground")
   }
@@ -136,7 +184,7 @@ export const storeBackgroundAsset = (
   }
 
   fs.writeFileSync(filePath, data)
-  pendingBackgroundAssetPaths.add(path)
+  pendingBackgroundAssets.set(path, { clientId, uploadedAt: Date.now() })
 
   return {
     ref: { kind: "config-asset", path },
@@ -158,7 +206,7 @@ export const deleteBackgroundAsset = (background: BackgroundRef): void => {
   }
 
   fs.unlinkSync(filePath)
-  pendingBackgroundAssetPaths.delete(background.path)
+  pendingBackgroundAssets.delete(background.path)
 }
 
 export interface BackgroundReclaimResult {
@@ -267,7 +315,7 @@ export const reclaimBackgroundAssets = ({
 
     try {
       fs.unlinkSync(assetPath)
-      pendingBackgroundAssetPaths.delete(validated.data)
+      pendingBackgroundAssets.delete(validated.data)
 
       result.deleted += 1
     } catch (error) {
@@ -296,7 +344,7 @@ export const finalizeBackgroundMutation = (
   adopted?: BackgroundRef,
 ): BackgroundReclaimResult => {
   if (adopted?.kind === "config-asset") {
-    pendingBackgroundAssetPaths.delete(adopted.path)
+    pendingBackgroundAssets.delete(adopted.path)
   }
 
   if (!previous || previous.path === adopted?.path) {
@@ -309,11 +357,14 @@ export const finalizeBackgroundMutation = (
   })
 }
 
-export const sweepBackgroundAssets = (): BackgroundReclaimResult =>
-  reclaimWithoutFailingMutation({
+export const sweepBackgroundAssets = (): BackgroundReclaimResult => {
+  prunePendingBackgroundAssets()
+
+  return reclaimWithoutFailingMutation({
     minimumAgeMs: BACKGROUND_ORPHAN_GRACE_MS,
-    preserve: pendingBackgroundAssetPaths,
+    preserve: new Set(pendingBackgroundAssets.keys()),
   })
+}
 
 export const cleanupBackgroundAssetsOnStartup = (): BackgroundReclaimResult =>
   reclaimWithoutFailingMutation({ minimumAgeMs: 0 })
@@ -528,6 +579,8 @@ export const serveBackgroundUpload = async (
   let uploaded: ReturnType<typeof storeBackgroundAsset> | undefined = undefined
 
   try {
+    assertPendingBackgroundCapacity(clientId)
+
     const fileNameHeader = request.headers["x-file-name"]
     const fileName =
       typeof fileNameHeader === "string" && fileNameHeader.length > 0
@@ -537,7 +590,7 @@ export const serveBackgroundUpload = async (
       request,
       BACKGROUND_UPLOAD_MAX_BYTES + 1024,
     )
-    uploaded = storeBackgroundAsset(fileName, data)
+    uploaded = storeBackgroundAsset(fileName, data, clientId)
 
     if (url.searchParams.get("setGlobal") === "1") {
       setGlobalBackground(uploaded.ref)

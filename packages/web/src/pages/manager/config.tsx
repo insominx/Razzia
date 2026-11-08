@@ -13,7 +13,7 @@ import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router"
 import { useEffect, useRef } from "react"
 
 const ManagerConfigPage = () => {
-  const { isConnected } = useSocket()
+  const { socket, isConnected } = useSocket()
   const { setConfig, config, reset } = useManagerStore()
   const navigate = useNavigate()
   const hadConfig = useRef(false)
@@ -37,6 +37,15 @@ const ManagerConfigPage = () => {
 
   useEvent(EVENTS.MANAGER.CONFIG, (data) => {
     setConfig(data)
+  })
+
+  // After a dropped connection the lists and settings on screen may be older
+  // than the server's, and a restarted server has forgotten this login too.
+  // Ask again: a login it still knows answers with fresh data, one it does not
+  // answers UNAUTHORIZED, below, which returns to the login page without
+  // waiting for an action to fail. The password is never sent from here.
+  useEvent("connect", () => {
+    socket.emit(EVENTS.MANAGER.GET_CONFIG)
   })
 
   // The server no longer knows this login: the cached quizzes and results

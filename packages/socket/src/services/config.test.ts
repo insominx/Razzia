@@ -347,3 +347,67 @@ describe("quizz and result functions given hostile input", () => {
     expect(() => getResultsMeta()).not.toThrow()
   })
 })
+
+describe("initConfig without CONFIG_PATH", () => {
+  const makeWorkspace = (withMarker: boolean) => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "razzia-ws-"))
+    tempRoots.push(root)
+    const cwd = path.join(root, "packages", "socket")
+    fs.mkdirSync(cwd, { recursive: true })
+
+    if (withMarker) {
+      fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+    }
+
+    return { root, cwd }
+  }
+
+  beforeEach(() => {
+    delete process.env.CONFIG_PATH
+    vi.spyOn(console, "log").mockImplementation(() => undefined)
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("refuses to create a placeholder game.json outside the project", async () => {
+    const { root, cwd } = makeWorkspace(false)
+    vi.spyOn(process, "cwd").mockReturnValue(cwd)
+    const { initConfig } = await import("@razzia/socket/services/config")
+
+    expect(() => initConfig()).toThrow(/Refusing to create a config folder/)
+    expect(fs.existsSync(path.join(root, "config"))).toBe(false)
+  })
+
+  it("creates the config folder and says so when run from packages/socket", async () => {
+    const { root, cwd } = makeWorkspace(true)
+    vi.spyOn(process, "cwd").mockReturnValue(cwd)
+    const { initConfig } = await import("@razzia/socket/services/config")
+
+    initConfig()
+
+    expect(fs.existsSync(path.join(root, "config", "game.json"))).toBe(true)
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining("placeholder password"),
+    )
+  })
+
+  it("uses a config folder that already exists, wherever it is", async () => {
+    const { root, cwd } = makeWorkspace(false)
+    fs.mkdirSync(path.join(root, "config"))
+    fs.writeFileSync(
+      path.join(root, "config", "game.json"),
+      JSON.stringify({ managerPassword: "secret" }),
+    )
+    vi.spyOn(process, "cwd").mockReturnValue(cwd)
+    const { initConfig, getGameConfig } =
+      await import("@razzia/socket/services/config")
+
+    initConfig()
+
+    expect(getGameConfig().managerPassword).toBe("secret")
+    expect(console.warn).not.toHaveBeenCalled()
+  })
+})

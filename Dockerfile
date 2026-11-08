@@ -32,6 +32,8 @@ COPY docker/entrypoint.sh /entrypoint.sh
 
 COPY --from=builder /app/packages/web/dist /app/web
 COPY --from=builder /app/packages/socket/dist/index.cjs /app/socket/index.cjs
+# Next to the bundle so node --enable-source-maps maps stack traces to source
+COPY --from=builder /app/packages/socket/dist/index.cjs.map /app/socket/index.cjs.map
 COPY config/quizz /app/seed/quizz
 
 EXPOSE 3000

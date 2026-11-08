@@ -100,3 +100,39 @@ describe("ConfigSelectQuizz game creation", () => {
     ])
   })
 })
+
+describe("ConfigSelectQuizz after the list is refreshed", () => {
+  beforeEach(() => {
+    emit.mockReset()
+    handlers.clear()
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("forgets a chosen quizz that the refreshed list no longer has", () => {
+    const { rerender } = render(
+      <ConfigProvider data={config}>
+        <ConfigSelectQuizz />
+      </ConfigProvider>,
+    )
+    fireEvent.click(screen.getByRole("button", { name: /Quiz One/u }))
+    expect(
+      screen.getByRole("button", { name: "manager:quizz.startGame" }),
+    ).toBeEnabled()
+
+    rerender(
+      <ConfigProvider data={{ ...config, quizz: [config.quizz[1]] }}>
+        <ConfigSelectQuizz />
+      </ConfigProvider>,
+    )
+
+    const start = screen.getByRole("button", {
+      name: "manager:quizz.startGame",
+    })
+    expect(start).toBeDisabled()
+    fireEvent.click(start)
+    expect(emit).not.toHaveBeenCalled()
+  })
+})

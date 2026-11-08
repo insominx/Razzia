@@ -61,6 +61,7 @@
     "invalidDialect": "Design mode is invalid",
     "invalidSoundTheme": "Sound theme is invalid",
     "soundThemeSetFailed": "Failed to update sound theme",
+    "tooManyPendingBackgrounds": "Too many uploaded backgrounds are waiting to be used. Try again later",
     "unsupportedBackgroundType": "Use a PNG, JPEG, WebP, or GIF image",
     "invalidShowIntensity": "Choose Full, Calm or Silent",
     "showIntensitySetFailed": "Could not change the show intensity"

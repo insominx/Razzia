@@ -61,6 +61,7 @@
     "invalidDialect": "El modo de diseño no es válido",
     "invalidSoundTheme": "El tema de sonido no es válido",
     "soundThemeSetFailed": "Error al actualizar el tema de sonido",
+    "tooManyPendingBackgrounds": "Hay demasiados fondos subidos esperando a usarse. Inténtalo de nuevo más tarde",
     "unsupportedBackgroundType": "Usa una imagen PNG, JPEG, WebP o GIF",
     "invalidShowIntensity": "Elige Completo, Tranquilo o Silencio",
     "showIntensitySetFailed": "No se pudo cambiar la intensidad del espectáculo"

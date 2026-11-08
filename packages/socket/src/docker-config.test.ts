@@ -13,6 +13,35 @@ describe("container configuration", () => {
     expect(socket).toMatch(/^startretries=\d{4,}$/m)
   })
 
+  it("ships the source map and runs node with it so traces map to source", () => {
+    const esbuild = readFileSync(
+      new URL("../esbuild.config.js", import.meta.url),
+      "utf8",
+    )
+    const socket =
+      read("docker/supervisord.conf").split("[program:socket]")[1] ?? ""
+
+    expect(esbuild).toMatch(/sourcemap: true/)
+    expect(read("Dockerfile")).toMatch(
+      /^COPY --from=builder \/app\/packages\/socket\/dist\/index\.cjs\.map \/app\/socket\/index\.cjs\.map$/m,
+    )
+    expect(socket).toMatch(
+      /^command=node --enable-source-maps \/app\/socket\/index\.cjs$/m,
+    )
+  })
+
+  it("gates the release image on lint, tests and build", () => {
+    const release = read(".github/workflows/docker-release.yml")
+    const jobs = release.split(/^jobs:$/m)[1] ?? ""
+    const test = jobs.split(/^ {2}build-and-push:$/m)[0] ?? ""
+    const build = jobs.split(/^ {2}build-and-push:$/m)[1] ?? ""
+
+    expect(test).toMatch(/run: pnpm lint/)
+    expect(test).toMatch(/run: pnpm test/)
+    expect(test).toMatch(/run: pnpm build/)
+    expect(build).toMatch(/^ {4}needs: test$/m)
+  })
+
   it("has a healthcheck and hands config to the unprivileged user", () => {
     expect(read("Dockerfile")).toMatch(/^HEALTHCHECK /m)
     expect(read("docker/entrypoint.sh")).toMatch(
