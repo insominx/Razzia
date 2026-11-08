@@ -6,6 +6,7 @@ import {
 import type {
   GameResult,
   GameResultMeta,
+  QuizzMeta,
   QuizzWithId,
 } from "@razzia/common/types/game"
 import type { BackgroundRef } from "@razzia/common/types/visuals"
@@ -16,6 +17,7 @@ import {
 import { normalizeFilename } from "@razzia/socket/utils/game"
 import { isSafeId, ItemNotFoundError } from "@razzia/socket/utils/safe"
 import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
+import { createHash } from "node:crypto"
 import fs from "fs"
 import { join, resolve } from "path"
 
@@ -123,6 +125,58 @@ export const initConfig = () => {
   }
 }
 
+const SEED_MANIFEST = ".seed-manifest.json"
+
+const sha256 = (data: Buffer): string =>
+  createHash("sha256").update(data).digest("hex")
+
+// What the seeder last wrote, by file name. It lives beside game.json, not in
+// quizz/, which lists every .json it holds as a quiz. A missing or unreadable
+// manifest reads as empty, which keeps every volume quiz.
+const readSeedManifest = (): Record<string, string> => {
+  const path = getConfigPath(SEED_MANIFEST)
+
+  if (!fs.existsSync(path)) {
+    return {}
+  }
+
+  try {
+    const parsed = readJsonFile(path) as { files?: Record<string, unknown> }
+    const files: Record<string, string> = {}
+
+    for (const [name, hash] of Object.entries(parsed.files ?? {})) {
+      if (typeof hash === "string") {
+        files[name] = hash
+      }
+    }
+
+    return files
+  } catch (error) {
+    console.warn("Ignoring an unreadable quiz seed manifest:", error)
+
+    return {}
+  }
+}
+
+const writeSeedManifest = (files: Record<string, string>): void => {
+  writeFileAtomic(
+    getConfigPath(SEED_MANIFEST),
+    JSON.stringify({ version: 1, files }, null, 2),
+  )
+}
+
+const recordSeedHash = (file: string, hash: string): void => {
+  try {
+    writeSeedManifest({ ...readSeedManifest(), [file]: hash })
+  } catch (error) {
+    console.error("Could not write the quiz seed manifest:", error)
+  }
+}
+
+// The volume is the source of truth; the quizzes baked into the image only add
+// to it. A seeded quiz is replaced only while it is byte-identical to what the
+// seeder last wrote, so a quiz edited in the manager survives every restart.
+// Nothing is ever deleted. Returns true when the seed had quizzes to offer.
 const syncSeedQuizzes = (): boolean => {
   const seedDir = process.env.QUIZ_SEED_PATH
 
@@ -130,38 +184,77 @@ const syncSeedQuizzes = (): boolean => {
     return false
   }
 
-  const seedFiles = fs
+  const seeds = new Map<string, Buffer>()
+
+  for (const file of fs
     .readdirSync(seedDir)
-    .filter((file) => file.endsWith(".json"))
-  const valid: string[] = []
-
-  for (const file of seedFiles) {
+    .filter((name) => name.endsWith(".json"))) {
     try {
-      const parsed = quizzValidator.safeParse(readJsonFile(join(seedDir, file)))
+      const data = fs.readFileSync(join(seedDir, file))
 
-      if (parsed.success) {
-        valid.push(file)
+      if (
+        quizzValidator.safeParse(
+          JSON.parse(data.toString("utf-8").replace(/^﻿/, "")),
+        ).success
+      ) {
+        seeds.set(file, data)
       }
     } catch {
       continue
     }
   }
 
-  if (valid.length === 0) {
+  if (seeds.size === 0) {
     return false
   }
 
   const destDir = getConfigPath("quizz")
   fs.mkdirSync(destDir, { recursive: true })
 
-  for (const file of fs
-    .readdirSync(destDir)
-    .filter((name) => name.endsWith(".json"))) {
-    fs.unlinkSync(join(destDir, file))
+  const recorded = readSeedManifest()
+  const next: Record<string, string> = { ...recorded }
+  let changed = false
+
+  for (const [file, seed] of seeds) {
+    const seedHash = sha256(seed)
+    const target = join(destDir, file)
+
+    try {
+      if (!fs.existsSync(target)) {
+        writeFileAtomic(target, seed.toString("utf-8"))
+        next[file] = seedHash
+        changed = true
+
+        continue
+      }
+
+      const volumeHash = sha256(fs.readFileSync(target))
+
+      if (volumeHash === seedHash) {
+        if (next[file] !== seedHash) {
+          next[file] = seedHash
+          changed = true
+        }
+      } else if (recorded[file] === volumeHash) {
+        writeFileAtomic(target, seed.toString("utf-8"))
+        next[file] = seedHash
+        changed = true
+      } else {
+        console.warn(
+          `Kept the edited copy of quiz "${file}"; the committed version differs.`,
+        )
+      }
+    } catch (error) {
+      console.error(`Could not seed quiz "${file}":`, error)
+    }
   }
 
-  for (const file of valid) {
-    fs.copyFileSync(join(seedDir, file), join(destDir, file))
+  if (changed) {
+    try {
+      writeSeedManifest(next)
+    } catch (error) {
+      console.error("Could not write the quiz seed manifest:", error)
+    }
   }
 
   return true
@@ -215,12 +308,85 @@ export const updateGameConfig = (
   return next
 }
 
-export const getQuizzMeta = () =>
-  getQuizz().map(({ id, subject, questions }) => ({
+// Key order and defaults must not make two identical quizzes look different.
+const canonical = (value: unknown): string =>
+  JSON.stringify(value, (_key, val: unknown) =>
+    val && typeof val === "object" && !Array.isArray(val)
+      ? Object.fromEntries(
+          Object.entries(val).sort(([x], [y]) => x.localeCompare(y)),
+        )
+      : val,
+  )
+
+// The copy of a quizz shipped with this server, when there is one.
+const readSeedQuizz = (id: string) => {
+  const seedDir = process.env.QUIZ_SEED_PATH
+
+  if (!seedDir || !isSafeId(id)) {
+    return null
+  }
+
+  const path = join(seedDir, `${id}.json`)
+
+  try {
+    if (!fs.existsSync(path)) {
+      return null
+    }
+
+    const bytes = fs.readFileSync(path)
+    const parsed = quizzValidator.safeParse(
+      JSON.parse(bytes.toString("utf-8").replace(/^﻿/, "")),
+    )
+
+    return parsed.success ? { bytes, quizz: parsed.data } : null
+  } catch {
+    return null
+  }
+}
+
+export const getQuizzMeta = (): QuizzMeta[] =>
+  getQuizz().map(({ id, subject, questions, ...rest }) => {
+    const seed = readSeedQuizz(id)
+    const meta: QuizzMeta = { id, subject, questionCount: questions.length }
+
+    if (seed) {
+      meta.seedState =
+        canonical({ subject, questions, ...rest }) === canonical(seed.quizz)
+          ? "committed"
+          : "edited"
+    }
+
+    return meta
+  })
+
+// Replaces a quizz's current content with the copy shipped with this server.
+export const restoreCommittedQuizz = (id: string): QuizzBackgroundMutation => {
+  assertSafeId(id)
+  const seed = readSeedQuizz(id)
+
+  if (!seed) {
+    throw new Error("errors:quizz.noCommittedVersion")
+  }
+
+  const path = getConfigPath(`quizz/${id}.json`)
+
+  if (!fs.existsSync(path)) {
+    throw new ItemNotFoundError(`Quizz "${id}" not found`)
+  }
+
+  const previous = readPreviousQuizzFile(path, `${id}.json`)
+
+  assertBackgroundExists(seed.quizz.visuals?.background, previous)
+  writeFileAtomic(path, seed.bytes.toString("utf-8"))
+  // Untouched again: a later committed change reaches it on the next start.
+  recordSeedHash(`${id}.json`, sha256(seed.bytes))
+
+  return {
     id,
-    subject,
-    questionCount: questions.length,
-  }))
+    previousBackground: previous?.visuals?.background,
+    background: seed.quizz.visuals?.background,
+  }
+}
 
 const parseQuizzData = (data: unknown, label: string) => {
   const result = quizzValidator.safeParse(data)

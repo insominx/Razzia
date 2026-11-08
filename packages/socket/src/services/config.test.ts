@@ -203,35 +203,155 @@ const sampleQuiz = (subject: string) => ({
 })
 
 describe("initConfig quiz seed", () => {
-  it("replaces volume quizzes with seed JSON and leaves game.json alone", async () => {
-    const seedDir = fs.mkdtempSync(path.join(os.tmpdir(), "razzia-seed-"))
-    tempRoots.push(seedDir)
+  const makeSeedDir = () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "razzia-seed-"))
+    tempRoots.push(dir)
+
+    return dir
+  }
+
+  const writeQuiz = (dir: string, file: string, subject: string) =>
+    fs.writeFileSync(path.join(dir, file), JSON.stringify(sampleQuiz(subject)))
+
+  const subjectsOnVolume = () =>
+    fs
+      .readdirSync(path.join(configRoot, "quizz"))
+      .sort()
+      .map(
+        (file) =>
+          (
+            JSON.parse(
+              fs.readFileSync(path.join(configRoot, "quizz", file), "utf-8"),
+            ) as { subject: string }
+          ).subject,
+      )
+
+  const start = async () => {
+    vi.resetModules()
+    const { initConfig } = await import("@razzia/socket/services/config")
+
+    initConfig()
+  }
+
+  it("seeds an empty volume, skips broken seed JSON and leaves game.json alone", async () => {
+    const seedDir = makeSeedDir()
     fs.writeFileSync(
       path.join(configRoot, "game.json"),
       JSON.stringify({ managerPassword: "keep-me" }),
     )
-    fs.writeFileSync(
-      path.join(configRoot, "quizz/old.json"),
-      JSON.stringify(sampleQuiz("Old")),
-    )
-    fs.writeFileSync(
-      path.join(seedDir, "netcode.json"),
-      JSON.stringify(sampleQuiz("Netcode")),
-    )
+    writeQuiz(seedDir, "netcode.json", "Netcode")
     fs.writeFileSync(path.join(seedDir, "broken.json"), "{")
     process.env.QUIZ_SEED_PATH = seedDir
 
-    const { initConfig, getGameConfig, getQuizz } =
-      await import("@razzia/socket/services/config")
+    await start()
 
-    initConfig()
+    const { getGameConfig } = await import("@razzia/socket/services/config")
 
     expect(getGameConfig().managerPassword).toBe("keep-me")
-    expect(fs.existsSync(path.join(configRoot, "quizz/old.json"))).toBe(false)
-    expect(fs.existsSync(path.join(configRoot, "quizz/broken.json"))).toBe(
-      false,
+    expect(subjectsOnVolume()).toEqual(["Netcode"])
+    expect(fs.existsSync(path.join(configRoot, ".seed-manifest.json"))).toBe(
+      true,
     )
-    expect(getQuizz().map((quiz) => quiz.subject)).toEqual(["Netcode"])
+    expect(
+      fs
+        .readdirSync(path.join(configRoot, "quizz"))
+        .filter((f) => f.endsWith(".tmp")),
+    ).toEqual([])
+  })
+
+  it("keeps quizzes that exist only on the volume, and ones the seed dropped", async () => {
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    writeQuiz(seedDir, "gone.json", "Gone")
+    process.env.QUIZ_SEED_PATH = seedDir
+    await start()
+    writeQuiz(path.join(configRoot, "quizz"), "mine.json", "Mine")
+    fs.rmSync(path.join(seedDir, "gone.json"))
+
+    await start()
+
+    expect(subjectsOnVolume()).toEqual(["Gone", "Mine", "Netcode"])
+  })
+
+  it("updates a seeded quiz nobody edited when the committed one changes", async () => {
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    process.env.QUIZ_SEED_PATH = seedDir
+    await start()
+    writeQuiz(seedDir, "netcode.json", "Netcode v2")
+
+    await start()
+
+    expect(subjectsOnVolume()).toEqual(["Netcode v2"])
+  })
+
+  it("keeps a quiz edited on the volume, with a warning, when the committed one changes", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    process.env.QUIZ_SEED_PATH = seedDir
+    await start()
+    writeQuiz(path.join(configRoot, "quizz"), "netcode.json", "Netcode edited")
+    writeQuiz(seedDir, "netcode.json", "Netcode v2")
+
+    await start()
+    await start()
+
+    expect(subjectsOnVolume()).toEqual(["Netcode edited"])
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("netcode.json"))
+    warn.mockRestore()
+  })
+
+  it("never overwrites a volume quiz on the first start after an upgrade", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    writeQuiz(seedDir, "same.json", "Same")
+    writeQuiz(path.join(configRoot, "quizz"), "netcode.json", "Edited before")
+    writeQuiz(path.join(configRoot, "quizz"), "same.json", "Same")
+    process.env.QUIZ_SEED_PATH = seedDir
+
+    await start()
+
+    expect(subjectsOnVolume()).toEqual(["Edited before", "Same"])
+
+    // The identical copy was recorded, so a later committed change reaches it.
+    writeQuiz(seedDir, "same.json", "Same v2")
+    await start()
+
+    expect(subjectsOnVolume()).toEqual(["Edited before", "Same v2"])
+  })
+
+  it("reads a corrupt manifest as empty and starts anyway", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    writeQuiz(path.join(configRoot, "quizz"), "netcode.json", "Edited")
+    fs.writeFileSync(path.join(configRoot, ".seed-manifest.json"), "{not json")
+    process.env.QUIZ_SEED_PATH = seedDir
+
+    await expect(start()).resolves.toBeUndefined()
+
+    expect(subjectsOnVolume()).toEqual(["Edited"])
+  })
+
+  it("does not rewrite anything on a second start with nothing new", async () => {
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    process.env.QUIZ_SEED_PATH = seedDir
+    await start()
+    const manifest = path.join(configRoot, ".seed-manifest.json")
+    const quiz = path.join(configRoot, "quizz/netcode.json")
+    const before = [fs.statSync(manifest).mtimeMs, fs.statSync(quiz).mtimeMs]
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 20)
+    })
+    await start()
+
+    expect([fs.statSync(manifest).mtimeMs, fs.statSync(quiz).mtimeMs]).toEqual(
+      before,
+    )
   })
 
   it("does not wipe volume quizzes when the seed has no valid JSON", async () => {
@@ -250,6 +370,77 @@ describe("initConfig quiz seed", () => {
     initConfig()
 
     expect(getQuizz().map((quiz) => quiz.subject)).toEqual(["Keep"])
+  })
+
+  it("tells a quiz that matches the committed one from one that was edited", async () => {
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "netcode.json", "Netcode")
+    writeQuiz(seedDir, "springs.json", "Springs")
+    process.env.QUIZ_SEED_PATH = seedDir
+    await start()
+    writeQuiz(path.join(configRoot, "quizz"), "mine.json", "Mine")
+    const { getQuizzById, updateQuizz, getQuizzMeta } =
+      await import("@razzia/socket/services/config")
+    const springs = getQuizzById("springs")
+
+    updateQuizz("springs", { ...springs, subject: "Springs, edited" })
+
+    const state = Object.fromEntries(
+      getQuizzMeta().map((q) => [q.id, q.seedState]),
+    )
+
+    expect(state).toEqual({
+      netcode: "committed",
+      springs: "edited",
+      mine: undefined,
+    })
+  })
+
+  it("reports no seed state at all when nothing was shipped", async () => {
+    writeQuiz(path.join(configRoot, "quizz"), "mine.json", "Mine")
+    const { getQuizzMeta } = await import("@razzia/socket/services/config")
+
+    expect(getQuizzMeta().map((q) => q.seedState)).toEqual([undefined])
+  })
+
+  it("restores the committed copy of an edited quiz and lets later updates reach it", async () => {
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "springs.json", "Springs")
+    process.env.QUIZ_SEED_PATH = seedDir
+    await start()
+    const { getQuizzById, updateQuizz, restoreCommittedQuizz, getQuizzMeta } =
+      await import("@razzia/socket/services/config")
+
+    updateQuizz("springs", {
+      ...getQuizzById("springs"),
+      subject: "Springs, edited",
+    })
+    expect(getQuizzMeta()[0].seedState).toBe("edited")
+
+    restoreCommittedQuizz("springs")
+
+    expect(getQuizzMeta()[0].seedState).toBe("committed")
+    expect(subjectsOnVolume()).toEqual(["Springs"])
+
+    writeQuiz(seedDir, "springs.json", "Springs v2")
+    await start()
+
+    expect(subjectsOnVolume()).toEqual(["Springs v2"])
+  })
+
+  it("will not restore a quiz that has no committed copy, or an unsafe id", async () => {
+    const seedDir = makeSeedDir()
+    writeQuiz(seedDir, "springs.json", "Springs")
+    process.env.QUIZ_SEED_PATH = seedDir
+    writeQuiz(path.join(configRoot, "quizz"), "mine.json", "Mine")
+    const { restoreCommittedQuizz } =
+      await import("@razzia/socket/services/config")
+
+    expect(() => restoreCommittedQuizz("mine")).toThrow(
+      "errors:quizz.noCommittedVersion",
+    )
+    expect(() => restoreCommittedQuizz("../springs")).toThrow()
+    expect(subjectsOnVolume()).toEqual(["Mine"])
   })
 
   it("writes the example quiz when there is no seed and no quizz folder", async () => {

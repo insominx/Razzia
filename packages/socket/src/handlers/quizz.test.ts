@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   deleteQuizz: vi.fn(),
+  restoreCommittedQuizz: vi.fn(),
   getGameConfig: vi.fn(),
   finalizeBackgroundMutation: vi.fn(),
 }))
 
 vi.mock("@razzia/socket/services/config", () => ({
   deleteQuizz: mocks.deleteQuizz,
+  restoreCommittedQuizz: mocks.restoreCommittedQuizz,
   getGameConfig: mocks.getGameConfig,
   getQuizzById: vi.fn(),
   saveQuizz: vi.fn(),
@@ -145,5 +147,60 @@ describe("QUIZZ.DELETE", () => {
     }).not.toThrow()
 
     expect(ack).toHaveBeenCalledExactlyOnceWith({ ok: true })
+  })
+})
+
+describe("QUIZZ.RESTORE", () => {
+  const restore = (handlers: Map<string, Handler>, ...args: unknown[]) => {
+    handlers.get(EVENTS.QUIZZ.RESTORE)?.(...(args as never[]))
+  }
+
+  it("acks ok, hands the replaced background back and refreshes the config", async () => {
+    mocks.restoreCommittedQuizz.mockReturnValue({
+      id: "quiz-1",
+      previousBackground: { kind: "config-asset", path: "old.png" },
+    })
+    const { handlers, emit } = await connect()
+    const ack = vi.fn()
+
+    restore(handlers, "quiz-1", ack)
+
+    expect(mocks.restoreCommittedQuizz).toHaveBeenCalledWith("quiz-1")
+    expect(mocks.finalizeBackgroundMutation).toHaveBeenCalledWith(
+      { kind: "config-asset", path: "old.png" },
+      undefined,
+    )
+    expect(ack).toHaveBeenCalledWith({ ok: true })
+    expect(emit).toHaveBeenCalledWith(EVENTS.MANAGER.CONFIG, expect.anything())
+  })
+
+  it("passes the 'no committed version' key through and any other failure as a generic one", async () => {
+    const { handlers } = await connect()
+    const ack = vi.fn()
+
+    mocks.restoreCommittedQuizz.mockImplementationOnce(() => {
+      throw new Error("errors:quizz.noCommittedVersion")
+    })
+    restore(handlers, "quiz-1", ack)
+    mocks.restoreCommittedQuizz.mockImplementationOnce(() => {
+      throw new Error("ENOENT: /secret/path")
+    })
+    restore(handlers, "quiz-1", ack)
+
+    expect(ack.mock.calls).toEqual([
+      [{ error: "errors:quizz.noCommittedVersion" }],
+      [{ error: "errors:quizz.failedToRestore" }],
+    ])
+  })
+
+  it("acks an error for a bad id and never throws without an ack", async () => {
+    const { handlers } = await connect()
+    const ack = vi.fn()
+
+    restore(handlers, 42, ack)
+
+    expect(ack).toHaveBeenCalledWith({ error: "errors:quizz.failedToRestore" })
+    expect(() => restore(handlers, "quiz-1")).not.toThrow()
+    expect(() => restore(handlers, "quiz-1", "nope")).not.toThrow()
   })
 })

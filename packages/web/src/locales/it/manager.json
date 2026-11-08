@@ -69,7 +69,14 @@
     "startGame": "Inizia il gioco",
     "invalidJson": "File JSON non valido",
     "questionCount_one": "{{count}} domanda",
-    "questionCount_other": "{{count}} domande"
+    "questionCount_other": "{{count}} domande",
+    "edited": "Modificato",
+    "editedTitle": "Modificato qui: diverso dalla versione fornita con questo server",
+    "editedNote": "I quiz contrassegnati come Modificato differiscono dalla versione fornita con questo server. Gli aggiornamenti del server mantengono le tue modifiche e non le sovrascrivono mai. Ripristina riporta la versione fornita.",
+    "restore": "Ripristina la versione fornita",
+    "restoreConfirm": "Sostituire le tue modifiche a «{{name}}» con la versione fornita con questo server? Le tue modifiche andranno perse.",
+    "restoreAction": "Ripristina",
+    "restored": "Versione fornita ripristinata"
   },
   "result": {
     "delete": "Elimina risultato",

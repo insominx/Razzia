@@ -69,7 +69,14 @@
     "startGame": "Start game",
     "invalidJson": "Invalid JSON file",
     "questionCount_one": "{{count}} question",
-    "questionCount_other": "{{count}} questions"
+    "questionCount_other": "{{count}} questions",
+    "edited": "Edited",
+    "editedTitle": "Edited here: differs from the version shipped with this server",
+    "editedNote": "Quizzes marked Edited differ from the version shipped with this server. Server updates keep your edits and never overwrite them. Restore brings back the shipped version.",
+    "restore": "Restore shipped version",
+    "restoreConfirm": "Replace your edits to \"{{name}}\" with the version shipped with this server? Your edits will be lost.",
+    "restoreAction": "Restore",
+    "restored": "Shipped version restored"
   },
   "result": {
     "delete": "Delete result",

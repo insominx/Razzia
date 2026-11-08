@@ -10,6 +10,7 @@ import {
   deleteQuizz,
   getGameConfig,
   getQuizzById,
+  restoreCommittedQuizz,
   saveQuizz,
   updateQuizz,
 } from "@razzia/socket/services/config"
@@ -87,6 +88,36 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
 
           return
         }
+      }
+
+      reply?.({ ok: true })
+      emitConfigSafely(socket)
+    }),
+  )
+
+  socket.on(
+    EVENTS.QUIZZ.RESTORE,
+    manager.withAuth(socket, (message, callback) => {
+      const reply = ackOf(callback)
+      const id = textOf(message)
+
+      if (id === undefined) {
+        reply?.({ error: "errors:quizz.failedToRestore" })
+
+        return
+      }
+
+      try {
+        const mutation = restoreCommittedQuizz(id)
+        finalizeBackgroundMutation(
+          mutation.previousBackground,
+          mutation.background,
+        )
+      } catch (error) {
+        console.error("Failed to restore quizz:", error)
+        reply?.({ error: clientMessage(error, "errors:quizz.failedToRestore") })
+
+        return
       }
 
       reply?.({ ok: true })

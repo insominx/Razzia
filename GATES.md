@@ -12,7 +12,7 @@ Scope: A Docker/Railway deploy bakes local `config/quizz/*.json` into the image 
   EXPECT: QUIZ_SEED_PATH
   EVIDENCE: Dockerfile:COPY config/quizz /app/seed/quizz | supervisord.conf:environment=NODE_ENV="production",CONFIG_PATH="/app/config",QUIZ_SEED_PATH="/app/seed/quizz"
 
-- [x] G3: Seed sync replaces volume quizzes with seed JSON and leaves game.json alone
+- [x] G3: Seed sync adds missing quizzes and updates only untouched seeded copies, never deletes, and leaves game.json alone
   CHECK: pnpm --filter @razzia/socket exec vitest run src/services/config.test.ts --reporter=verbose
   EXPECT: Tests
   EVIDENCE: } | ]

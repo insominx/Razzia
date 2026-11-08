@@ -69,7 +69,14 @@
     "startGame": "Spiel starten",
     "invalidJson": "Ungültige JSON-Datei",
     "questionCount_one": "{{count}} Frage",
-    "questionCount_other": "{{count}} Fragen"
+    "questionCount_other": "{{count}} Fragen",
+    "edited": "Bearbeitet",
+    "editedTitle": "Hier bearbeitet: weicht von der mit diesem Server gelieferten Version ab",
+    "editedNote": "Als Bearbeitet markierte Quizze weichen von der mit diesem Server gelieferten Version ab. Server-Updates behalten deine Änderungen und überschreiben sie nie. Wiederherstellen bringt die gelieferte Version zurück.",
+    "restore": "Gelieferte Version wiederherstellen",
+    "restoreConfirm": "Deine Änderungen an „{{name}}“ durch die mit diesem Server gelieferte Version ersetzen? Deine Änderungen gehen verloren.",
+    "restoreAction": "Wiederherstellen",
+    "restored": "Gelieferte Version wiederhergestellt"
   },
   "result": {
     "delete": "Ergebnis löschen",

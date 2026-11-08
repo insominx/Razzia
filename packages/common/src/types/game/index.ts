@@ -56,6 +56,11 @@ export interface QuizzMeta {
   subject: string
   /** How many questions, for the picker. Absent from an older server. */
   questionCount?: number
+  /**
+   * Against the copy shipped with the server: "committed" when it is the same,
+   * "edited" when it was changed here. Absent when no copy was shipped.
+   */
+  seedState?: "committed" | "edited"
 }
 
 export interface GameUpdateQuestion {

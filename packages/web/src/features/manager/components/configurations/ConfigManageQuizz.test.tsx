@@ -12,6 +12,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 type Ack = (error: Error | null, response?: unknown) => void
 
+const list = vi.hoisted(() => ({
+  quizz: [] as Array<{ id: string; subject: string; seedState?: string }>,
+}))
+
 const mocks = vi.hoisted(() => ({
   emit: vi.fn(),
   timeoutEmit: vi.fn(),
@@ -28,12 +32,7 @@ vi.mock("@razzia/web/features/game/contexts/socket-context", () => ({
 }))
 
 vi.mock("@razzia/web/features/manager/contexts/config-context", () => ({
-  useConfig: () => ({
-    quizz: [
-      { id: "q1", subject: "Capitals" },
-      { id: "q2", subject: "Rivers" },
-    ],
-  }),
+  useConfig: () => ({ quizz: list.quizz }),
 }))
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }))
@@ -45,6 +44,15 @@ vi.mock("react-hot-toast", () => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
+
+const plainList = () => [
+  { id: "q1", subject: "Capitals" },
+  { id: "q2", subject: "Rivers" },
+]
+
+beforeEach(() => {
+  list.quizz = plainList()
+})
 
 const pick = (container: HTMLElement, file: File) => {
   const input = container.querySelector('input[type="file"]')
@@ -159,5 +167,100 @@ describe("ConfigManageQuizz delete", () => {
     expect(mocks.error).toHaveBeenCalledWith("errors:quizz.failedToDelete")
     expect(mocks.success).not.toHaveBeenCalled()
     expect(allEnabled()).toBe(true)
+  })
+})
+
+describe("ConfigManageQuizz shipped versions", () => {
+  beforeEach(() => {
+    mocks.timeout.mockReturnValue({ emit: mocks.timeoutEmit })
+    list.quizz = [
+      { id: "q1", subject: "Capitals", seedState: "edited" },
+      { id: "q2", subject: "Rivers", seedState: "committed" },
+      { id: "q3", subject: "Mine" },
+    ]
+  })
+
+  afterEach(() => {
+    cleanup()
+    Object.values(mocks).forEach((mock) => {
+      mock.mockReset()
+    })
+  })
+
+  const restoreButtons = () =>
+    screen.queryAllByRole("button", { name: "manager:quizz.restore" })
+
+  it("marks only an edited quiz, explains it, and offers the restore button only there", () => {
+    render(<ConfigManageQuizz />)
+
+    expect(screen.getAllByText("manager:quizz.edited")).toHaveLength(1)
+    expect(screen.getByTestId("seed-note").textContent).toBe(
+      "manager:quizz.editedNote",
+    )
+    expect(restoreButtons()).toHaveLength(1)
+  })
+
+  it("shows no note, badge or button when nothing was edited", () => {
+    list.quizz = [
+      { id: "q2", subject: "Rivers", seedState: "committed" },
+      { id: "q3", subject: "Mine" },
+    ]
+    render(<ConfigManageQuizz />)
+
+    expect(screen.queryByTestId("seed-note")).toBeNull()
+    expect(screen.queryByText("manager:quizz.edited")).toBeNull()
+    expect(restoreButtons()).toHaveLength(0)
+  })
+
+  it("asks before it restores, and says what will be lost", () => {
+    render(<ConfigManageQuizz />)
+
+    fireEvent.click(restoreButtons()[0])
+
+    expect(
+      within(screen.getByRole("alertdialog")).getByText(
+        "manager:quizz.restoreConfirm",
+      ),
+    ).toBeTruthy()
+    expect(mocks.timeoutEmit).not.toHaveBeenCalled()
+  })
+
+  it("restores through the server, toasts success only once it confirms", () => {
+    render(<ConfigManageQuizz />)
+    fireEvent.click(restoreButtons()[0])
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "manager:quizz.restoreAction",
+      }),
+    )
+
+    expect(mocks.timeoutEmit).toHaveBeenCalledWith(
+      EVENTS.QUIZZ.RESTORE,
+      "q1",
+      expect.any(Function),
+    )
+    expect(mocks.success).not.toHaveBeenCalled()
+
+    const ack = mocks.timeoutEmit.mock.calls.at(-1)?.[2] as Ack
+
+    act(() => ack(null, { ok: true }))
+
+    expect(mocks.success).toHaveBeenCalledWith("manager:quizz.restored")
+  })
+
+  it("shows the server's error key when the restore fails", () => {
+    render(<ConfigManageQuizz />)
+    fireEvent.click(restoreButtons()[0])
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "manager:quizz.restoreAction",
+      }),
+    )
+    const ack = mocks.timeoutEmit.mock.calls.at(-1)?.[2] as Ack
+
+    act(() => ack(null, { error: "errors:quizz.noCommittedVersion" }))
+
+    expect(mocks.error).toHaveBeenCalledWith("errors:quizz.noCommittedVersion")
+    expect(mocks.success).not.toHaveBeenCalled()
   })
 })

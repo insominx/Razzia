@@ -46,7 +46,9 @@
     "textTooLong": "Der Text ist zu lang",
     "tooFewAnswers": "Eine Frage muss mindestens 2 Antworten haben",
     "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben",
-    "tooManyQuestions": "Ein Quiz darf höchstens 200 Fragen haben"
+    "tooManyQuestions": "Ein Quiz darf höchstens 200 Fragen haben",
+    "failedToRestore": "Die gelieferte Version konnte nicht wiederhergestellt werden",
+    "noCommittedVersion": "Für dieses Quiz gibt es keine gelieferte Version"
   },
   "visuals": {
     "backgroundClearFailed": "Hintergrund konnte nicht entfernt werden",

@@ -64,6 +64,9 @@ The `-v ./config:/app/config` option mounts a local `config` folder to persist y
 
 The folder will be created automatically on first run with an example quiz to get you started.
 
+**Quizzes baked into the image:**
+An image built from this repository carries the quizzes in `config/quizz` as seed data. On every start, a quiz that is missing from the volume is added, and a seeded quiz that nobody has edited is updated when the committed version changes. A quiz you created or edited in the manager is never overwritten or deleted, even when the committed version differs (the log says so). To drop a quiz, delete it in the manager. The seeder records what it wrote in `.seed-manifest.json` beside `game.json`.
+
 The application will be available at http://localhost:3000
 
 ### 🛠️ Without Docker

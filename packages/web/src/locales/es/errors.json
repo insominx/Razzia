@@ -46,7 +46,9 @@
     "textTooLong": "El texto es demasiado largo",
     "tooFewAnswers": "Una pregunta debe tener al menos 2 respuestas",
     "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas",
-    "tooManyQuestions": "Un cuestionario no puede tener más de 200 preguntas"
+    "tooManyQuestions": "Un cuestionario no puede tener más de 200 preguntas",
+    "failedToRestore": "No se pudo restaurar la versión incluida",
+    "noCommittedVersion": "Este cuestionario no tiene una versión incluida que restaurar"
   },
   "visuals": {
     "backgroundClearFailed": "Error al borrar el fondo",

@@ -69,7 +69,14 @@
     "startGame": "Iniciar juego",
     "invalidJson": "Archivo JSON no válido",
     "questionCount_one": "{{count}} pregunta",
-    "questionCount_other": "{{count}} preguntas"
+    "questionCount_other": "{{count}} preguntas",
+    "edited": "Editado",
+    "editedTitle": "Editado aquí: difiere de la versión incluida con este servidor",
+    "editedNote": "Los cuestionarios marcados como Editado difieren de la versión incluida con este servidor. Las actualizaciones del servidor conservan tus cambios y nunca los sobrescriben. Restaurar recupera la versión incluida.",
+    "restore": "Restaurar versión incluida",
+    "restoreConfirm": "¿Reemplazar tus cambios en «{{name}}» por la versión incluida con este servidor? Tus cambios se perderán.",
+    "restoreAction": "Restaurar",
+    "restored": "Versión incluida restaurada"
   },
   "result": {
     "delete": "Eliminar resultado",

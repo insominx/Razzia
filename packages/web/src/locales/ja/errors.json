@@ -46,7 +46,9 @@
     "textTooLong": "テキストが長すぎます",
     "tooFewAnswers": "質問には少なくとも2つの回答が必要です",
     "tooManyAnswers": "質問に設定できる回答は4つまでです",
-    "tooManyQuestions": "クイズの問題は200問までです"
+    "tooManyQuestions": "クイズの問題は200問までです",
+    "failedToRestore": "同梱バージョンを復元できませんでした",
+    "noCommittedVersion": "このクイズには復元できる同梱バージョンがありません"
   },
   "visuals": {
     "backgroundClearFailed": "背景を削除できませんでした",

@@ -69,7 +69,14 @@
     "startGame": "ゲーム開始",
     "invalidJson": "無効なJSONファイルです",
     "questionCount_one": "{{count}}問",
-    "questionCount_other": "{{count}}問"
+    "questionCount_other": "{{count}}問",
+    "edited": "編集済み",
+    "editedTitle": "ここで編集済み: このサーバーに同梱されたバージョンと異なります",
+    "editedNote": "「編集済み」のクイズは、このサーバーに同梱されたバージョンと異なります。サーバーの更新で編集内容が上書きされることはありません。復元すると同梱バージョンに戻ります。",
+    "restore": "同梱バージョンに復元",
+    "restoreConfirm": "「{{name}}」の編集内容を、このサーバーに同梱されたバージョンに置き換えますか？編集内容は失われます。",
+    "restoreAction": "復元",
+    "restored": "同梱バージョンに復元しました"
   },
   "result": {
     "delete": "結果を削除",

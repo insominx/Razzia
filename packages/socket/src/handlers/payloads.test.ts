@@ -48,6 +48,7 @@ vi.mock("@razzia/socket/services/config", () => ({
   saveQuizz: vi.fn(() => ({ id: "saved" })),
   updateQuizz: vi.fn(() => ({ id: "quiz-1" })),
   deleteQuizz: vi.fn(() => ({ id: "quiz-1" })),
+  restoreCommittedQuizz: vi.fn(() => ({ id: "quiz-1" })),
   deleteResult: vi.fn(),
   updateGameConfig: vi.fn(),
   saveResult: vi.fn(),

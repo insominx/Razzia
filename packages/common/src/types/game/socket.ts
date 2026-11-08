@@ -168,6 +168,10 @@ export interface ClientToServerEvents {
   [EVENTS.QUIZZ.GET]: (_id: string) => void
   [EVENTS.QUIZZ.SAVE]: (_quizz: unknown) => void
   [EVENTS.QUIZZ.UPDATE]: (_data: QuizzWithId) => void
+  [EVENTS.QUIZZ.RESTORE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
   [EVENTS.QUIZZ.DELETE]: (
     _id: string,
     _callback?: (_response: ManagerMutationResponse) => void,
