@@ -148,3 +148,24 @@ describe("question prompt reveal schedule", () => {
     expect(getNextSentenceRevealElapsed("Pick one", 1)).toBeNull()
   })
 })
+
+describe("pathological question text", () => {
+  it("caps the prompt reveal time", () => {
+    const text = "A sentence of some length. ".repeat(5000)
+
+    expect(getQuestionPromptRevealMs(text)).toBeLessThanOrEqual(30_000)
+    expect(getQuestionSentenceIntervalMs("x".repeat(100_000))).toBeLessThan(
+      10_000,
+    )
+  })
+
+  it("does not use a regex lookbehind", async () => {
+    const { readFileSync } = await import("node:fs")
+    const source = readFileSync(
+      new URL("./question-transition.ts", import.meta.url),
+      "utf8",
+    )
+
+    expect(source).not.toContain("(?<=")
+  })
+})

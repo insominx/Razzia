@@ -23,6 +23,7 @@ import fs from "fs"
 import type { IncomingMessage, ServerResponse } from "http"
 import { nanoid } from "nanoid"
 import { extname } from "path"
+import { publicErrorMessage } from "@razzia/socket/utils/safe"
 
 export const BACKGROUND_ASSETS_CONFIG_PATH = "assets/backgrounds"
 
@@ -31,6 +32,17 @@ export const BACKGROUND_ASSETS_PUBLIC_PREFIX = "/config-assets/backgrounds"
 export const BACKGROUND_ORPHAN_GRACE_MS = 60 * 60 * 1000
 
 const pendingBackgroundAssetPaths = new Set<string>()
+
+// Backgrounds a running game still shows. Its url was resolved when the game
+// was created, so the saved config no longer vouches for it once the manager
+// replaces or clears that background mid-game.
+let liveBackgroundPathsProvider: () => Iterable<string> = () => []
+
+export const setLiveBackgroundPathsProvider = (
+  provider: () => Iterable<string>,
+): void => {
+  liveBackgroundPathsProvider = provider
+}
 
 export { BACKGROUND_UPLOAD_MAX_BYTES }
 
@@ -52,6 +64,28 @@ export const getBackgroundAssetPath = (path: string): string | null => {
 
 export const publicBackgroundUrl = (path: string): string =>
   `${BACKGROUND_ASSETS_PUBLIC_PREFIX}/${encodeURIComponent(path)}`
+
+// The inverse of publicBackgroundUrl: undefined for anything that is not a
+// valid background url.
+export const backgroundPathFromUrl = (url: unknown): string | undefined => {
+  const prefix = `${BACKGROUND_ASSETS_PUBLIC_PREFIX}/`
+
+  if (typeof url !== "string" || !url.startsWith(prefix)) {
+    return undefined
+  }
+
+  let decoded = ""
+
+  try {
+    decoded = decodeURIComponent(url.slice(prefix.length))
+  } catch {
+    return undefined
+  }
+
+  const result = backgroundAssetPathValidator.safeParse(decoded)
+
+  return result.success ? result.data : undefined
+}
 
 export const getBackgroundAssetUrl = (
   background?: BackgroundRef,
@@ -145,10 +179,28 @@ export const reclaimBackgroundAssets = ({
   preserve = new Set<string>(),
 }: BackgroundReclaimOptions): BackgroundReclaimResult => {
   const referenced = getReferencedBackgroundAssetPaths()
+  const live = (() => {
+    try {
+      return new Set(liveBackgroundPathsProvider())
+    } catch (error) {
+      // Cannot tell what a running game shows: keep every file.
+      console.warn("Failed to list live game backgrounds:", error)
+
+      return null
+    }
+  })()
   const assetsDirectory = getConfigPath(BACKGROUND_ASSETS_CONFIG_PATH)
 
   if (!fs.existsSync(assetsDirectory)) {
     return { examined: 0, deleted: 0, retained: 0 }
+  }
+
+  if (!live) {
+    const candidateCount = new Set(
+      candidates ?? fs.readdirSync(assetsDirectory),
+    ).size
+
+    return { examined: candidateCount, deleted: 0, retained: candidateCount }
   }
 
   const candidatePaths = [
@@ -174,6 +226,7 @@ export const reclaimBackgroundAssets = ({
     if (
       !assetPath ||
       referenced.has(validated.data) ||
+      live.has(validated.data) ||
       preserve.has(validated.data)
     ) {
       result.retained += 1
@@ -319,6 +372,22 @@ export const resolveVisuals = (
   }
 }
 
+// Request targets like "//" or "http://" do not parse; the caller answers 400.
+const parseRequestUrl = (request: IncomingMessage): URL | null => {
+  try {
+    return new URL(request.url ?? "", "http://localhost")
+  } catch {
+    return null
+  }
+}
+
+const badRequest = (response: ServerResponse): true => {
+  response.writeHead(400)
+  response.end()
+
+  return true
+}
+
 export const serveConfigAsset = (
   request: IncomingMessage,
   response: ServerResponse,
@@ -327,7 +396,11 @@ export const serveConfigAsset = (
     return false
   }
 
-  const url = new URL(request.url, "http://localhost")
+  const url = parseRequestUrl(request)
+
+  if (!url) {
+    return badRequest(response)
+  }
 
   if (!url.pathname.startsWith(`${BACKGROUND_ASSETS_PUBLIC_PREFIX}/`)) {
     return false
@@ -354,12 +427,15 @@ export const serveConfigAsset = (
   }
 
   const filePath = getBackgroundAssetPath(assetName)
+  const isFile = (() => {
+    try {
+      return filePath ? fs.statSync(filePath).isFile() : false
+    } catch {
+      return false
+    }
+  })()
 
-  if (
-    !filePath ||
-    !fs.existsSync(filePath) ||
-    !fs.statSync(filePath).isFile()
-  ) {
+  if (!filePath || !isFile) {
     response.writeHead(404)
     response.end()
 
@@ -372,7 +448,20 @@ export const serveConfigAsset = (
       contentTypeForExtension(extname(filePath)) ?? "application/octet-stream",
     "X-Content-Type-Options": "nosniff",
   })
-  fs.createReadStream(filePath).pipe(response)
+
+  // Piping forwards neither errors nor an early close: without these a file
+  // removed mid-open crashes the process and an aborted download leaks its fd.
+  const stream = fs.createReadStream(filePath)
+
+  stream.on("error", (error) => {
+    console.warn("Failed to stream background asset:", error)
+    stream.destroy()
+    response.destroy()
+  })
+  response.on("close", () => {
+    stream.destroy()
+  })
+  stream.pipe(response)
 
   return true
 }
@@ -410,7 +499,11 @@ export const serveBackgroundUpload = async (
     return false
   }
 
-  const url = new URL(request.url, "http://localhost")
+  const url = parseRequestUrl(request)
+
+  if (!url) {
+    return badRequest(response)
+  }
 
   if (url.pathname !== BACKGROUND_ASSETS_PUBLIC_PREFIX) {
     return false
@@ -463,10 +556,13 @@ export const serveBackgroundUpload = async (
       }
     }
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "errors:visuals.backgroundUploadFailed"
+    console.error("Background upload failed:", error)
+
+    // Filesystem errors carry absolute paths; only i18n keys go to the browser.
+    const message = publicErrorMessage(
+      error,
+      "errors:visuals.backgroundUploadFailed",
+    )
 
     response.writeHead(400, { "Content-Type": "application/json" })
     response.end(JSON.stringify({ error: message }))

@@ -14,8 +14,39 @@ import {
   quizzValidator,
 } from "@razzia/common/validators/quizz"
 import { normalizeFilename } from "@razzia/socket/utils/game"
+import { isSafeId, ItemNotFoundError } from "@razzia/socket/utils/safe"
+import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 import fs from "fs"
 import { join, resolve } from "path"
+
+// Write to a sibling temp file and rename over the target, so a crash or a
+// full disk never leaves a truncated JSON file behind.
+const writeFileAtomic = (path: string, data: string, mode?: number): void => {
+  const tempPath = `${path}.${process.pid}.tmp`
+
+  try {
+    fs.writeFileSync(tempPath, data, mode === undefined ? {} : { mode })
+    fs.renameSync(tempPath, path)
+  } catch (error) {
+    try {
+      fs.rmSync(tempPath, { force: true })
+    } catch {
+      // The original error is the one worth reporting.
+    }
+
+    throw error
+  }
+}
+
+// Notepad and PowerShell can save a UTF-8 BOM, which JSON.parse rejects.
+const readJsonFile = (path: string): unknown =>
+  JSON.parse(fs.readFileSync(path, "utf-8").replace(/^\uFEFF/, ""))
+
+const assertSafeId = (id: string): void => {
+  if (!isSafeId(id)) {
+    throw new Error("Invalid id")
+  }
+}
 
 export const getConfigPath = (path = "") => {
   const configRoot = process.env.CONFIG_PATH
@@ -35,7 +66,7 @@ export const initConfig = () => {
   const isGameConfigExists = fs.existsSync(getConfigPath("game.json"))
 
   if (!isGameConfigExists) {
-    fs.writeFileSync(
+    writeFileAtomic(
       getConfigPath("game.json"),
       JSON.stringify(
         {
@@ -44,6 +75,7 @@ export const initConfig = () => {
         null,
         2,
       ),
+      0o600,
     )
   }
 
@@ -79,9 +111,7 @@ const syncSeedQuizzes = (): boolean => {
 
   for (const file of seedFiles) {
     try {
-      const parsed = quizzValidator.safeParse(
-        JSON.parse(fs.readFileSync(join(seedDir, file), "utf-8")),
-      )
+      const parsed = quizzValidator.safeParse(readJsonFile(join(seedDir, file)))
 
       if (parsed.success) {
         valid.push(file)
@@ -118,8 +148,15 @@ export const getGameConfig = (): GameConfig => {
     throw new Error("Game config not found")
   }
 
-  const config = fs.readFileSync(getConfigPath("game.json"), "utf-8")
-  const result = gameConfigValidator.safeParse(JSON.parse(config))
+  const raw = (() => {
+    try {
+      return readJsonFile(getConfigPath("game.json"))
+    } catch {
+      throw new Error("Game config is not valid JSON")
+    }
+  })()
+
+  const result = gameConfigValidator.safeParse(raw)
 
   if (!result.success) {
     throw new Error(result.error.issues[0].message)
@@ -135,9 +172,10 @@ export const writeGameConfig = (data: GameConfig): void => {
     throw new Error(result.error.issues[0].message)
   }
 
-  fs.writeFileSync(
+  writeFileAtomic(
     getConfigPath("game.json"),
     JSON.stringify(result.data, null, 2),
+    0o600,
   )
 }
 
@@ -189,19 +227,14 @@ const parseQuizzData = (data: unknown, label: string) => {
   return null
 }
 
-const readStrictQuizzFile = (
+// The quizz as it is on disk, for the background it holds. Invalid visuals are
+// tolerated like the loaders do (they count as no background); a file that is
+// not even JSON still throws so nothing is reclaimed on a guess.
+const readPreviousQuizzFile = (
   filePath: string,
   label: string,
-): QuizzValidated => {
-  const data: unknown = JSON.parse(fs.readFileSync(filePath, "utf-8"))
-  const result = quizzValidator.safeParse(data)
-
-  if (!result.success) {
-    throw new Error(`Invalid quizz config "${label}"`)
-  }
-
-  return result.data
-}
+): QuizzValidated | undefined =>
+  parseQuizzData(readJsonFile(filePath), label) ?? undefined
 
 export const getReferencedBackgroundAssetPaths = (): Set<string> => {
   const references = new Set<string>()
@@ -214,16 +247,29 @@ export const getReferencedBackgroundAssetPaths = (): Set<string> => {
   const quizzDirectory = getConfigPath("quizz")
   const files = fs
     .readdirSync(quizzDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .filter(
+      (entry) =>
+        (entry.isFile() || entry.isSymbolicLink()) &&
+        entry.name.endsWith(".json"),
+    )
     .map((entry) => entry.name)
     .sort()
 
   for (const file of files) {
-    const quizz = readStrictQuizzFile(getConfigPath(`quizz/${file}`), file)
-    const background = quizz.visuals?.background
+    // A quizz that fails validation is not listed, but a valid background
+    // path it names is still kept until someone fixes or removes the file.
+    const data = readJsonFile(getConfigPath(`quizz/${file}`))
+    const quizz = parseQuizzData(data, file)
+    const rawPath = (
+      data as { visuals?: { background?: { path?: unknown } } } | null
+    )?.visuals?.background?.path
+    const rawValid = backgroundAssetPathValidator.safeParse(rawPath)
+    const background = quizz?.visuals?.background
 
     if (background) {
       references.add(background.path)
+    } else if (rawValid.success) {
+      references.add(rawValid.data)
     }
   }
 
@@ -236,14 +282,40 @@ export interface QuizzBackgroundMutation {
   background?: BackgroundRef
 }
 
+// A save may keep the reference it already had, but a new one must point at an
+// uploaded file (a restart can have reclaimed an unsaved upload).
+const assertBackgroundExists = (
+  background: BackgroundRef | undefined,
+  previous: QuizzValidated | undefined,
+): void => {
+  if (!background || previous?.visuals?.background?.path === background.path) {
+    return
+  }
+
+  const exists = (() => {
+    try {
+      return fs
+        .lstatSync(getConfigPath(`assets/backgrounds/${background.path}`))
+        .isFile()
+    } catch {
+      return false
+    }
+  })()
+
+  if (!exists) {
+    throw new Error("errors:visuals.invalidBackgroundPath")
+  }
+}
+
 export const getQuizzById = (id: string) => {
+  assertSafeId(id)
   const filePath = getConfigPath(`quizz/${id}.json`)
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Quizz "${id}" not found`)
   }
 
-  const data: unknown = JSON.parse(fs.readFileSync(filePath, "utf-8"))
+  const data = readJsonFile(filePath)
   const parsed = parseQuizzData(data, id)
 
   if (!parsed) {
@@ -265,20 +337,25 @@ export const getQuizz = () => {
       .readdirSync(getConfigPath("quizz"))
       .filter((file) => file.endsWith(".json"))
 
+    // One bad file is skipped; it must not hide every other quizz.
     const quizz: QuizzWithId[] = files.flatMap((file) => {
-      const data: unknown = JSON.parse(
-        fs.readFileSync(getConfigPath(`quizz/${file}`), "utf-8"),
-      )
-      const id = file.replace(".json", "")
-      const parsed = parseQuizzData(data, file)
+      try {
+        const data = readJsonFile(getConfigPath(`quizz/${file}`))
+        const id = file.slice(0, -".json".length)
+        const parsed = isSafeId(id) ? parseQuizzData(data, file) : null
 
-      if (!parsed) {
-        console.warn(`Invalid quizz config "${file}"`)
+        if (!parsed) {
+          console.warn(`Invalid quizz config "${file}"`)
+
+          return []
+        }
+
+        return [{ id, ...parsed }]
+      } catch (error) {
+        console.warn(`Unreadable quizz config "${file}":`, error)
 
         return []
       }
-
-      return [{ id, ...parsed }]
     })
 
     return quizz
@@ -299,54 +376,69 @@ export const updateQuizz = (
     throw new Error(result.error.issues[0].message)
   }
 
+  assertSafeId(id)
   const oldPath = getConfigPath(`quizz/${id}.json`)
 
   if (!fs.existsSync(oldPath)) {
     throw new Error(`Quizz "${id}" not found`)
   }
 
-  const previous = readStrictQuizzFile(oldPath, `${id}.json`)
+  const previous = readPreviousQuizzFile(oldPath, `${id}.json`)
 
-  fs.writeFileSync(oldPath, JSON.stringify(result.data, null, 2))
+  assertBackgroundExists(result.data.visuals?.background, previous)
+  writeFileAtomic(oldPath, JSON.stringify(result.data, null, 2))
 
   return {
     id,
-    previousBackground: previous.visuals?.background,
+    previousBackground: previous?.visuals?.background,
     background: result.data.visuals?.background,
   }
 }
 
 export const deleteQuizz = (id: string): QuizzBackgroundMutation => {
+  assertSafeId(id)
   const filePath = getConfigPath(`quizz/${id}.json`)
 
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Quizz "${id}" not found`)
+    throw new ItemNotFoundError(`Quizz "${id}" not found`)
   }
 
-  const previous = readStrictQuizzFile(filePath, `${id}.json`)
+  const previous = readPreviousQuizzFile(filePath, `${id}.json`)
 
   fs.unlinkSync(filePath)
 
-  return { id, previousBackground: previous.visuals?.background }
+  return { id, previousBackground: previous?.visuals?.background }
 }
 
-export const saveResult = (data: GameResult): void => {
+// Returns false when the write failed, so the caller can try again later.
+export const saveResult = (data: GameResult): boolean => {
   try {
+    assertSafeId(data.id)
     const resultsPath = getConfigPath("results")
 
     if (!fs.existsSync(resultsPath)) {
       fs.mkdirSync(resultsPath)
     }
 
-    fs.writeFileSync(
+    writeFileAtomic(
       getConfigPath(`results/${data.id}.json`),
       JSON.stringify(data, null, 2),
     )
 
     console.log(`Saved result for "${data.subject}"`)
+
+    return true
   } catch (error) {
     console.error("Failed to save result:", error)
+
+    return false
   }
+}
+
+const timeOf = (date: unknown): number => {
+  const time = new Date(date as string).getTime()
+
+  return Number.isNaN(time) ? 0 : time
 }
 
 export const getResultsMeta = (): GameResultMeta[] => {
@@ -358,14 +450,22 @@ export const getResultsMeta = (): GameResultMeta[] => {
 
   const readMeta = (file: string): GameResultMeta | null => {
     try {
-      const data = fs.readFileSync(getConfigPath(`results/${file}`), "utf-8")
-      const result = JSON.parse(data) as GameResult
+      const id = file.slice(0, -".json".length)
+
+      if (!isSafeId(id)) {
+        return null
+      }
+
+      // The id is the file name: that is what get and delete resolve.
+      const result = readJsonFile(
+        getConfigPath(`results/${file}`),
+      ) as GameResult
 
       return {
-        id: result.id,
+        id,
         subject: result.subject,
         date: result.date,
-        playerCount: result.players.length,
+        playerCount: Array.isArray(result.players) ? result.players.length : 0,
       }
     } catch {
       return null
@@ -378,27 +478,29 @@ export const getResultsMeta = (): GameResultMeta[] => {
       .filter((file) => file.endsWith(".json"))
       .map(readMeta)
       .filter((meta): meta is GameResultMeta => meta !== null)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort((a, b) => timeOf(b.date) - timeOf(a.date))
   } catch {
     return []
   }
 }
 
 export const getResultById = (id: string): GameResult => {
+  assertSafeId(id)
   const filePath = getConfigPath(`results/${id}.json`)
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Result "${id}" not found`)
   }
 
-  return JSON.parse(fs.readFileSync(filePath, "utf-8")) as GameResult
+  return readJsonFile(filePath) as GameResult
 }
 
 export const deleteResult = (id: string): void => {
+  assertSafeId(id)
   const filePath = getConfigPath(`results/${id}.json`)
 
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Result "${id}" not found`)
+    throw new ItemNotFoundError(`Result "${id}" not found`)
   }
 
   fs.unlinkSync(filePath)
@@ -414,10 +516,11 @@ export const saveQuizz = (data: unknown): QuizzBackgroundMutation => {
   const id = normalizeFilename(result.data.subject)
   const filePath = getConfigPath(`quizz/${id}.json`)
   const previous = fs.existsSync(filePath)
-    ? readStrictQuizzFile(filePath, `${id}.json`)
+    ? readPreviousQuizzFile(filePath, `${id}.json`)
     : undefined
 
-  fs.writeFileSync(filePath, JSON.stringify(result.data, null, 2))
+  assertBackgroundExists(result.data.visuals?.background, previous)
+  writeFileAtomic(filePath, JSON.stringify(result.data, null, 2))
 
   return {
     id,

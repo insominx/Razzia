@@ -29,8 +29,9 @@ afterEach(() => {
   }
 })
 
-describe("getGameConfig fail-closed", () => {
-  it("throws when visuals contain an invalid background path instead of returning empty config", async () => {
+describe("getGameConfig", () => {
+  it("keeps the password and drops an invalid background path, with a warning", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
     const root = configRoot
     fs.writeFileSync(
       path.join(root, "game.json"),
@@ -44,7 +45,11 @@ describe("getGameConfig fail-closed", () => {
 
     const { getGameConfig } = await import("@razzia/socket/services/config")
 
-    expect(() => getGameConfig()).toThrow()
+    const config = getGameConfig()
+
+    expect(config.managerPassword).toBe("secret")
+    expect(config.visuals?.background).toBeUndefined()
+    expect(warn).toHaveBeenCalled()
   })
 
   it("throws when managerPassword is missing", async () => {
@@ -256,5 +261,89 @@ describe("initConfig quiz seed", () => {
     initConfig()
 
     expect(getQuizz().some((quiz) => quiz.id === "example")).toBe(true)
+  })
+})
+
+const listFiles = (dir: string) =>
+  fs.existsSync(dir) ? fs.readdirSync(dir).sort() : []
+
+describe("quizz and result functions given hostile input", () => {
+  const hostile: unknown[] = [
+    undefined,
+    null,
+    42,
+    "text",
+    [],
+    {},
+    { subject: "x", questions: null },
+    { subject: "x", questions: "nope" },
+    { subject: 5, questions: [] },
+    { subject: "x", questions: [null, 1, "a"] },
+    { subject: "x", questions: [{ question: "q", answers: null }] },
+    { subject: "x".repeat(5_000_000), questions: [] },
+  ]
+
+  it("saveQuizz throws on every one and writes nothing", async () => {
+    const { saveQuizz } = await import("@razzia/socket/services/config")
+
+    for (const input of hostile) {
+      expect(() => saveQuizz(input)).toThrow()
+    }
+
+    expect(listFiles(path.join(configRoot, "quizz"))).toEqual([])
+  })
+
+  it("updateQuizz throws on every one and leaves the stored quizz as it was", async () => {
+    const { saveQuizz, updateQuizz } =
+      await import("@razzia/socket/services/config")
+    const { id } = saveQuizz({
+      subject: "Kept",
+      questions: [
+        {
+          question: "Pick one",
+          answers: ["No", "Yes"],
+          solutions: [1],
+          cooldown: 5,
+          time: 5,
+        },
+      ],
+    })
+    const file = path.join(configRoot, "quizz", `${id}.json`)
+    const before = fs.readFileSync(file, "utf8")
+
+    for (const input of hostile) {
+      expect(() => updateQuizz(id, input)).toThrow()
+    }
+
+    expect(fs.readFileSync(file, "utf8")).toBe(before)
+    expect(listFiles(path.join(configRoot, "quizz"))).toEqual([`${id}.json`])
+  })
+
+  it("refuses ids that are not plain ids or that name nothing", async () => {
+    const { getQuizzById, deleteQuizz, getResultById, deleteResult } =
+      await import("@razzia/socket/services/config")
+    const ids = ["", "../game", "..\\game", "a/b", "missing", "x".repeat(300)]
+
+    for (const id of ids) {
+      expect(() => getQuizzById(id)).toThrow()
+      expect(() => deleteQuizz(id)).toThrow()
+      expect(() => getResultById(id)).toThrow()
+      expect(() => deleteResult(id)).toThrow()
+    }
+  })
+
+  it("reads a truncated or foreign file on disk as an error, not as data", async () => {
+    fs.writeFileSync(path.join(configRoot, "quizz", "broken.json"), '{"subj')
+    fs.writeFileSync(path.join(configRoot, "quizz", "alien.json"), "[1,2,3]")
+    fs.mkdirSync(path.join(configRoot, "results"))
+    fs.writeFileSync(path.join(configRoot, "results", "broken.json"), "{")
+
+    const { getQuizzById, getResultById, getResultsMeta } =
+      await import("@razzia/socket/services/config")
+
+    expect(() => getQuizzById("broken")).toThrow()
+    expect(() => getQuizzById("alien")).toThrow()
+    expect(() => getResultById("broken")).toThrow()
+    expect(() => getResultsMeta()).not.toThrow()
   })
 })

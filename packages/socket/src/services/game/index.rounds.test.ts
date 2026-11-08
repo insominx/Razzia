@@ -365,3 +365,116 @@ describe("Game answers opened early by the host", () => {
     })
   })
 })
+
+describe("Game kick and leaderboard bookkeeping", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    mocks.saveResult.mockClear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("tells the room the new answer count when an answered player is kicked", async () => {
+    const { io, emitted } = createIo()
+    const host = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: host.socket,
+      quizz: {
+        subject: "Count",
+        questions: [
+          {
+            question: "Pick one",
+            answers: ["No", "Yes"],
+            solutions: [1],
+            cooldown: 1,
+            time: 60,
+          },
+        ],
+      },
+      visuals: {},
+    })
+    const alice = createClient("p1", "alice-client")
+    const bobby = createClient("p2", "bobby-client")
+    const carol = createClient("p3", "carol-client")
+    for (const [client, name] of [
+      [alice, "Alice"],
+      [bobby, "Bobby"],
+      [carol, "Carol"],
+    ] as const) {
+      game.join(client.socket, name)
+    }
+    void game.start(host.socket)
+    await vi.advanceTimersByTimeAsync(20_000)
+
+    game.selectAnswer(alice.socket, 1)
+    game.selectAnswer(bobby.socket, 1)
+    emitted.length = 0
+    game.kickPlayer(host.socket, "p1")
+
+    expect(
+      emitted.filter(({ event }) => event === EVENTS.GAME.PLAYER_ANSWER),
+    ).toEqual([
+      { target: game.gameId, event: EVENTS.GAME.PLAYER_ANSWER, payload: 1 },
+    ])
+  })
+
+  it("drops a kicked player's earlier answers from the saved result", async () => {
+    const round = play()
+    round.start()
+    await round.untilAnswering()
+
+    round.game.selectAnswer(round.alice.socket, 1)
+    round.game.selectAnswer(round.bobby.socket, 1)
+    round.game.selectAnswer(round.carol.socket, 0)
+    await vi.advanceTimersByTimeAsync(1_000)
+    round.game.kickPlayer(round.host.socket, "p1")
+    round.game.showLeaderboard(round.host.socket)
+
+    const [[saved]] = mocks.saveResult.mock.calls
+
+    expect(saved.questions[0].playerAnswers.map((a) => a.playerName)).toEqual([
+      "Bobby",
+      "Carol",
+    ])
+  })
+
+  it("shows the leaderboard once per results, not again against itself", async () => {
+    const round = play(2)
+    round.start()
+    await round.untilAnswering()
+
+    round.game.selectAnswer(round.alice.socket, 1)
+    round.game.selectAnswer(round.bobby.socket, 0)
+    round.game.selectAnswer(round.carol.socket, 0)
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    round.game.showLeaderboard(round.host.socket)
+    round.game.showLeaderboard(round.host.socket)
+
+    const boards = round.statuses("manager", STATUS.SHOW_LEADERBOARD)
+
+    expect(boards).toHaveLength(1)
+    expect(round.statuses("p1", STATUS.SHOW_STANDING)).toHaveLength(1)
+  })
+
+  it("sends the final podium to a player who reconnected after the results", async () => {
+    const round = play()
+    round.start()
+    await round.untilAnswering()
+
+    round.game.selectAnswer(round.alice.socket, 1)
+    round.game.selectAnswer(round.bobby.socket, 0)
+    round.game.selectAnswer(round.carol.socket, 0)
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    round.game.setPlayerDisconnected("p1")
+    round.game.reconnectPlayer(createClient("p1-again", "alice-client").socket)
+    round.game.showLeaderboard(round.host.socket)
+
+    expect(round.statuses("p1-again", STATUS.FINISHED)).toHaveLength(1)
+    expect(round.statuses("p1", STATUS.FINISHED)).toHaveLength(0)
+  })
+})

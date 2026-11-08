@@ -60,7 +60,7 @@ describe("verifyManagerAuth", () => {
 
     expect(verifyManagerAuth("any", { managerPassword: undefined })).toEqual({
       ok: false,
-      error: "errors:failedToReadConfig",
+      error: "errors:manager.failedToReadConfig",
     })
     expect(
       verifyManagerAuth("PASSWORD", { managerPassword: "PASSWORD" }),

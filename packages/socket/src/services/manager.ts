@@ -70,3 +70,27 @@ class Manager {
 }
 
 export default new Manager()
+
+// For a plain request for the config: a config problem must reach the host as
+// a message, not as a silent nothing.
+export const emitConfigOrError = (socket: SocketContext["socket"]) => {
+  try {
+    emitConfig(socket)
+  } catch (error) {
+    console.error("Failed to read the config:", error)
+    socket.emit(
+      EVENTS.MANAGER.ERROR_MESSAGE,
+      "errors:manager.failedToReadConfig",
+    )
+  }
+}
+
+// The refresh after a change that is already saved: if it fails, the change
+// must not be reported as failed.
+export const emitConfigSafely = (socket: SocketContext["socket"]) => {
+  try {
+    emitConfig(socket)
+  } catch (error) {
+    console.error("Failed to refresh the config after a change:", error)
+  }
+}

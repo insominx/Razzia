@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import {
   backgroundAssetPathValidator,
+  gameVisualsConfigValidator,
+  visualsConfigValidator,
   soundThemeValidator,
 } from "@razzia/common/validators/visuals"
 
@@ -35,6 +37,35 @@ describe("backgroundAssetPathValidator", () => {
       false,
     )
     expect(backgroundAssetPathValidator.safeParse("noext").success).toBe(false)
+  })
+})
+
+describe("gameVisualsConfigValidator background", () => {
+  it("drops a background that does not validate instead of failing", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+
+    for (const background of [
+      { kind: "config-asset", path: "../evil.png" },
+      { kind: "url", path: "x.png" },
+      "room.png",
+      null,
+    ]) {
+      const result = gameVisualsConfigValidator.safeParse({ background })
+
+      expect(result.success).toBe(true)
+      expect(result.data?.background).toBeUndefined()
+    }
+
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it("leaves the shared quiz visuals validator strict", () => {
+    expect(
+      visualsConfigValidator.safeParse({
+        background: { kind: "config-asset", path: "../evil.png" },
+      }).success,
+    ).toBe(false)
   })
 })
 

@@ -488,3 +488,129 @@ describe("resolveVisuals", () => {
     )
   })
 })
+
+describe("live game backgrounds", () => {
+  it("keeps a replaced global background while a running game shows it", async () => {
+    const {
+      backgroundPathFromUrl,
+      getBackgroundAssetPath,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const first = storeBackgroundAsset("one.png", pngBytes)
+    setGlobalBackground(first.ref)
+    const firstPath = getBackgroundAssetPath(first.ref.path) ?? ""
+    setLiveBackgroundPathsProvider(() => [
+      backgroundPathFromUrl(first.url) ?? "",
+    ])
+
+    const second = storeBackgroundAsset("two.png", pngBytes)
+    setGlobalBackground(second.ref)
+
+    expect(fs.existsSync(firstPath)).toBe(true)
+  })
+
+  it("keeps a cleared global background while a running game shows it", async () => {
+    const {
+      clearGlobalBackground,
+      getBackgroundAssetPath,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const uploaded = storeBackgroundAsset("clear.png", pngBytes)
+    setGlobalBackground(uploaded.ref)
+    setLiveBackgroundPathsProvider(() => [uploaded.ref.path])
+
+    clearGlobalBackground()
+
+    expect(fs.existsSync(getBackgroundAssetPath(uploaded.ref.path) ?? "")).toBe(
+      true,
+    )
+  })
+
+  it("deletes the file once no running game shows it", async () => {
+    const {
+      clearGlobalBackground,
+      cleanupBackgroundAssetsOnStartup,
+      getBackgroundAssetPath,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const uploaded = storeBackgroundAsset("later.png", pngBytes)
+    const uploadedPath = getBackgroundAssetPath(uploaded.ref.path) ?? ""
+    setGlobalBackground(uploaded.ref)
+    let live: string[] = [uploaded.ref.path]
+    setLiveBackgroundPathsProvider(() => live)
+
+    clearGlobalBackground()
+    expect(fs.existsSync(uploadedPath)).toBe(true)
+
+    live = []
+    const result = cleanupBackgroundAssetsOnStartup()
+
+    expect(result.deleted).toBe(1)
+    expect(fs.existsSync(uploadedPath)).toBe(false)
+  })
+
+  it("keeps every file when the provider throws", async () => {
+    const {
+      clearGlobalBackground,
+      getBackgroundAssetPath,
+      reclaimBackgroundAssets,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const uploaded = storeBackgroundAsset("boom.png", pngBytes)
+    const uploadedPath = getBackgroundAssetPath(uploaded.ref.path) ?? ""
+    const orphan = storeBackgroundAsset("orphan.png", pngBytes)
+    const orphanPath = getBackgroundAssetPath(orphan.ref.path) ?? ""
+    setGlobalBackground(uploaded.ref)
+    setLiveBackgroundPathsProvider(() => {
+      throw new Error("registry unavailable")
+    })
+
+    clearGlobalBackground()
+    const result = reclaimBackgroundAssets({ minimumAgeMs: 0 })
+
+    expect(fs.existsSync(uploadedPath)).toBe(true)
+    expect(fs.existsSync(orphanPath)).toBe(true)
+    expect(result.deleted).toBe(0)
+    expect(result.retained).toBe(result.examined)
+    expect(warn).toHaveBeenCalled()
+  })
+
+  it("turns a public url back into the path it came from", async () => {
+    const { backgroundPathFromUrl, publicBackgroundUrl } =
+      await import("@razzia/socket/services/visuals")
+
+    for (const name of ["room.png", "my room-abc.webp", "café #1 (x).jpg"]) {
+      expect(backgroundPathFromUrl(publicBackgroundUrl(name))).toBe(name)
+    }
+  })
+
+  it("gives undefined for anything that is not a background url", async () => {
+    const { backgroundPathFromUrl } =
+      await import("@razzia/socket/services/visuals")
+
+    for (const url of [
+      undefined,
+      null,
+      42,
+      "",
+      "room.png",
+      "/config-assets/backgrounds/",
+      "/config-assets/backgrounds/%E0%A4%A.png",
+      "/config-assets/backgrounds/..%2Fevil.png",
+      "/config-assets/backgrounds/a%2Fb.png",
+      "/config-assets/backgrounds/notes.txt",
+      "/elsewhere/room.png",
+    ]) {
+      expect(backgroundPathFromUrl(url), String(url)).toBeUndefined()
+    }
+  })
+})

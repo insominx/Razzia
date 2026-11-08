@@ -13,6 +13,9 @@ export const toPublicPlayer = ({
 // only reloading or riding out a network blip.
 export const DROP_GRACE_MS = 10_000
 
+// The most players one game takes.
+export const MAX_PLAYERS = 200
+
 interface PlayerManagerOptions {
   io: Server
   gameId: string
@@ -27,6 +30,7 @@ export class PlayerManager {
   private readonly getVisuals: () => ResolvedVisuals
   private players: Player[] = []
   private readonly droppedAt = new Map<string, number>()
+  private readonly kicked = new Set<string>()
 
   constructor({ io, gameId, isManager, getVisuals }: PlayerManagerOptions) {
     this.io = io
@@ -42,11 +46,24 @@ export class PlayerManager {
   ): Player | undefined {
     const clientId = socket.handshake.auth.clientId as string
 
+    if (this.kicked.has(clientId)) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.kickedByManager")
+
+      return undefined
+    }
+
     if (this.findByClientId(clientId)) {
       socket.emit(
         EVENTS.GAME.ERROR_MESSAGE,
         "errors:game.playerAlreadyConnected",
       )
+
+      return undefined
+    }
+
+    // Client ids cost nothing to invent, so the room itself is capped.
+    if (this.players.length >= MAX_PLAYERS) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.full")
 
       return undefined
     }
@@ -59,13 +76,22 @@ export class PlayerManager {
       return undefined
     }
 
+    const name = result.data
+    const lowered = name.toLocaleLowerCase()
+
+    if (this.players.some((p) => p.username.toLocaleLowerCase() === lowered)) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:auth.usernameTaken")
+
+      return undefined
+    }
+
     socket.join(this.gameId)
 
     const player: Player = {
       id: socket.id,
       clientId,
       connected: true,
-      username,
+      username: name,
       points: 0,
       streak: 0,
     }
@@ -93,6 +119,7 @@ export class PlayerManager {
     }
 
     this.players = this.players.filter((p) => p.id !== playerId)
+    this.kicked.add(player.clientId)
 
     this.io.in(playerId).socketsLeave(this.gameId)
 
@@ -107,6 +134,10 @@ export class PlayerManager {
     this.broadcastCount()
 
     return true
+  }
+
+  isKicked(clientId: string): boolean {
+    return this.kicked.has(clientId)
   }
 
   remove(socketId: string): Player | undefined {

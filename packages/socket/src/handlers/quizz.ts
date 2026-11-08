@@ -1,5 +1,10 @@
 import { EVENTS } from "@razzia/common/constants"
-import { fieldsOf, textOf } from "@razzia/socket/handlers/payload"
+import {
+  ackOf,
+  clientMessage,
+  fieldsOf,
+  textOf,
+} from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import {
   deleteQuizz,
@@ -8,11 +13,12 @@ import {
   saveQuizz,
   updateQuizz,
 } from "@razzia/socket/services/config"
-import manager, { emitConfig } from "@razzia/socket/services/manager"
+import manager, { emitConfigSafely } from "@razzia/socket/services/manager"
 import {
   finalizeBackgroundMutation,
   resolveVisuals,
 } from "@razzia/socket/services/visuals"
+import { ItemNotFoundError } from "@razzia/socket/utils/safe"
 
 export const quizzSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
@@ -47,34 +53,44 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
         )
 
         socket.emit(EVENTS.QUIZZ.SAVE_SUCCESS, { id: mutation.id })
-        emitConfig(socket)
+        emitConfigSafely(socket)
       } catch (error) {
         console.error("Failed to save quizz:", error)
-        const message =
-          error instanceof Error ? error.message : "errors:quizz.failedToSave"
-        socket.emit(EVENTS.QUIZZ.ERROR, message)
+        socket.emit(
+          EVENTS.QUIZZ.ERROR,
+          clientMessage(error, "errors:quizz.failedToSave"),
+        )
       }
     }),
   )
 
   socket.on(
     EVENTS.QUIZZ.DELETE,
-    manager.withAuth(socket, (message) => {
+    manager.withAuth(socket, (message, callback) => {
+      const reply = ackOf(callback)
       const id = textOf(message)
 
       if (id === undefined) {
+        reply?.({ error: "errors:quizz.failedToDelete" })
+
         return
       }
 
       try {
         const mutation = deleteQuizz(id)
         finalizeBackgroundMutation(mutation.previousBackground)
-
-        emitConfig(socket)
       } catch (error) {
-        console.error("Failed to delete quizz:", error)
-        socket.emit(EVENTS.QUIZZ.ERROR, "errors:quizz.failedToDelete")
+        // A double click or a second tab: the quiz is gone either way.
+        if (!(error instanceof ItemNotFoundError)) {
+          console.error("Failed to delete quizz:", error)
+          reply?.({ error: "errors:quizz.failedToDelete" })
+
+          return
+        }
       }
+
+      reply?.({ ok: true })
+      emitConfigSafely(socket)
     }),
   )
 
@@ -95,12 +111,13 @@ export const quizzSocketHandlers = ({ socket }: SocketContext) => {
         )
 
         socket.emit(EVENTS.QUIZZ.UPDATE_SUCCESS, { id: mutation.id })
-        emitConfig(socket)
+        emitConfigSafely(socket)
       } catch (error) {
         console.error("Failed to update quizz:", error)
-        const message =
-          error instanceof Error ? error.message : "errors:quizz.failedToUpdate"
-        socket.emit(EVENTS.QUIZZ.ERROR, message)
+        socket.emit(
+          EVENTS.QUIZZ.ERROR,
+          clientMessage(error, "errors:quizz.failedToUpdate"),
+        )
       }
     }),
   )

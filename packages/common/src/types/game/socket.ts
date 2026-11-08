@@ -19,7 +19,7 @@ import type {
   ShowIntensity,
   SoundTheme,
 } from "@razzia/common/types/visuals"
-import { Server as ServerIO, Socket as SocketIO } from "socket.io"
+import type { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
 export type Server = ServerIO<ClientToServerEvents, ServerToClientEvents>
 
@@ -168,7 +168,10 @@ export interface ClientToServerEvents {
   [EVENTS.QUIZZ.GET]: (_id: string) => void
   [EVENTS.QUIZZ.SAVE]: (_quizz: unknown) => void
   [EVENTS.QUIZZ.UPDATE]: (_data: QuizzWithId) => void
-  [EVENTS.QUIZZ.DELETE]: (_id: string) => void
+  [EVENTS.QUIZZ.DELETE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
 
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void
@@ -183,7 +186,10 @@ export interface ClientToServerEvents {
 
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void
-  [EVENTS.RESULTS.DELETE]: (_id: string) => void
+  [EVENTS.RESULTS.DELETE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
 
   // Common
   disconnect: () => void

@@ -69,13 +69,17 @@ export const orderToPoint = (index: number, totalPlayers: number): number => {
 }
 
 export const timeToPoint = (startTime: number, secondes: number): number => {
+  if (!(secondes > 0)) {
+    return 0
+  }
+
   let points = MAX_POINTS
 
   const actualTime = Date.now()
   const tempsPasseEnSecondes = (actualTime - startTime) / 1000
 
   points -= (MAX_POINTS / secondes) * tempsPasseEnSecondes
-  points = Math.max(0, points)
+  points = Math.min(MAX_POINTS, Math.max(0, points))
 
   return points
 }

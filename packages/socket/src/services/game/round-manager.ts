@@ -101,10 +101,14 @@ export class RoundManager {
   private startTime = 0
   private leaderboard: Player[] = []
   private tempOldLeaderboard: Player[] | null = null
+  private leaderboardShown = false
   // False for the first scored question: its "before" is only the join order,
   // which is no place a player was ever in.
   private previousPlaceKnown = false
   private questionsHistory: QuestionResult[] = []
+  // The clientId behind each questionsHistory[i].playerAnswers[j], so a kick
+  // can drop the entry; the saved result carries names only.
+  private historyClientIds: string[][] = []
   private phase: RoundPhase = "idle"
   private questionGeneration = 0
   private revealWaiter: InterruptibleDelay | null = null
@@ -168,8 +172,17 @@ export class RoundManager {
 
     await sleep(3)
 
+    // The game may have been stopped while the start screen ran.
+    if (!this.started) {
+      return
+    }
+
     this.opts.io.to(this.opts.gameId).emit(EVENTS.GAME.START_COOLDOWN)
     await this.opts.cooldown.start(3)
+
+    if (!this.started) {
+      return
+    }
 
     void this.newQuestion()
   }
@@ -415,6 +428,7 @@ export class RoundManager {
       fastest: this.fastestRightAnswer(question, sortedPlayers),
     })
 
+    this.historyClientIds.push(currentPlayers.map((player) => player.clientId))
     this.questionsHistory.push({
       ...question,
       playerAnswers: currentPlayers.map((player) => ({
@@ -426,8 +440,11 @@ export class RoundManager {
     })
 
     this.previousPlaceKnown = this.leaderboard.length > 0
-    this.leaderboard = sortedPlayers
+    // A copy: the live player list takes latecomers and must not reach the
+    // board.
+    this.leaderboard = sortedPlayers.map((player) => ({ ...player }))
     this.tempOldLeaderboard = oldLeaderboard
+    this.leaderboardShown = false
     this.playersAnswers = []
   }
 
@@ -471,6 +488,19 @@ export class RoundManager {
     this.leaderboard = this.leaderboard.filter(others)
     this.tempOldLeaderboard = this.tempOldLeaderboard?.filter(others) ?? null
     this.playersAnswers = this.playersAnswers.filter(others)
+    this.questionsHistory = this.questionsHistory.map((entry, index) => {
+      const ids = this.historyClientIds[index] ?? []
+
+      return {
+        ...entry,
+        playerAnswers: entry.playerAnswers.filter(
+          (_answer, at) => ids[at] !== clientId,
+        ),
+      }
+    })
+    this.historyClientIds = this.historyClientIds.map((ids) =>
+      ids.filter((id) => id !== clientId),
+    )
   }
 
   // How many are in while answering is open, for a host back mid-question;
@@ -879,8 +909,13 @@ export class RoundManager {
       this.currentQuestion + 1 === this.opts.quizz.questions.length
 
     if (isLastRound) {
-      this.endGame(this.leaderboard)
+      this.endGame(this.withCurrentIds(this.leaderboard))
 
+      return
+    }
+
+    // Shown once per results: a repeat would compare the board with itself.
+    if (this.leaderboardShown) {
       return
     }
 
@@ -890,11 +925,14 @@ export class RoundManager {
 
     this.opts.send(this.opts.getManagerId(), STATUS.SHOW_LEADERBOARD, {
       oldLeaderboard: oldLeaderboard.slice(0, 5).map(toPublicPlayer),
-      leaderboard: this.leaderboard.slice(0, 5).map(toPublicPlayer),
+      leaderboard: this.withCurrentIds(this.leaderboard)
+        .slice(0, 5)
+        .map(toPublicPlayer),
     })
 
     this.sendStandings(oldLeaderboard)
 
     this.tempOldLeaderboard = null
+    this.leaderboardShown = true
   }
 }

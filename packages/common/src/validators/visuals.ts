@@ -47,6 +47,16 @@ export const showIntensityValidator = z.enum(SHOW_INTENSITIES, {
 })
 
 export const gameVisualsConfigValidator = visualsConfigValidator.extend({
+  // A damaged background in game.json must not lock the manager out: drop it
+  // (the password is validated separately and stays strict).
+  background: backgroundRefValidator.optional().catch((context) => {
+    console.warn(
+      "Ignoring an invalid background in game.json:",
+      context.issues[0]?.message,
+    )
+
+    return undefined
+  }),
   showIntensity: showIntensityValidator
     .catch(DEFAULT_SHOW_INTENSITY)
     .optional(),

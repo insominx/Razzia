@@ -222,8 +222,9 @@ class Game {
       return
     }
 
-    this.resultSaved = true
-    saveResult(result)
+    // A failed write leaves the latch open so a later call (a SIGTERM save)
+    // can still try; `false` is the only failure signal.
+    this.resultSaved = saveResult(result)
   }
 
   // Keeps the questions a lecture game played when it closes before its
@@ -307,12 +308,26 @@ class Game {
     }
   }
 
+  // A kicked client may not come back in through the lobby or a lecture's
+  // between-question window.
+  isKicked(clientId: string): boolean {
+    return this.playerManager.isKicked(clientId)
+  }
+
   kickPlayer(socket: Socket, playerId: string) {
     const player = this.playerManager.findById(playerId)
 
     if (player && this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
       this.round.forgetPlayer(player.clientId)
+
+      // The host's "N answered" counter would still count a kicked answer.
+      const answered = this.round.getAnswerCount()
+
+      if (answered !== null) {
+        this.io.to(this.gameId).emit(EVENTS.GAME.PLAYER_ANSWER, answered)
+      }
+
       this.round.endIfEveryoneAnswered()
     }
   }
@@ -320,12 +335,15 @@ class Game {
   // Reconnect
 
   reconnectManager(socket: Socket) {
-    // The attached socket asking again just resyncs; only another tab is
-    // refused.
+    // The attached socket asking again just resyncs. Another socket with the
+    // same clientId is the host back before the server noticed the old
+    // connection died (a network change, a laptop waking), so the newest
+    // connection wins.
     if (this._manager.connected && this._manager.id !== socket.id) {
-      socket.emit(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
-
-      return
+      this.io
+        .to(this._manager.id)
+        .emit(EVENTS.GAME.RESET, "errors:game.openedElsewhere")
+      this.io.in(this._manager.id).socketsLeave(this.gameId)
     }
 
     socket.join(this.gameId)
@@ -371,14 +389,8 @@ class Game {
     }
 
     if (player.connected && player.id !== socket.id) {
-      if (!this.lecture) {
-        socket.emit(EVENTS.GAME.RESET, "errors:game.playerAlreadyConnected")
-
-        return
-      }
-
       // A phone that changed networks is back before the server has noticed
-      // its old connection died. In a lecture the newest connection wins.
+      // its old connection died. The newest connection wins.
       this.io
         .to(player.id)
         .emit(EVENTS.GAME.RESET, "errors:game.openedElsewhere")
@@ -413,6 +425,15 @@ class Game {
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
+    // The host's lobby names a seat by socket id, and this phone has a new
+    // one: without this a Kick aims at the dead id and a later leave misses.
+    // The host's seat for the same name takes the new id in place.
+    if (this._manager.connected) {
+      this.io
+        .to(this._manager.id)
+        .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
+    }
+
     console.log(
       `Player ${player.username} reconnected to game ${this.inviteCode}`,
     )
@@ -444,6 +465,12 @@ class Game {
   }
 
   setPlayerDisconnected(socketId: string) {
+    // No player holds that id (a stale socket): nothing to mark, announce or
+    // wait out.
+    if (!this.playerManager.findById(socketId)) {
+      return
+    }
+
     this.playerManager.setDisconnected(socketId)
     this.io.in(socketId).socketsLeave(this.gameId)
     this.playerManager.broadcastCount()

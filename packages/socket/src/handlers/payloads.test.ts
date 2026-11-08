@@ -6,6 +6,7 @@ import { managerSocketHandlers } from "@razzia/socket/handlers/manager"
 import { quizzSocketHandlers } from "@razzia/socket/handlers/quizz"
 import { resultsSocketHandlers } from "@razzia/socket/handlers/results"
 import type { SocketHandler } from "@razzia/socket/handlers/types"
+import * as config from "@razzia/socket/services/config"
 import manager from "@razzia/socket/services/manager"
 import Registry from "@razzia/socket/services/registry"
 import {
@@ -76,10 +77,11 @@ const io = {
 // A client's socket, with every real handler registered on it.
 const connect = (id: string, clientId: string) => {
   const handlers = new Map<string, Handler>()
+  const emit = vi.fn()
   const socket = {
     id,
     handshake: { auth: { clientId } },
-    emit: vi.fn(),
+    emit,
     join: vi.fn(),
     to: vi.fn(() => ({ emit: vi.fn() })),
     on: vi.fn((event: string, handler: Handler) => {
@@ -93,7 +95,7 @@ const connect = (id: string, clientId: string) => {
     register({ io, socket })
   })
 
-  return { socket, handlers }
+  return { socket, handlers, emit }
 }
 
 const events = [...connect("probe", "probe-client").handlers.keys()]
@@ -230,5 +232,124 @@ describe("socket handlers given a missing or malformed payload", () => {
         expect(failures).toEqual([])
       },
     )
+  })
+})
+
+// What a client may not do without being the host. These send well-formed
+// payloads, so only an authorization check can stop them.
+describe("socket handlers given a well-formed request from the wrong client", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.spyOn(console, "log").mockImplementation(() => undefined)
+    vi.spyOn(console, "error").mockImplementation(() => undefined)
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    clearGames()
+    manager.logout(connect("manager", "manager-client").socket)
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it("turns every manager event away from a client that never logged in", () => {
+    const outsider = connect("outsider", "outsider-client")
+    const quizzData = { subject: "x", questions: [] }
+    const requests: Array<[string, unknown[]]> = [
+      [EVENTS.MANAGER.GET_CONFIG, []],
+      [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET, [{ background: null }]],
+      [EVENTS.MANAGER.GLOBAL_BACKGROUND_CLEAR, []],
+      [EVENTS.MANAGER.DIALECT_SET, [{ dialect: "stage-studio" }]],
+      [EVENTS.MANAGER.SOUND_THEME_SET, [{ soundTheme: "techno" }]],
+      [EVENTS.MANAGER.SHOW_INTENSITY_SET, [{ showIntensity: "calm" }]],
+      [EVENTS.QUIZZ.GET, ["quiz-1"]],
+      [EVENTS.QUIZZ.SAVE, [quizzData]],
+      [EVENTS.QUIZZ.UPDATE, [{ id: "quiz-1", ...quizzData }]],
+      [EVENTS.QUIZZ.DELETE, ["quiz-1"]],
+      [EVENTS.RESULTS.GET, ["result-1"]],
+      [EVENTS.RESULTS.DELETE, ["result-1"]],
+      [EVENTS.GAME.CREATE, ["quiz-1"]],
+      [EVENTS.GAME.CREATE_LECTURE, ["quiz-1"]],
+    ]
+
+    for (const [event, args] of requests) {
+      const { emit } = outsider
+      emit.mockClear()
+
+      outsider.handlers.get(event)?.(...args)
+
+      expect(emit, event).toHaveBeenCalledWith(EVENTS.MANAGER.UNAUTHORIZED)
+    }
+
+    expect(registry.getAllGames()).toEqual([])
+    expect(config.saveQuizz).not.toHaveBeenCalled()
+    expect(config.updateQuizz).not.toHaveBeenCalled()
+    expect(config.deleteQuizz).not.toHaveBeenCalled()
+    expect(config.deleteResult).not.toHaveBeenCalled()
+    expect(config.updateGameConfig).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { kind: "game", lecture: false },
+    { kind: "lecture game", lecture: true },
+  ])(
+    "leaves a $kind untouched when a stranger sends host commands",
+    ({ lecture }) => {
+      const { game } = hostGame(lecture)
+      const intruder = connect("intruder", "intruder-client")
+      const phaseBefore = game.inLobby
+      const ack = vi.fn<(outcome: unknown) => void>()
+      const commands: Array<[string, unknown[]]> = [
+        [
+          EVENTS.MANAGER.KICK_PLAYER,
+          [{ gameId: game.gameId, playerId: "stranger" }],
+        ],
+        [EVENTS.MANAGER.START_GAME, [{ gameId: game.gameId }]],
+        [EVENTS.MANAGER.NEXT_QUESTION, [{ gameId: game.gameId }]],
+        [EVENTS.MANAGER.ABORT_QUIZ, [{ gameId: game.gameId }]],
+        [EVENTS.MANAGER.UNLOCK_ANSWERS, [{ gameId: game.gameId }]],
+        [EVENTS.MANAGER.SHOW_LEADERBOARD, [{ gameId: game.gameId }]],
+        [
+          EVENTS.MANAGER.PLAY_QUESTION,
+          [{ gameId: game.gameId, index: 0 }, ack],
+        ],
+        [EVENTS.MANAGER.FINISH_GAME, [{ gameId: game.gameId }, ack]],
+      ]
+
+      for (const [event, args] of commands) {
+        intruder.handlers.get(event)?.(...args)
+      }
+
+      expect(game.players.map(({ username }) => username)).toEqual(["Stranger"])
+      expect(game.inLobby).toBe(phaseBefore)
+      expect(game.manager.id).toBe("manager")
+      expect(registry.getAllGames()).toEqual([game])
+      expect(intruder.emit).not.toHaveBeenCalledWith(
+        EVENTS.GAME.RESET,
+        expect.anything(),
+      )
+
+      if (lecture) {
+        expect(ack.mock.calls.map(([outcome]) => outcome)).toEqual([
+          "notManager",
+          "notManager",
+        ])
+      }
+    },
+  )
+
+  it("does not hand a manager's game to a client that is not its manager", () => {
+    const { game } = hostGame(false)
+    const intruder = connect("intruder", "intruder-client")
+    manager.login(intruder.socket)
+
+    intruder.handlers.get(EVENTS.MANAGER.RECONNECT)?.({ gameId: game.gameId })
+
+    expect(game.manager.id).toBe("manager")
+    expect(intruder.emit).toHaveBeenCalledWith(
+      EVENTS.GAME.RESET,
+      "errors:game.expired",
+    )
+    manager.logout(intruder.socket)
   })
 })

@@ -1,8 +1,9 @@
 import { EVENTS } from "@razzia/common/constants"
-import { textOf } from "@razzia/socket/handlers/payload"
+import { ackOf, textOf } from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { deleteResult, getResultById } from "@razzia/socket/services/config"
-import manager, { emitConfig } from "@razzia/socket/services/manager"
+import manager, { emitConfigSafely } from "@razzia/socket/services/manager"
+import { ItemNotFoundError } from "@razzia/socket/utils/safe"
 
 export const resultsSocketHandlers = ({ socket }: SocketContext) => {
   socket.on(
@@ -24,19 +25,30 @@ export const resultsSocketHandlers = ({ socket }: SocketContext) => {
 
   socket.on(
     EVENTS.RESULTS.DELETE,
-    manager.withAuth(socket, (message) => {
+    manager.withAuth(socket, (message, callback) => {
+      const reply = ackOf(callback)
       const id = textOf(message)
 
       if (id === undefined) {
+        reply?.({ error: "errors:result.failedToDelete" })
+
         return
       }
 
       try {
         deleteResult(id)
-        emitConfig(socket)
       } catch (error) {
-        console.error("Failed to delete result:", error)
+        // A double click or a second tab: the result is gone either way.
+        if (!(error instanceof ItemNotFoundError)) {
+          console.error("Failed to delete result:", error)
+          reply?.({ error: "errors:result.failedToDelete" })
+
+          return
+        }
       }
+
+      reply?.({ ok: true })
+      emitConfigSafely(socket)
     }),
   )
 }

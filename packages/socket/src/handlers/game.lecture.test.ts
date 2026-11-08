@@ -91,6 +91,8 @@ const makeLectureGame = (gameId: string, started: boolean) => ({
   inviteCode: `${gameId}-code`,
   lecture: true,
   started,
+  inLobby: !started,
+  players: [{ id: "manager", clientId: MANAGER_CLIENT_ID }],
   manager: { id: "manager", connected: true },
   setManagerDisconnected: vi.fn(),
   setPlayerDisconnected: vi.fn(),
@@ -230,6 +232,7 @@ describe("gameSocketHandlers joining a lecture game", () => {
   }) => {
     const { handlers, emit } = await registerHandlers()
     mocks.registry.getGameByInviteCode.mockReturnValueOnce({
+      isKicked: () => false,
       ...game,
       lecture: true,
       inLobby: !game.started,

@@ -9,47 +9,56 @@ import {
 } from "@razzia/socket/handlers/payload"
 import type { SocketContext } from "@razzia/socket/handlers/types"
 import { getGameConfig, getQuizz } from "@razzia/socket/services/config"
+import { inviteThrottle } from "@razzia/socket/services/auth-throttle"
 import Game from "@razzia/socket/services/game"
 import manager from "@razzia/socket/services/manager"
 import Registry from "@razzia/socket/services/registry"
 import { resolveVisuals } from "@razzia/socket/services/visuals"
 import { withGame } from "@razzia/socket/utils/game"
+import { logSafe } from "@razzia/socket/utils/safe"
 
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   const registry = Registry.getInstance()
   const clientId = socket.handshake.auth.clientId as string
 
-  // A lecture game outlives a dropped host, lobby included, so a deck reload
-  // never strands the room; only the host's own Exit ends it at once.
+  // Only the host's own Exit ends a game at once. A dropped host (a Wi-Fi
+  // blip, a reload, a sleeping laptop) leaves the lobby, the running game or
+  // the podium waiting for its manager to reconnect before it expires.
   const handleManagerLeave = (game: Game, explicit: boolean) => {
     game.setManagerDisconnected()
 
-    const closeNow = game.lecture ? explicit : !game.started
-
-    if (closeNow) {
+    if (explicit) {
       registry.closeGame(game, "errors:game.managerDisconnected")
 
       return
     }
 
-    // A running game waits for its manager to reconnect before expiring.
     registry.markGameAsEmpty(game)
   }
 
   // A lecture lobby keeps a player whose phone dropped; leaving on purpose
   // still removes them.
-  const handlePlayerLeave = (game: Game, explicit: boolean) => {
-    if (!game.started && (!game.lecture || explicit)) {
-      const player = game.removePlayer(socket.id)
+  // Only the lobby forgets a player; a finished game keeps its podium for a
+  // phone that wakes up later. The player is named by the id they hold now,
+  // which a socket that has not reconnected yet does not own.
+  const handlePlayerLeave = (
+    game: Game,
+    explicit: boolean,
+    playerId: string,
+  ) => {
+    if (game.inLobby && (!game.lecture || explicit)) {
+      const player = game.removePlayer(playerId)
 
       if (player) {
-        console.log(`Player ${player.username} left game ${game.gameId}`)
+        console.log(
+          `Player ${logSafe(player.username)} left game ${game.gameId}`,
+        )
       }
 
       return
     }
 
-    game.setPlayerDisconnected(socket.id)
+    game.setPlayerDisconnected(playerId)
   }
 
   socket.on(EVENTS.PLAYER.RECONNECT, (message) => {
@@ -77,6 +86,13 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
+    // A manager who logged out must log in again before taking a game back.
+    if (!manager.isLogged(socket)) {
+      socket.emit(EVENTS.MANAGER.UNAUTHORIZED)
+
+      return
+    }
+
     const game = registry.getManagerGame(gameId, clientId)
 
     if (game) {
@@ -89,8 +105,29 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   })
 
   const createGame = (quizzId: string, mode: { lecture?: true } = {}) => {
-    const quizzList = getQuizz()
-    const quizz = quizzList.find((q) => q.id === quizzId)
+    const failedToRead = (label: string, error: unknown) => {
+      console.error(label, error)
+      socket.emit(
+        EVENTS.GAME.ERROR_MESSAGE,
+        "errors:manager.failedToReadConfig",
+      )
+    }
+
+    const found = (() => {
+      try {
+        return { quizz: getQuizz().find((q) => q.id === quizzId) }
+      } catch (error) {
+        failedToRead("Failed to read quizzes:", error)
+
+        return null
+      }
+    })()
+
+    if (!found) {
+      return
+    }
+
+    const { quizz } = found
 
     if (!quizz) {
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:quizz.notFound")
@@ -98,7 +135,23 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
-    const visuals = resolveVisuals(quizz, getGameConfig())
+    // An unreadable config answers the host instead of escaping the handler.
+    const resolved = (() => {
+      try {
+        return { visuals: resolveVisuals(quizz, getGameConfig()) }
+      } catch (error) {
+        failedToRead("Failed to read game config:", error)
+
+        return null
+      }
+    })()
+
+    if (!resolved) {
+      return
+    }
+
+    const { visuals } = resolved
+
     const game = new Game({ io, socket, quizz, visuals, ...mode })
     registry.addGame(game)
   }
@@ -126,10 +179,28 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
       return
     }
 
+    // Six digits are few: a client sweeping codes is slowed down. Only per
+    // client: a class shares one address, so an address limit would let one
+    // student keep everyone else out.
+    const clientKeys = [`client:${clientId}`]
+
+    if (inviteThrottle.retryAfter(clientKeys) > 0) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:manager.tooManyAttempts")
+
+      return
+    }
+
     const game = registry.getGameByInviteCode(inviteCode)
 
     if (!game) {
+      inviteThrottle.fail(clientKeys)
       socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.notFound")
+
+      return
+    }
+
+    if (game.isKicked(clientId)) {
+      socket.emit(EVENTS.GAME.ERROR_MESSAGE, "errors:game.kickedByManager")
 
       return
     }
@@ -273,8 +344,10 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
     const game = registry.getPlayerGame(gameId, clientId)
 
-    if (game) {
-      handlePlayerLeave(game, true)
+    const player = game?.players.find((p) => p.clientId === clientId)
+
+    if (game && player) {
+      handlePlayerLeave(game, true, player.id)
     }
   })
 
@@ -288,7 +361,7 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
     // A socket stays a (disconnected) player of any started game it left.
     registry.getGamesByPlayerSocketId(socket.id).forEach((game) => {
-      handlePlayerLeave(game, false)
+      handlePlayerLeave(game, false, socket.id)
     })
   })
 }
