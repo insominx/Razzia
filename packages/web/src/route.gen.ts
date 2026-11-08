@@ -18,10 +18,13 @@ import { Route as ManagerConfigRouteImport } from './pages/manager/config'
 import { Route as DevGalleryRouteImport } from './pages/dev/gallery'
 import { Route as DevFrameRouteImport } from './pages/dev/frame'
 import { Route as ManagerQuizzLayoutRouteImport } from './pages/manager/quizz/layout'
+import { Route as ManagerPollsLayoutRouteImport } from './pages/manager/polls/layout'
 import { Route as ManagerQuizzIndexRouteImport } from './pages/manager/quizz/index'
+import { Route as ManagerPollsIndexRouteImport } from './pages/manager/polls/index'
 import { Route as authManagerIndexRouteImport } from './pages/(auth)/manager/index'
 import { Route as PartyManagerGameIdRouteImport } from './pages/party/manager/$gameId'
 import { Route as ManagerQuizzQuizzIdRouteImport } from './pages/manager/quizz/$quizzId'
+import { Route as ManagerPollsPollIdRouteImport } from './pages/manager/polls/$pollId'
 
 const authLayoutRoute = authLayoutRouteImport.update({
   id: '/(auth)',
@@ -67,10 +70,20 @@ const ManagerQuizzLayoutRoute = ManagerQuizzLayoutRouteImport.update({
   path: '/manager/quizz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagerPollsLayoutRoute = ManagerPollsLayoutRouteImport.update({
+  id: '/manager/polls',
+  path: '/manager/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagerQuizzIndexRoute = ManagerQuizzIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ManagerQuizzLayoutRoute,
+} as any)
+const ManagerPollsIndexRoute = ManagerPollsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ManagerPollsLayoutRoute,
 } as any)
 const authManagerIndexRoute = authManagerIndexRouteImport.update({
   id: '/manager/',
@@ -87,8 +100,14 @@ const ManagerQuizzQuizzIdRoute = ManagerQuizzQuizzIdRouteImport.update({
   path: '/$quizzId',
   getParentRoute: () => ManagerQuizzLayoutRoute,
 } as any)
+const ManagerPollsPollIdRoute = ManagerPollsPollIdRouteImport.update({
+  id: '/$pollId',
+  path: '/$pollId',
+  getParentRoute: () => ManagerPollsLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/manager/polls': typeof ManagerPollsLayoutRouteWithChildren
   '/manager/quizz': typeof ManagerQuizzLayoutRouteWithChildren
   '/dev/frame': typeof DevFrameRoute
   '/dev/gallery': typeof DevGalleryRoute
@@ -97,9 +116,11 @@ export interface FileRoutesByFullPath {
   '/rehearse/frame': typeof RehearseFrameRoute
   '/': typeof authIndexRoute
   '/rehearse/': typeof RehearseIndexRoute
+  '/manager/polls/$pollId': typeof ManagerPollsPollIdRoute
   '/manager/quizz/$quizzId': typeof ManagerQuizzQuizzIdRoute
   '/party/manager/$gameId': typeof PartyManagerGameIdRoute
   '/manager/': typeof authManagerIndexRoute
+  '/manager/polls/': typeof ManagerPollsIndexRoute
   '/manager/quizz/': typeof ManagerQuizzIndexRoute
 }
 export interface FileRoutesByTo {
@@ -110,14 +131,17 @@ export interface FileRoutesByTo {
   '/rehearse/frame': typeof RehearseFrameRoute
   '/': typeof authIndexRoute
   '/rehearse': typeof RehearseIndexRoute
+  '/manager/polls/$pollId': typeof ManagerPollsPollIdRoute
   '/manager/quizz/$quizzId': typeof ManagerQuizzQuizzIdRoute
   '/party/manager/$gameId': typeof PartyManagerGameIdRoute
   '/manager': typeof authManagerIndexRoute
+  '/manager/polls': typeof ManagerPollsIndexRoute
   '/manager/quizz': typeof ManagerQuizzIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(auth)': typeof authLayoutRouteWithChildren
+  '/manager/polls': typeof ManagerPollsLayoutRouteWithChildren
   '/manager/quizz': typeof ManagerQuizzLayoutRouteWithChildren
   '/dev/frame': typeof DevFrameRoute
   '/dev/gallery': typeof DevGalleryRoute
@@ -126,14 +150,17 @@ export interface FileRoutesById {
   '/rehearse/frame': typeof RehearseFrameRoute
   '/(auth)/': typeof authIndexRoute
   '/rehearse/': typeof RehearseIndexRoute
+  '/manager/polls/$pollId': typeof ManagerPollsPollIdRoute
   '/manager/quizz/$quizzId': typeof ManagerQuizzQuizzIdRoute
   '/party/manager/$gameId': typeof PartyManagerGameIdRoute
   '/(auth)/manager/': typeof authManagerIndexRoute
+  '/manager/polls/': typeof ManagerPollsIndexRoute
   '/manager/quizz/': typeof ManagerQuizzIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/manager/polls'
     | '/manager/quizz'
     | '/dev/frame'
     | '/dev/gallery'
@@ -142,9 +169,11 @@ export interface FileRouteTypes {
     | '/rehearse/frame'
     | '/'
     | '/rehearse/'
+    | '/manager/polls/$pollId'
     | '/manager/quizz/$quizzId'
     | '/party/manager/$gameId'
     | '/manager/'
+    | '/manager/polls/'
     | '/manager/quizz/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,13 +184,16 @@ export interface FileRouteTypes {
     | '/rehearse/frame'
     | '/'
     | '/rehearse'
+    | '/manager/polls/$pollId'
     | '/manager/quizz/$quizzId'
     | '/party/manager/$gameId'
     | '/manager'
+    | '/manager/polls'
     | '/manager/quizz'
   id:
     | '__root__'
     | '/(auth)'
+    | '/manager/polls'
     | '/manager/quizz'
     | '/dev/frame'
     | '/dev/gallery'
@@ -170,14 +202,17 @@ export interface FileRouteTypes {
     | '/rehearse/frame'
     | '/(auth)/'
     | '/rehearse/'
+    | '/manager/polls/$pollId'
     | '/manager/quizz/$quizzId'
     | '/party/manager/$gameId'
     | '/(auth)/manager/'
+    | '/manager/polls/'
     | '/manager/quizz/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   authLayoutRoute: typeof authLayoutRouteWithChildren
+  ManagerPollsLayoutRoute: typeof ManagerPollsLayoutRouteWithChildren
   ManagerQuizzLayoutRoute: typeof ManagerQuizzLayoutRouteWithChildren
   DevFrameRoute: typeof DevFrameRoute
   DevGalleryRoute: typeof DevGalleryRoute
@@ -253,12 +288,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerQuizzLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/manager/polls': {
+      id: '/manager/polls'
+      path: '/manager/polls'
+      fullPath: '/manager/polls'
+      preLoaderRoute: typeof ManagerPollsLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/manager/quizz/': {
       id: '/manager/quizz/'
       path: '/'
       fullPath: '/manager/quizz/'
       preLoaderRoute: typeof ManagerQuizzIndexRouteImport
       parentRoute: typeof ManagerQuizzLayoutRoute
+    }
+    '/manager/polls/': {
+      id: '/manager/polls/'
+      path: '/'
+      fullPath: '/manager/polls/'
+      preLoaderRoute: typeof ManagerPollsIndexRouteImport
+      parentRoute: typeof ManagerPollsLayoutRoute
     }
     '/(auth)/manager/': {
       id: '/(auth)/manager/'
@@ -281,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerQuizzQuizzIdRouteImport
       parentRoute: typeof ManagerQuizzLayoutRoute
     }
+    '/manager/polls/$pollId': {
+      id: '/manager/polls/$pollId'
+      path: '/$pollId'
+      fullPath: '/manager/polls/$pollId'
+      preLoaderRoute: typeof ManagerPollsPollIdRouteImport
+      parentRoute: typeof ManagerPollsLayoutRoute
+    }
   }
 }
 
@@ -298,6 +354,19 @@ const authLayoutRouteWithChildren = authLayoutRoute._addFileChildren(
   authLayoutRouteChildren,
 )
 
+interface ManagerPollsLayoutRouteChildren {
+  ManagerPollsPollIdRoute: typeof ManagerPollsPollIdRoute
+  ManagerPollsIndexRoute: typeof ManagerPollsIndexRoute
+}
+
+const ManagerPollsLayoutRouteChildren: ManagerPollsLayoutRouteChildren = {
+  ManagerPollsPollIdRoute: ManagerPollsPollIdRoute,
+  ManagerPollsIndexRoute: ManagerPollsIndexRoute,
+}
+
+const ManagerPollsLayoutRouteWithChildren =
+  ManagerPollsLayoutRoute._addFileChildren(ManagerPollsLayoutRouteChildren)
+
 interface ManagerQuizzLayoutRouteChildren {
   ManagerQuizzQuizzIdRoute: typeof ManagerQuizzQuizzIdRoute
   ManagerQuizzIndexRoute: typeof ManagerQuizzIndexRoute
@@ -313,6 +382,7 @@ const ManagerQuizzLayoutRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   authLayoutRoute: authLayoutRouteWithChildren,
+  ManagerPollsLayoutRoute: ManagerPollsLayoutRouteWithChildren,
   ManagerQuizzLayoutRoute: ManagerQuizzLayoutRouteWithChildren,
   DevFrameRoute: DevFrameRoute,
   DevGalleryRoute: DevGalleryRoute,

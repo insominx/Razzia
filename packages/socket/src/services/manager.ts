@@ -6,6 +6,10 @@ import {
   getQuizzMeta,
   getResultsMeta,
 } from "@razzia/socket/services/config"
+import {
+  getPollMeta,
+  getPollResultsMeta,
+} from "@razzia/socket/services/poll-store"
 import { resolveVisuals } from "@razzia/socket/services/visuals"
 
 const getClientId = (socket: SocketContext["socket"]) =>
@@ -21,6 +25,8 @@ export const emitConfig = (socket: SocketContext["socket"]) => {
 
   socket.emit(EVENTS.MANAGER.CONFIG, {
     quizz: getQuizzMeta(),
+    polls: getPollMeta(),
+    pollResults: getPollResultsMeta(),
     results: getResultsMeta(),
     game: {
       visuals: gameConfig.visuals,

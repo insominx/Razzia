@@ -52,6 +52,18 @@ export const EVENTS = {
     PLAY_QUESTION: "manager:playQuestion",
     FINISH_GAME: "manager:finishGame",
     LECTURE_STATE: "manager:lectureState",
+    START_POLL: "manager:startPoll",
+    CLOSE_POLL: "manager:closePoll",
+    DISMISS_POLL: "manager:dismissPoll",
+  },
+  // A poll runs beside the quiz, not as one of its screens: its own state
+  // travels on these events and never on `game:status`.
+  POLL: {
+    STATE: "poll:state",
+    TALLY: "poll:tally",
+    VOTE: "poll:vote",
+    // A screen that has just opened asks for the poll as it stands.
+    SYNC: "poll:sync",
   },
   QUIZZ: {
     GET: "quizz:get",
@@ -63,6 +75,21 @@ export const EVENTS = {
     DELETE: "quizz:delete",
     RESTORE: "quizz:restore",
     ERROR: "quizz:error",
+  },
+  // The polls a host has stored and can run. A poll in play is `POLL` above.
+  POLLS: {
+    GET: "polls:get",
+    DATA: "polls:data",
+    SAVE: "polls:save",
+    SAVE_SUCCESS: "polls:saveSuccess",
+    UPDATE: "polls:update",
+    UPDATE_SUCCESS: "polls:updateSuccess",
+    DELETE: "polls:delete",
+    ERROR: "polls:error",
+    // What closed polls left behind.
+    RESULT_GET: "polls:resultGet",
+    RESULT_DATA: "polls:resultData",
+    RESULT_DELETE: "polls:resultDelete",
   },
   RESULTS: {
     GET: "results:get",

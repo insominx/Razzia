@@ -1,0 +1,69 @@
+{
+  "label": "Encuesta",
+  "privacy": {
+    "anonymous": "Los votos son anónimos",
+    "named": "El anfitrión puede ver quién vota qué"
+  },
+  "changeHint": "Puedes cambiar tu voto hasta que el anfitrión cierre la encuesta.",
+  "yourVote": "Tu voto",
+  "closedTitle": "Encuesta cerrada",
+  "waitingForHost": "Esperando a que el anfitrión continúe",
+  "voted": "{{voted}} de {{total}} han votado",
+  "votes_one": "{{count}} voto",
+  "votes_other": "{{count}} votos",
+  "more": "+{{count}} más",
+  "noOneVoted": "Nadie ha votado",
+  "vote": {
+    "failed": "Tu voto no se envió. Inténtalo de nuevo.",
+    "tooManyChanges": "Has cambiado tu voto demasiadas veces."
+  },
+  "host": {
+    "close": "Cerrar encuesta",
+    "done": "Listo",
+    "closedNote": "Encuesta cerrada"
+  },
+  "launcher": {
+    "button": "Encuesta",
+    "title": "Lanzar una encuesta",
+    "empty": "Aún no hay encuestas. Crea una en la pestaña Encuestas.",
+    "options_one": "{{count}} opción",
+    "options_other": "{{count}} opciones",
+    "anonymous": "Anónima",
+    "named": "Con nombres"
+  },
+  "outcome": {
+    "busy": "Hay una pregunta u otra encuesta en pantalla. Inténtalo cuando termine.",
+    "notFound": "No se encontró esa encuesta. Puede que se haya eliminado.",
+    "notLecture": "Las encuestas necesitan una sala de clase.",
+    "notManager": "Solo el anfitrión puede lanzar encuestas.",
+    "noAck": "El servidor no respondió. Inténtalo de nuevo.",
+    "none": "Nada que hacer: la encuesta ya estaba cerrada."
+  },
+  "editor": {
+    "newTitle": "Nueva encuesta",
+    "editTitle": "Editar encuesta",
+    "questionLabel": "Pregunta",
+    "questionPlaceholder": "¿Qué quieres preguntar a la sala?",
+    "optionsLabel": "Opciones",
+    "optionPlaceholder": "Opción {{letter}}",
+    "addOption": "Añadir opción",
+    "removeOption": "Quitar opción {{letter}}",
+    "optionsHint": "De dos a seis opciones. Todos en la sala votan por una de ellas.",
+    "anonymousLabel": "Votos anónimos",
+    "anonymousOn": "Nadie puede ver quién votó qué, ni siquiera tú.",
+    "anonymousOff": "Ves el nombre de cada jugador junto a su voto, y se les avisa.",
+    "fitWarning": "Puede que no quepa en el proyector. Acorta la pregunta o las opciones.",
+    "saved": "Encuesta guardada",
+    "updated": "Encuesta actualizada",
+    "unsaved": {
+      "title": "¿Descartar los cambios sin guardar?",
+      "description": "Tus cambios en esta encuesta no se han guardado.",
+      "discard": "Descartar"
+    }
+  },
+  "result": {
+    "close": "Cerrar",
+    "partialNote": "La sala se cerró mientras la encuesta seguía abierta, así que estos son los votos hasta ese momento.",
+    "subject": "En {{subject}}"
+  }
+}

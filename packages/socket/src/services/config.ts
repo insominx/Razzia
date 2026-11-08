@@ -23,7 +23,11 @@ import { join, resolve } from "path"
 
 // Write to a sibling temp file and rename over the target, so a crash or a
 // full disk never leaves a truncated JSON file behind.
-const writeFileAtomic = (path: string, data: string, mode?: number): void => {
+export const writeFileAtomic = (
+  path: string,
+  data: string,
+  mode?: number,
+): void => {
   const tempPath = `${path}.${process.pid}.tmp`
 
   try {
@@ -41,10 +45,10 @@ const writeFileAtomic = (path: string, data: string, mode?: number): void => {
 }
 
 // Notepad and PowerShell can save a UTF-8 BOM, which JSON.parse rejects.
-const readJsonFile = (path: string): unknown =>
+export const readJsonFile = (path: string): unknown =>
   JSON.parse(fs.readFileSync(path, "utf-8").replace(/^\uFEFF/, ""))
 
-const assertSafeId = (id: string): void => {
+export const assertSafeId = (id: string): void => {
   if (!isSafeId(id)) {
     throw new Error("Invalid id")
   }

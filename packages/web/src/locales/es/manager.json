@@ -67,6 +67,8 @@
     "pleaseCreate": "Por favor crea un cuestionario primero",
     "pleaseSelect": "Por favor selecciona un cuestionario",
     "startGame": "Iniciar juego",
+    "startLecture": "Iniciar sala de clase",
+    "lectureHint": "Una sala de clase permanece abierta entre preguntas: los jugadores pueden unirse más tarde y puedes hacer encuestas.",
     "invalidJson": "Archivo JSON no válido",
     "questionCount_one": "{{count}} pregunta",
     "questionCount_other": "{{count}} preguntas",
@@ -104,6 +106,21 @@
     "play": "Jugar",
     "quizz": "Cuestionario",
     "results": "Resultados",
-    "visuals": "Visuales"
+    "visuals": "Visuales",
+    "polls": "Encuestas"
+  },
+  "polls": {
+    "create": "Crear encuesta",
+    "none": "Aún no hay encuestas",
+    "delete": "Eliminar encuesta",
+    "deleted": "Encuesta eliminada",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
+    "resultsTitle": "Resultados",
+    "resultVotes_one": "{{count}} voto",
+    "resultVotes_other": "{{count}} votos",
+    "resultPartial": "Terminó antes de tiempo",
+    "resultDelete": "Eliminar resultado",
+    "resultDeleteConfirm": "¿Seguro que quieres eliminar el resultado de \"{{name}}\"? Esta acción no se puede deshacer.",
+    "resultDeleted": "Resultado eliminado"
   }
 }

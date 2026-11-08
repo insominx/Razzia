@@ -67,6 +67,8 @@
     "pleaseCreate": "Please create a quizz first",
     "pleaseSelect": "Please select a quizz",
     "startGame": "Start game",
+    "startLecture": "Start lecture room",
+    "lectureHint": "A lecture room stays open between questions: players can join late, and you can run polls.",
     "invalidJson": "Invalid JSON file",
     "questionCount_one": "{{count}} question",
     "questionCount_other": "{{count}} questions",
@@ -104,6 +106,21 @@
     "play": "Play",
     "quizz": "Quizz",
     "results": "Results",
-    "visuals": "Visuals"
+    "visuals": "Visuals",
+    "polls": "Polls"
+  },
+  "polls": {
+    "create": "Create poll",
+    "none": "No polls yet",
+    "delete": "Delete poll",
+    "deleted": "Poll deleted",
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "resultsTitle": "Results",
+    "resultVotes_one": "{{count}} vote",
+    "resultVotes_other": "{{count}} votes",
+    "resultPartial": "Ended early",
+    "resultDelete": "Delete result",
+    "resultDeleteConfirm": "Are you sure you want to delete the result of \"{{name}}\"? This action cannot be undone.",
+    "resultDeleted": "Result deleted"
   }
 }

@@ -36,21 +36,25 @@ const ConfigSelectQuizz = () => {
     }
   }
 
-  const handleSubmit = () => {
-    if (creating) {
-      return
+  // A normal game closes its lobby when it starts. A lecture room stays open
+  // between questions, so students can join late and the host can run polls.
+  const handleCreate =
+    (event: typeof EVENTS.GAME.CREATE | typeof EVENTS.GAME.CREATE_LECTURE) =>
+    () => {
+      if (creating) {
+        return
+      }
+
+      if (!selected) {
+        toast.error(t("manager:quizz.pleaseSelect"))
+
+        return
+      }
+
+      // Success navigates to the new game, so only an error unlocks this.
+      setCreating(true)
+      socket.emit(event, selected)
     }
-
-    if (!selected) {
-      toast.error(t("manager:quizz.pleaseSelect"))
-
-      return
-    }
-
-    // Success navigates to the new game, so only an error unlocks this.
-    setCreating(true)
-    socket.emit(EVENTS.GAME.CREATE, selected)
-  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -59,16 +63,34 @@ const ConfigSelectQuizz = () => {
           className="mb-4 shrink-0"
           title={selected ? undefined : t("manager:quizz.pleaseSelect")}
         >
-          <Button
-            className={clsx(
-              "border-brand-border bg-brand-tint text-brand w-full border",
-              !selected && "pointer-events-none",
-            )}
-            disabled={!selected || creating}
-            onClick={handleSubmit}
+          <div className="flex gap-2">
+            <Button
+              className={clsx(
+                "border-brand-border bg-brand-tint text-brand flex-1 border",
+                !selected && "pointer-events-none",
+              )}
+              disabled={!selected || creating}
+              onClick={handleCreate(EVENTS.GAME.CREATE)}
+            >
+              {t("manager:quizz.startGame")}
+            </Button>
+            <Button
+              className={clsx(
+                "bg-surface border-border text-text-primary hover:bg-panel flex-1 border",
+                !selected && "pointer-events-none",
+              )}
+              disabled={!selected || creating}
+              onClick={handleCreate(EVENTS.GAME.CREATE_LECTURE)}
+            >
+              {t("manager:quizz.startLecture")}
+            </Button>
+          </div>
+          <p
+            data-lecture-hint
+            className="text-text-muted mt-2 text-xs font-normal"
           >
-            {t("manager:quizz.startGame")}
-          </Button>
+            {t("manager:quizz.lectureHint")}
+          </p>
         </div>
       )}
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-0.5">

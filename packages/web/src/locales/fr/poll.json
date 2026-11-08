@@ -1,0 +1,69 @@
+{
+  "label": "Sondage",
+  "privacy": {
+    "anonymous": "Les votes sont anonymes",
+    "named": "L'animateur voit qui vote pour quoi"
+  },
+  "changeHint": "Vous pouvez changer votre vote tant que l'animateur n'a pas fermé le sondage.",
+  "yourVote": "Votre vote",
+  "closedTitle": "Sondage fermé",
+  "waitingForHost": "En attente de l'animateur",
+  "voted": "{{voted}} sur {{total}} ont voté",
+  "votes_one": "{{count}} vote",
+  "votes_other": "{{count}} votes",
+  "more": "+{{count}} de plus",
+  "noOneVoted": "Personne n'a voté",
+  "vote": {
+    "failed": "Votre vote n'est pas passé. Réessayez.",
+    "tooManyChanges": "Vous avez changé de vote trop de fois."
+  },
+  "host": {
+    "close": "Fermer le sondage",
+    "done": "Terminé",
+    "closedNote": "Sondage fermé"
+  },
+  "launcher": {
+    "button": "Sondage",
+    "title": "Lancer un sondage",
+    "empty": "Aucun sondage pour l'instant. Créez-en un dans l'onglet Sondages.",
+    "options_one": "{{count}} option",
+    "options_other": "{{count}} options",
+    "anonymous": "Anonyme",
+    "named": "Nominatif"
+  },
+  "outcome": {
+    "busy": "Une question ou un autre sondage est à l'écran. Réessayez quand c'est terminé.",
+    "notFound": "Ce sondage est introuvable. Il a peut-être été supprimé.",
+    "notLecture": "Les sondages nécessitent une salle de cours.",
+    "notManager": "Seul l'animateur peut lancer des sondages.",
+    "noAck": "Le serveur n'a pas répondu. Réessayez.",
+    "none": "Rien à faire : le sondage était déjà fermé."
+  },
+  "editor": {
+    "newTitle": "Nouveau sondage",
+    "editTitle": "Modifier le sondage",
+    "questionLabel": "Question",
+    "questionPlaceholder": "Que voulez-vous demander à la salle ?",
+    "optionsLabel": "Options",
+    "optionPlaceholder": "Option {{letter}}",
+    "addOption": "Ajouter une option",
+    "removeOption": "Supprimer l'option {{letter}}",
+    "optionsHint": "De deux à six options. Toute la salle vote pour l'une d'elles.",
+    "anonymousLabel": "Votes anonymes",
+    "anonymousOn": "Personne ne voit qui a voté pour quoi, pas même vous.",
+    "anonymousOff": "Vous voyez le nom de chaque joueur à côté de son vote, et les joueurs en sont informés.",
+    "fitWarning": "Peut ne pas tenir sur le projecteur. Raccourcissez la question ou les options.",
+    "saved": "Sondage enregistré",
+    "updated": "Sondage mis à jour",
+    "unsaved": {
+      "title": "Abandonner les modifications non enregistrées ?",
+      "description": "Vos modifications de ce sondage n'ont pas été enregistrées.",
+      "discard": "Abandonner"
+    }
+  },
+  "result": {
+    "close": "Fermer",
+    "partialNote": "La salle s'est fermée alors que le sondage était encore ouvert : voici les votes jusqu'à ce moment.",
+    "subject": "Dans {{subject}}"
+  }
+}

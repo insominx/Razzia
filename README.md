@@ -215,6 +215,35 @@ Background precedence is **quiz override → global default → bundled fallback
 4. Wait for players to join
 5. Click the start button to begin the game
 
+## 📊 Polls
+
+A poll asks the room a question that has no right answer ("What should we do first?") and shows how the room voted. Polls run in a **lecture room**, so students join once, by the name they already gave, and can join late.
+
+### Running one
+
+1. In the manager's **Polls** tab choose **Create poll**: a question, two to six options, and whether votes are anonymous (the default) or named.
+2. In the **Play** tab pick a quiz and choose **Start lecture room**. A normal game cannot run polls. Students join with the PIN as usual.
+3. In the lobby, or on a results or leaderboard screen between questions, choose **Poll** at the top left and pick the poll. Every phone shows it. A tap votes, and another tap changes the vote until you close the poll.
+4. Choose **Close poll** to end voting and show everyone the result, then **Done** to go back to the quiz, which carries on exactly as it was. The quiz's controls wait until you press **Done**.
+
+While a poll is open you see live counts. Phones see counts only after it closes.
+
+### Anonymity
+
+- **Anonymous** (the default): nobody, you included, can see who voted for what, and no name is ever sent or saved.
+- **Named**: you see each student's name beside their vote, and students are told so. They never see each other's names, and the names are saved in the result.
+
+Whether a poll is named is part of the poll, not chosen at launch.
+
+### Where things are kept
+
+- `config/polls/<id>.json`: the polls you wrote, such as `{ "question": "What first?", "options": ["Review", "New topic"], "anonymous": true }`. A question is up to 500 characters; there are 2 to 6 options of up to 200 characters, no two alike. Edit them in the Polls tab or by hand.
+- `config/poll-results/<id>.json`: one record for each poll that was run, with the question and options as they were asked, the counts, the quiz the room was for, the date, and names only for a named poll. A poll still open when its room closed is saved as **Ended early**. Open or delete these under **Polls → Results**. They are kept apart from quiz results.
+
+Keep both folders with `config/game.json` and your quizzes when you copy, back up or mount a configuration. The Docker image does not ship any polls.
+
+An open poll lives in the server's memory, so restarting the server loses it along with any live room: do not deploy during a class. Editing or deleting a poll does not change one that is open or a result already saved. The design is recorded in [ADR 0004](docs/adr/0004-polls-as-a-room-lane.md).
+
 ## 📝 Contributing
 
 Contributions are welcome! Please read the [CONTRIBUTING.md](.github/CONTRIBUTING.md) guide before submitting a pull request.

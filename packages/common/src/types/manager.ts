@@ -1,4 +1,5 @@
 import type { GameResultMeta, QuizzMeta } from "@razzia/common/types/game"
+import type { PollMeta, PollResultMeta } from "@razzia/common/types/poll"
 import type {
   BackgroundRef,
   GameVisualsConfig,
@@ -7,6 +8,8 @@ import type {
 
 export interface ManagerConfig {
   quizz: QuizzMeta[]
+  polls: PollMeta[]
+  pollResults: PollResultMeta[]
   results: GameResultMeta[]
   game: {
     visuals?: GameVisualsConfig
