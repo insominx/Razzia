@@ -20,7 +20,8 @@
   "host": {
     "close": "Cerrar encuesta",
     "done": "Listo",
-    "closedNote": "Encuesta cerrada"
+    "closedNote": "Encuesta cerrada",
+    "sealedNote": "Los resultados aparecen cuando se cierra la encuesta."
   },
   "launcher": {
     "button": "Encuesta",
@@ -29,7 +30,8 @@
     "options_one": "{{count}} opción",
     "options_other": "{{count}} opciones",
     "anonymous": "Anónima",
-    "named": "Con nombres"
+    "named": "Con nombres",
+    "live": "Resultados en vivo"
   },
   "outcome": {
     "busy": "Hay una pregunta u otra encuesta en pantalla. Inténtalo cuando termine.",
@@ -50,8 +52,11 @@
     "removeOption": "Quitar opción {{letter}}",
     "optionsHint": "De dos a seis opciones. Todos en la sala votan por una de ellas.",
     "anonymousLabel": "Votos anónimos",
-    "anonymousOn": "No se muestran ni se guardan nombres. En un grupo pequeño, los recuentos en vivo aún pueden delatar quién votó qué.",
+    "anonymousOn": "No se muestran ni se guardan nombres.",
     "anonymousOff": "Ves el nombre de cada jugador junto a su voto, y se les avisa.",
+    "liveLabel": "Mostrar los resultados mientras se vota",
+    "liveOff": "La pantalla muestra cuántas personas han votado. Los resultados aparecen cuando cierras la encuesta.",
+    "liveOn": "La pantalla muestra los resultados a medida que llegan los votos. En un grupo pequeño, los recuentos aún pueden delatar quién votó qué.",
     "fitWarning": "Puede que no quepa en el proyector. Acorta la pregunta o las opciones.",
     "saved": "Encuesta guardada",
     "updated": "Encuesta actualizada",

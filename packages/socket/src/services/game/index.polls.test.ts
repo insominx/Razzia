@@ -71,6 +71,9 @@ const lunch = (anonymous = true): PollWithId => ({
   question: "Lunch?",
   options: ["Pizza", "Soup"],
   anonymous,
+  // These tests are about the host's live counts; the sealed default has its
+  // own tests in index.polls.sealed.test.ts.
+  live: true,
 })
 
 const createGame = (lecture = true) => {

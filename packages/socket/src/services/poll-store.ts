@@ -104,11 +104,12 @@ const getPolls = (): PollWithId[] => {
 export const getPollMeta = (): PollMeta[] => {
   try {
     return getPolls()
-      .map(({ id, question, options, anonymous }) => ({
+      .map(({ id, question, options, anonymous, live }) => ({
         id,
         question,
         optionCount: options.length,
         anonymous,
+        ...(live ? { live: true } : {}),
       }))
       .sort((a, b) => a.question.localeCompare(b.question))
   } catch (error) {

@@ -7,6 +7,10 @@ export interface Poll {
   options: string[]
   // An anonymous poll never tells anyone, or saves, who voted for what.
   anonymous: boolean
+  // Sealed is the default (absent or false): while people vote the host's
+  // screen is told only how many have voted, and the counts arrive at the
+  // close. A live poll sends the host its counts as the votes come in.
+  live?: boolean
 }
 
 export type PollWithId = Poll & { id: string }
@@ -16,6 +20,7 @@ export interface PollMeta {
   question: string
   optionCount: number
   anonymous: boolean
+  live?: boolean
 }
 
 export type PollPhase = "open" | "closed"
@@ -26,8 +31,10 @@ export interface PollVoter {
 }
 
 // What one screen is told about the poll. A player's snapshot carries their
-// own choice and, once the poll has closed, the counts; the host's carries the
-// counts at all times and the voters' names only for a named poll.
+// own choice and, once the poll has closed, the counts. The host's carries the
+// counts once the poll has closed, or while it is open if it is live; a sealed
+// poll tells the host only `total`, the votes cast. Names only for a named
+// poll, and only to the host.
 export interface PollSnapshot {
   pollId: string
   question: string
@@ -40,12 +47,15 @@ export interface PollSnapshot {
   mine?: number | null
   // The host only, and only for a named poll.
   voters?: PollVoter[]
+  // The host only: present and true when counts arrive as the votes do.
+  live?: true
 }
 
-// The host's running count while a poll is open.
+// The host's running count while a poll is open. A sealed poll sends `total`
+// alone.
 export interface PollTally {
   pollId: string
-  counts: number[]
+  counts?: number[]
   total: number
   voters?: PollVoter[]
 }

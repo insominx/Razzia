@@ -112,7 +112,9 @@ describe("PollEditor starting a poll", () => {
     expect(screen.getByText("poll:editor.newTitle")).toBeInTheDocument()
     expect(questionBox()).toHaveValue("")
     expect(optionBoxes()).toHaveLength(2)
-    expect(screen.getByRole("switch")).toBeChecked()
+    expect(
+      screen.getByRole("switch", { name: "poll:editor.anonymousLabel" }),
+    ).toBeChecked()
     expect(screen.getByText("poll:editor.anonymousOn")).toBeInTheDocument()
   })
 
@@ -126,7 +128,9 @@ describe("PollEditor starting a poll", () => {
       "Physics",
       "Networking",
     ])
-    expect(screen.getByRole("switch")).not.toBeChecked()
+    expect(
+      screen.getByRole("switch", { name: "poll:editor.anonymousLabel" }),
+    ).not.toBeChecked()
     expect(screen.getByText("poll:editor.anonymousOff")).toBeInTheDocument()
   })
 
@@ -208,7 +212,9 @@ describe("PollEditor saving", () => {
     render(<PollEditor />)
     fillNewPoll()
 
-    fireEvent.click(screen.getByRole("switch"))
+    fireEvent.click(
+      screen.getByRole("switch", { name: "poll:editor.anonymousLabel" }),
+    )
     expect(screen.getByText("poll:editor.anonymousOff")).toBeInTheDocument()
     fireEvent.click(saveButton())
 

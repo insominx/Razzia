@@ -20,7 +20,8 @@
   "host": {
     "close": "Umfrage schließen",
     "done": "Fertig",
-    "closedNote": "Umfrage beendet"
+    "closedNote": "Umfrage beendet",
+    "sealedNote": "Die Ergebnisse erscheinen, wenn die Umfrage geschlossen wird."
   },
   "launcher": {
     "button": "Umfrage",
@@ -29,7 +30,8 @@
     "options_one": "{{count}} Option",
     "options_other": "{{count}} Optionen",
     "anonymous": "Anonym",
-    "named": "Mit Namen"
+    "named": "Mit Namen",
+    "live": "Live-Ergebnisse"
   },
   "outcome": {
     "busy": "Gerade läuft eine Frage oder eine andere Umfrage. Versuche es danach noch einmal.",
@@ -50,8 +52,11 @@
     "removeOption": "Option {{letter}} entfernen",
     "optionsHint": "Zwei bis sechs Optionen. Alle im Raum stimmen für eine davon ab.",
     "anonymousLabel": "Anonyme Stimmen",
-    "anonymousOn": "Es werden keine Namen angezeigt oder gespeichert. In einer kleinen Gruppe können die Live-Zahlen dennoch verraten, wer wofür gestimmt hat.",
+    "anonymousOn": "Es werden keine Namen angezeigt oder gespeichert.",
     "anonymousOff": "Du siehst den Namen jedes Spielers neben seiner Stimme, und die Spielenden werden darüber informiert.",
+    "liveLabel": "Ergebnisse während der Abstimmung anzeigen",
+    "liveOff": "Der Bildschirm zeigt, wie viele abgestimmt haben. Die Ergebnisse erscheinen, wenn du die Umfrage schließt.",
+    "liveOn": "Der Bildschirm zeigt die Ergebnisse, während die Stimmen eingehen. In einer kleinen Gruppe können die Zahlen dennoch verraten, wer wofür gestimmt hat.",
     "fitWarning": "Passt möglicherweise nicht auf den Projektor. Kürze die Frage oder die Optionen.",
     "saved": "Umfrage gespeichert",
     "updated": "Umfrage aktualisiert",

@@ -221,23 +221,25 @@ A poll asks the room a question that has no right answer ("What should we do fir
 
 ### Running one
 
-1. In the manager's **Polls** tab choose **Create poll**: a question, two to six options, and whether votes are anonymous (the default) or named.
+1. In the manager's **Polls** tab choose **Create poll**: a question, two to six options, whether votes are anonymous (the default) or named, and whether the screen shows results while people vote (it does not, by default).
 2. In the **Play** tab pick a quiz and choose **Start lecture room**. A normal game cannot run polls. Students join with the PIN as usual.
 3. In the lobby, or on a results or leaderboard screen between questions, choose **Poll** at the top left and pick the poll. Every phone shows it. A tap votes, and another tap changes the vote until you close the poll.
 4. Choose **Close poll** to end voting and show everyone the result, then **Done** to go back to the quiz, which carries on exactly as it was. The quiz's controls wait until you press **Done**.
 
-While a poll is open you see live counts. Phones see counts only after it closes.
+### Sealed or live
+
+A poll is **sealed** unless you turn on **Show results while people vote** when you write it. While a sealed poll is open, the host's screen shows the question, the options and how many have voted ("12 of 25 voted"), but no counts and no bars; they appear when you close the poll. A **live** poll shows the bars growing as people vote. Phones see counts only after the close either way. A shared screen invites following the crowd, which is why sealed is the default.
 
 ### Anonymity
 
-- **Anonymous** (the default): no name is ever shown, sent or saved. It hides names, not timing: in a small group, watching the live counts as students vote one at a time (or kicking a student, whose vote then disappears) can still reveal who voted what.
+- **Anonymous** (the default): no name is ever shown, sent or saved. It hides names, not timing: in a small group, watching the votes arrive one at a time (or kicking a student, whose vote then disappears) can still reveal who voted what. A live poll shows more of this than a sealed one, because the bars move with each vote.
 - **Named**: you see each student's name beside their vote, and students are told so. They never see each other's names, and the names are saved in the result.
 
 Whether a poll is named is part of the poll, not chosen at launch.
 
 ### Where things are kept
 
-- `config/polls/<id>.json`: the polls you wrote, such as `{ "question": "What first?", "options": ["Review", "New topic"], "anonymous": true }`. A question is up to 500 characters; there are 2 to 6 options of up to 200 characters, no two alike. Edit them in the Polls tab or by hand.
+- `config/polls/<id>.json`: the polls you wrote, such as `{ "question": "What first?", "options": ["Review", "New topic"], "anonymous": true }`. Add `"live": true` to show results while people vote; a poll without it is sealed. A question is up to 500 characters; there are 2 to 6 options of up to 200 characters, no two alike. Edit them in the Polls tab or by hand.
 - `config/poll-results/<id>.json`: one record for each poll that was run, with the question and options as they were asked, the counts, the quiz the room was for, the date, and names only for a named poll. A poll still open when its room closed is saved as **Ended early**. Open or delete these under **Polls → Results**. They are kept apart from quiz results.
 
 Keep both folders with `config/game.json` and your quizzes when you copy, back up or mount a configuration. The Docker image does not ship any polls.

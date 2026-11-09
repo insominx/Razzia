@@ -20,7 +20,8 @@
   "host": {
     "close": "Chiudi sondaggio",
     "done": "Fatto",
-    "closedNote": "Sondaggio chiuso"
+    "closedNote": "Sondaggio chiuso",
+    "sealedNote": "I risultati compaiono alla chiusura del sondaggio."
   },
   "launcher": {
     "button": "Sondaggio",
@@ -29,7 +30,8 @@
     "options_one": "{{count}} opzione",
     "options_other": "{{count}} opzioni",
     "anonymous": "Anonimo",
-    "named": "Con nomi"
+    "named": "Con nomi",
+    "live": "Risultati in tempo reale"
   },
   "outcome": {
     "busy": "È in corso una domanda o un altro sondaggio. Riprova quando ha finito.",
@@ -50,8 +52,11 @@
     "removeOption": "Rimuovi opzione {{letter}}",
     "optionsHint": "Da due a sei opzioni. Tutti nella sala votano per una di esse.",
     "anonymousLabel": "Voti anonimi",
-    "anonymousOn": "Nessun nome viene mostrato o salvato. In un gruppo piccolo, i conteggi in tempo reale possono comunque far capire chi ha votato cosa.",
+    "anonymousOn": "Nessun nome viene mostrato o salvato.",
     "anonymousOff": "Vedi il nome di ogni giocatore accanto al suo voto, e i giocatori ne sono informati.",
+    "liveLabel": "Mostra i risultati mentre si vota",
+    "liveOff": "Lo schermo mostra quante persone hanno votato. I risultati compaiono quando chiudi il sondaggio.",
+    "liveOn": "Lo schermo mostra i risultati man mano che arrivano i voti. In un gruppo piccolo, i conteggi possono comunque far capire chi ha votato cosa.",
     "fitWarning": "Potrebbe non entrare nel proiettore. Accorcia la domanda o le opzioni.",
     "saved": "Sondaggio salvato",
     "updated": "Sondaggio aggiornato",
