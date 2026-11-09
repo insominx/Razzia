@@ -1,10 +1,11 @@
 import { MEDIA_TYPES } from "@razzia/common/constants"
 import type { QuestionMedia } from "@razzia/common/types/game"
 import AlertDialog from "@razzia/web/components/AlertDialog"
-import { ANSWER_IDENTITY } from "@razzia/web/features/game/utils/constants"
+import { ANSWER_IDENTITY } from "@razzia/web/features/game/utils/game-constants"
+import { questionFitProblems } from "@razzia/web/features/game/utils/question-fit"
 import { type QuestionWithId } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
-import { Music, Trash2, Video } from "lucide-react"
+import { Music, Trash2, TriangleAlert, Video } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { twMerge } from "tailwind-merge"
 
@@ -44,6 +45,7 @@ const QuizzEditorCard = ({
   onDelete,
 }: Props) => {
   const { t } = useTranslation()
+  const problems = questionFitProblems(question)
 
   return (
     <div
@@ -60,6 +62,17 @@ const QuizzEditorCard = ({
       <span className="text-text-faint absolute top-2 left-2 text-xs font-semibold">
         {index + 1}
       </span>
+      {problems.length > 0 && (
+        <span
+          data-fit-warning={problems.join(" ")}
+          role="img"
+          aria-label={t("quizz:fitWarning.card")}
+          title={t("quizz:fitWarning.card")}
+          className="text-warning absolute bottom-1.5 left-1.5"
+        >
+          <TriangleAlert className="size-4" />
+        </span>
+      )}
       <p className="text-text-body line-clamp-2 text-center text-xs font-semibold wrap-break-word">
         {question.question || t("quizz:noQuestionYet")}
       </p>
@@ -83,27 +96,35 @@ const QuizzEditorCard = ({
       </div>
 
       {canDelete && (
-        <AlertDialog
-          trigger={
-            // Hover-only reveal left touch screens with no way to delete; the
-            // button now also shows on the active card and on coarse pointers.
-            <button
-              type="button"
-              aria-label={t("quizz:question.deleteQuestion")}
-              onClick={(e) => e.stopPropagation()}
-              className={clsx(
-                "bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 p-1 transition group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
-                isActive ? "opacity-100" : "opacity-0",
-              )}
-            >
-              <Trash2 className="size-3.5" />
-            </button>
-          }
-          title={t("quizz:question.deleteQuestion")}
-          description={t("quizz:question.deleteQuestionConfirm")}
-          confirmLabel={t("common:delete")}
-          onConfirm={onDelete}
-        />
+        // The dialog is portaled, but React still bubbles its events to this
+        // card (select it) and to the drag wrapper around it (start a drag).
+        <div
+          className="contents"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <AlertDialog
+            trigger={
+              // Hover-only reveal left touch screens with no way to delete; the
+              // button now also shows on the active card and on coarse pointers.
+              <button
+                type="button"
+                aria-label={t("quizz:question.deleteQuestion")}
+                onClick={(e) => e.stopPropagation()}
+                className={clsx(
+                  "bg-surface text-text-faint hover:bg-danger-tint hover:text-danger rounded-rz-sm ease-calm absolute top-1.5 right-1.5 p-1 transition group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+                  isActive ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            }
+            title={t("quizz:question.deleteQuestion")}
+            description={t("quizz:question.deleteQuestionConfirm")}
+            confirmLabel={t("common:delete")}
+            onConfirm={onDelete}
+          />
+        </div>
       )}
     </div>
   )

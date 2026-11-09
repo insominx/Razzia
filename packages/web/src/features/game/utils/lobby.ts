@@ -1,0 +1,88 @@
+import type { PublicPlayer } from "@razzia/common/types/game"
+
+/** The lobby draws this many seats; the rest are counted, not drawn. */
+export const MAX_SEATS = 60
+
+/** Seats are always drawn in rows of at least this many, empty ones included. */
+const MIN_SEATS = 12
+
+export interface SeatTier {
+  /** Tailwind classes for the seat's name. */
+  text: string
+  /** Tailwind padding for the seat, which sets how tall a row is. */
+  pad: string
+  /** The narrowest a seat may get, in rem, so the grid sets its own columns. */
+  minRem: number
+}
+
+/**
+ * How big a seat is for this many players. A small room gets large names that
+ * read from the back; a full one shrinks so sixty still fit, and never below a
+ * size a front row can read.
+ *
+ * Measured at 1920×1080 (the frame is 67.5 rem tall; the bottom 8%, 5.4 rem, is
+ * kept clear because heads in the front rows hide it): up to 30 players the
+ * grid is three columns and ends by 59 rem; to 47 it is four columns of 3.8 rem
+ * rows, twelve of them with the empty seats that fill the last row, and ends by
+ * 60.4 rem. The 48th player brings a thirteenth row, which ends at 63 rem and
+ * pushes the header to the top edge, and sixty would be fifteen rows ending at
+ * 72 rem; so from 48 the seats go to a compact tier of five shorter columns
+ * (sixty end by 55 rem).
+ */
+export const seatTier = (players: number): SeatTier => {
+  if (players <= 12) {
+    return {
+      text: "text-4xl stage:text-[2.75rem]",
+      pad: "px-4 py-3",
+      minRem: 17,
+    }
+  }
+
+  if (players <= 30) {
+    return { text: "text-3xl stage:text-4xl", pad: "px-4 py-3", minRem: 14 }
+  }
+
+  if (players <= 47) {
+    return {
+      text: "text-2xl stage:text-[1.75rem]",
+      pad: "px-4 py-3",
+      minRem: 12,
+    }
+  }
+
+  return {
+    text: "text-xl stage:text-[1.375rem]",
+    pad: "px-3 py-2",
+    minRem: 10,
+  }
+}
+
+export interface Seats {
+  shown: PublicPlayer[]
+  /** Players past the drawn seats: "+N more". */
+  more: number
+  /** Empty seats drawn after the players, so the room looks like a room. */
+  empty: number
+}
+
+/**
+ * Who is drawn, how many are left over, and how many empty seats fill out the
+ * last row. The grid never draws more than `MAX_SEATS` in total.
+ */
+export const seatsFor = (players: PublicPlayer[]): Seats => {
+  const shown = players.slice(0, MAX_SEATS)
+  const more = players.length - shown.length
+  const target = Math.min(
+    MAX_SEATS,
+    Math.max(MIN_SEATS, Math.ceil((shown.length + 1) / 4) * 4),
+  )
+
+  return { shown, more, empty: Math.max(0, target - shown.length) }
+}
+
+/** The join address as read aloud: no scheme, no trailing slash. */
+export const shortUrl = (origin: string): string =>
+  origin.replace(/^[a-z][a-z0-9+.-]*:\/\//iu, "").replace(/\/+$/u, "")
+
+/** A PIN split into its characters, spaces kept as gaps. */
+export const pinCells = (code: string): string[] => code.split("")

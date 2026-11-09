@@ -39,8 +39,12 @@ const QuestionEditorMedia = () => {
   }
 
   const handleChangeMedia = (e: ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value
+
+    // An emptied box means no media: a kept `{ url: "" }` would fail the
+    // save's URL check on a question that shows nothing.
     updateQuestion(currentIndex, {
-      media: { url: e.target.value },
+      media: url.trim() === "" ? undefined : { url },
     })
   }
 

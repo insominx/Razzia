@@ -8,6 +8,7 @@ import { backgroundAssetPathValidator } from "@razzia/common/validators/visuals"
 import type { GameConfig } from "@razzia/common/validators/game-config"
 import type { Quizz } from "@razzia/common/types/game"
 import {
+  DEFAULT_SHOW_INTENSITY,
   DEFAULT_SOUND_THEME,
   type BackgroundRef,
   type ResolvedVisuals,
@@ -22,6 +23,7 @@ import fs from "fs"
 import type { IncomingMessage, ServerResponse } from "http"
 import { nanoid } from "nanoid"
 import { extname } from "path"
+import { publicErrorMessage } from "@razzia/socket/utils/safe"
 
 export const BACKGROUND_ASSETS_CONFIG_PATH = "assets/backgrounds"
 
@@ -29,7 +31,63 @@ export const BACKGROUND_ASSETS_PUBLIC_PREFIX = "/config-assets/backgrounds"
 
 export const BACKGROUND_ORPHAN_GRACE_MS = 60 * 60 * 1000
 
-const pendingBackgroundAssetPaths = new Set<string>()
+// An upload that was never saved into a config stays protected from the sweep
+// for this long, then it is orphaned like any other unreferenced file.
+export const BACKGROUND_PENDING_TTL_MS = BACKGROUND_ORPHAN_GRACE_MS
+
+export const MAX_PENDING_BACKGROUNDS_PER_CLIENT = 20
+
+export const MAX_PENDING_BACKGROUNDS_TOTAL = 100
+
+interface PendingBackgroundUpload {
+  clientId: string
+  uploadedAt: number
+}
+
+const pendingBackgroundAssets = new Map<string, PendingBackgroundUpload>()
+
+const prunePendingBackgroundAssets = (): void => {
+  const now = Date.now()
+
+  for (const [path, pending] of pendingBackgroundAssets) {
+    if (now - pending.uploadedAt >= BACKGROUND_PENDING_TTL_MS) {
+      pendingBackgroundAssets.delete(path)
+    }
+  }
+}
+
+// Throws before any bytes are stored or read once a client (or the server as a
+// whole) holds too many uploads that no config has adopted yet.
+export const assertPendingBackgroundCapacity = (clientId = ""): void => {
+  prunePendingBackgroundAssets()
+
+  if (pendingBackgroundAssets.size >= MAX_PENDING_BACKGROUNDS_TOTAL) {
+    throw new Error("errors:visuals.tooManyPendingBackgrounds")
+  }
+
+  let owned = 0
+
+  for (const pending of pendingBackgroundAssets.values()) {
+    if (pending.clientId === clientId) {
+      owned += 1
+    }
+  }
+
+  if (owned >= MAX_PENDING_BACKGROUNDS_PER_CLIENT) {
+    throw new Error("errors:visuals.tooManyPendingBackgrounds")
+  }
+}
+
+// Backgrounds a running game still shows. Its url was resolved when the game
+// was created, so the saved config no longer vouches for it once the manager
+// replaces or clears that background mid-game.
+let liveBackgroundPathsProvider: () => Iterable<string> = () => []
+
+export const setLiveBackgroundPathsProvider = (
+  provider: () => Iterable<string>,
+): void => {
+  liveBackgroundPathsProvider = provider
+}
 
 export { BACKGROUND_UPLOAD_MAX_BYTES }
 
@@ -52,6 +110,28 @@ export const getBackgroundAssetPath = (path: string): string | null => {
 export const publicBackgroundUrl = (path: string): string =>
   `${BACKGROUND_ASSETS_PUBLIC_PREFIX}/${encodeURIComponent(path)}`
 
+// The inverse of publicBackgroundUrl: undefined for anything that is not a
+// valid background url.
+export const backgroundPathFromUrl = (url: unknown): string | undefined => {
+  const prefix = `${BACKGROUND_ASSETS_PUBLIC_PREFIX}/`
+
+  if (typeof url !== "string" || !url.startsWith(prefix)) {
+    return undefined
+  }
+
+  let decoded = ""
+
+  try {
+    decoded = decodeURIComponent(url.slice(prefix.length))
+  } catch {
+    return undefined
+  }
+
+  const result = backgroundAssetPathValidator.safeParse(decoded)
+
+  return result.success ? result.data : undefined
+}
+
 export const getBackgroundAssetUrl = (
   background?: BackgroundRef,
 ): string | undefined => {
@@ -71,7 +151,10 @@ export const getBackgroundAssetUrl = (
 export const storeBackgroundAsset = (
   fileName: string,
   data: Buffer,
+  clientId = "",
 ): { ref: BackgroundRef; url: string } => {
+  assertPendingBackgroundCapacity(clientId)
+
   if (data.byteLength === 0) {
     throw new Error("errors:visuals.emptyBackground")
   }
@@ -101,7 +184,7 @@ export const storeBackgroundAsset = (
   }
 
   fs.writeFileSync(filePath, data)
-  pendingBackgroundAssetPaths.add(path)
+  pendingBackgroundAssets.set(path, { clientId, uploadedAt: Date.now() })
 
   return {
     ref: { kind: "config-asset", path },
@@ -123,7 +206,7 @@ export const deleteBackgroundAsset = (background: BackgroundRef): void => {
   }
 
   fs.unlinkSync(filePath)
-  pendingBackgroundAssetPaths.delete(background.path)
+  pendingBackgroundAssets.delete(background.path)
 }
 
 export interface BackgroundReclaimResult {
@@ -144,10 +227,28 @@ export const reclaimBackgroundAssets = ({
   preserve = new Set<string>(),
 }: BackgroundReclaimOptions): BackgroundReclaimResult => {
   const referenced = getReferencedBackgroundAssetPaths()
+  const live = (() => {
+    try {
+      return new Set(liveBackgroundPathsProvider())
+    } catch (error) {
+      // Cannot tell what a running game shows: keep every file.
+      console.warn("Failed to list live game backgrounds:", error)
+
+      return null
+    }
+  })()
   const assetsDirectory = getConfigPath(BACKGROUND_ASSETS_CONFIG_PATH)
 
   if (!fs.existsSync(assetsDirectory)) {
     return { examined: 0, deleted: 0, retained: 0 }
+  }
+
+  if (!live) {
+    const candidateCount = new Set(
+      candidates ?? fs.readdirSync(assetsDirectory),
+    ).size
+
+    return { examined: candidateCount, deleted: 0, retained: candidateCount }
   }
 
   const candidatePaths = [
@@ -173,6 +274,7 @@ export const reclaimBackgroundAssets = ({
     if (
       !assetPath ||
       referenced.has(validated.data) ||
+      live.has(validated.data) ||
       preserve.has(validated.data)
     ) {
       result.retained += 1
@@ -213,7 +315,7 @@ export const reclaimBackgroundAssets = ({
 
     try {
       fs.unlinkSync(assetPath)
-      pendingBackgroundAssetPaths.delete(validated.data)
+      pendingBackgroundAssets.delete(validated.data)
 
       result.deleted += 1
     } catch (error) {
@@ -242,7 +344,7 @@ export const finalizeBackgroundMutation = (
   adopted?: BackgroundRef,
 ): BackgroundReclaimResult => {
   if (adopted?.kind === "config-asset") {
-    pendingBackgroundAssetPaths.delete(adopted.path)
+    pendingBackgroundAssets.delete(adopted.path)
   }
 
   if (!previous || previous.path === adopted?.path) {
@@ -255,11 +357,14 @@ export const finalizeBackgroundMutation = (
   })
 }
 
-export const sweepBackgroundAssets = (): BackgroundReclaimResult =>
-  reclaimWithoutFailingMutation({
+export const sweepBackgroundAssets = (): BackgroundReclaimResult => {
+  prunePendingBackgroundAssets()
+
+  return reclaimWithoutFailingMutation({
     minimumAgeMs: BACKGROUND_ORPHAN_GRACE_MS,
-    preserve: pendingBackgroundAssetPaths,
+    preserve: new Set(pendingBackgroundAssets.keys()),
   })
+}
 
 export const cleanupBackgroundAssetsOnStartup = (): BackgroundReclaimResult =>
   reclaimWithoutFailingMutation({ minimumAgeMs: 0 })
@@ -314,7 +419,24 @@ export const resolveVisuals = (
   return {
     ...(backgroundUrl ? { backgroundUrl } : {}),
     soundTheme: gameConfig.visuals?.soundTheme ?? DEFAULT_SOUND_THEME,
+    showIntensity: gameConfig.visuals?.showIntensity ?? DEFAULT_SHOW_INTENSITY,
   }
+}
+
+// Request targets like "//" or "http://" do not parse; the caller answers 400.
+const parseRequestUrl = (request: IncomingMessage): URL | null => {
+  try {
+    return new URL(request.url ?? "", "http://localhost")
+  } catch {
+    return null
+  }
+}
+
+const badRequest = (response: ServerResponse): true => {
+  response.writeHead(400)
+  response.end()
+
+  return true
 }
 
 export const serveConfigAsset = (
@@ -325,7 +447,11 @@ export const serveConfigAsset = (
     return false
   }
 
-  const url = new URL(request.url, "http://localhost")
+  const url = parseRequestUrl(request)
+
+  if (!url) {
+    return badRequest(response)
+  }
 
   if (!url.pathname.startsWith(`${BACKGROUND_ASSETS_PUBLIC_PREFIX}/`)) {
     return false
@@ -352,12 +478,15 @@ export const serveConfigAsset = (
   }
 
   const filePath = getBackgroundAssetPath(assetName)
+  const isFile = (() => {
+    try {
+      return filePath ? fs.statSync(filePath).isFile() : false
+    } catch {
+      return false
+    }
+  })()
 
-  if (
-    !filePath ||
-    !fs.existsSync(filePath) ||
-    !fs.statSync(filePath).isFile()
-  ) {
+  if (!filePath || !isFile) {
     response.writeHead(404)
     response.end()
 
@@ -370,7 +499,20 @@ export const serveConfigAsset = (
       contentTypeForExtension(extname(filePath)) ?? "application/octet-stream",
     "X-Content-Type-Options": "nosniff",
   })
-  fs.createReadStream(filePath).pipe(response)
+
+  // Piping forwards neither errors nor an early close: without these a file
+  // removed mid-open crashes the process and an aborted download leaks its fd.
+  const stream = fs.createReadStream(filePath)
+
+  stream.on("error", (error) => {
+    console.warn("Failed to stream background asset:", error)
+    stream.destroy()
+    response.destroy()
+  })
+  response.on("close", () => {
+    stream.destroy()
+  })
+  stream.pipe(response)
 
   return true
 }
@@ -408,7 +550,11 @@ export const serveBackgroundUpload = async (
     return false
   }
 
-  const url = new URL(request.url, "http://localhost")
+  const url = parseRequestUrl(request)
+
+  if (!url) {
+    return badRequest(response)
+  }
 
   if (url.pathname !== BACKGROUND_ASSETS_PUBLIC_PREFIX) {
     return false
@@ -433,6 +579,8 @@ export const serveBackgroundUpload = async (
   let uploaded: ReturnType<typeof storeBackgroundAsset> | undefined = undefined
 
   try {
+    assertPendingBackgroundCapacity(clientId)
+
     const fileNameHeader = request.headers["x-file-name"]
     const fileName =
       typeof fileNameHeader === "string" && fileNameHeader.length > 0
@@ -442,7 +590,7 @@ export const serveBackgroundUpload = async (
       request,
       BACKGROUND_UPLOAD_MAX_BYTES + 1024,
     )
-    uploaded = storeBackgroundAsset(fileName, data)
+    uploaded = storeBackgroundAsset(fileName, data, clientId)
 
     if (url.searchParams.get("setGlobal") === "1") {
       setGlobalBackground(uploaded.ref)
@@ -461,10 +609,13 @@ export const serveBackgroundUpload = async (
       }
     }
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "errors:visuals.backgroundUploadFailed"
+    console.error("Background upload failed:", error)
+
+    // Filesystem errors carry absolute paths; only i18n keys go to the browser.
+    const message = publicErrorMessage(
+      error,
+      "errors:visuals.backgroundUploadFailed",
+    )
 
     response.writeHead(400, { "Content-Type": "application/json" })
     response.end(JSON.stringify({ error: message }))

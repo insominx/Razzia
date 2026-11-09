@@ -13,25 +13,29 @@ const ResultModalHeader = () => {
         {result.subject}
       </h2>
       <div className="flex shrink-0 items-center gap-1">
-        <span className="text-text-faint text-sm">
-          {questionIndex + 1}
-          {t("manager:result.paginationOf")}
-          {total}
-        </span>
-        <button
-          disabled={questionIndex === 0}
-          onClick={goPrev}
-          className="text-text-muted hover:bg-panel rounded-rz-sm ease-calm p-1 transition-colors disabled:opacity-30"
-        >
-          <ChevronLeft className="size-5" />
-        </button>
-        <button
-          disabled={questionIndex === total - 1}
-          onClick={goNext}
-          className="text-text-muted hover:bg-panel rounded-rz-sm ease-calm p-1 transition-colors disabled:opacity-30"
-        >
-          <ChevronRight className="size-5" />
-        </button>
+        {total > 0 && (
+          <>
+            <span className="text-text-faint text-sm">
+              {questionIndex + 1}
+              {t("manager:result.paginationOf")}
+              {total}
+            </span>
+            <button
+              disabled={questionIndex === 0}
+              onClick={goPrev}
+              className="text-text-muted hover:bg-panel rounded-rz-sm ease-calm p-1 transition-colors disabled:opacity-30"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+            <button
+              disabled={questionIndex === total - 1}
+              onClick={goNext}
+              className="text-text-muted hover:bg-panel rounded-rz-sm ease-calm p-1 transition-colors disabled:opacity-30"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+          </>
+        )}
         <button
           onClick={onClose}
           className="text-text-faint hover:bg-panel hover:text-text-body rounded-rz-sm ease-calm ml-1 p-1 transition-colors"

@@ -64,12 +64,15 @@ const managerClient = {
   handshake: { auth: { clientId: MANAGER_CLIENT_ID } },
 } as unknown as Socket
 
-const registerHandlers = async () => {
+const registerHandlers = async (
+  clientId: string = MANAGER_CLIENT_ID,
+  address?: string,
+) => {
   const handlers = new Map<string, (...args: never[]) => void>()
   const emit = vi.fn()
   const socket = {
     id: "manager",
-    handshake: { auth: { clientId: MANAGER_CLIENT_ID } },
+    handshake: { auth: { clientId }, address },
     emit,
     on: vi.fn((event: string, handler: (...args: never[]) => void) => {
       handlers.set(event, handler)
@@ -188,13 +191,11 @@ describe("gameSocketHandlers manager socket lifecycle", () => {
 
     expect(running.setManagerDisconnected).toHaveBeenCalledTimes(1)
     expect(lobby.setManagerDisconnected).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledTimes(1)
+    // A drop is never the host's own Exit: lobby and game both wait.
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledTimes(2)
     expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(running)
-    expect(mocks.registry.closeGame).toHaveBeenCalledTimes(1)
-    expect(mocks.registry.closeGame).toHaveBeenCalledWith(
-      lobby,
-      "errors:game.managerDisconnected",
-    )
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(lobby)
+    expect(mocks.registry.closeGame).not.toHaveBeenCalled()
   })
 
   it("ignores a leave from a manager tab that is not running the game", async () => {
@@ -254,7 +255,10 @@ describe("gameSocketHandlers joining", () => {
 
   const joinWithPin = async (game: { gameId: string; inLobby: boolean }) => {
     const { handlers, emit, socket } = await registerHandlers()
-    mocks.registry.getGameByInviteCode.mockReturnValueOnce(game)
+    mocks.registry.getGameByInviteCode.mockReturnValueOnce({
+      isKicked: () => false,
+      ...game,
+    })
 
     handlers.get(EVENTS.PLAYER.JOIN)?.("123456" as never)
 
@@ -295,6 +299,7 @@ describe("gameSocketHandlers joining", () => {
 
   it("reconnects as a player or as the manager by the event it came on", async () => {
     const { handlers, socket } = await registerHandlers()
+    manager.login(socket)
     const game = { reconnectPlayer: vi.fn(), reconnectManager: vi.fn() }
     mocks.registry.getPlayerGame.mockReturnValueOnce(game)
     mocks.registry.getManagerGame.mockReturnValueOnce(game)
@@ -305,5 +310,142 @@ describe("gameSocketHandlers joining", () => {
 
     handlers.get(EVENTS.MANAGER.RECONNECT)?.({ gameId: "g" } as never)
     expect(game.reconnectManager).toHaveBeenCalledWith(socket)
+  })
+})
+
+describe("gameSocketHandlers hardening", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.registry.getGameByInviteCode.mockReset()
+    mocks.registry.getPlayerGame.mockReset()
+    mocks.registry.getManagerGame.mockReset()
+    mocks.getQuizz.mockReturnValue([quiz])
+  })
+
+  afterEach(() => {
+    manager.logout(managerClient)
+  })
+
+  it("keeps a finished game's players and host through a drop", async () => {
+    const { handlers } = await registerHandlers()
+    // A finished game reports neither started nor in its lobby.
+    const podium = {
+      ...makeManagedGame("podium", false),
+      inLobby: false,
+      setPlayerDisconnected: vi.fn(),
+      removePlayer: vi.fn(),
+    }
+    mocks.registry.getGamesByManagerSocketId.mockReturnValueOnce([podium])
+    mocks.registry.getGamesByPlayerSocketId.mockReturnValueOnce([podium])
+
+    handlers.get("disconnect")?.()
+
+    expect(mocks.registry.closeGame).not.toHaveBeenCalled()
+    expect(mocks.registry.markGameAsEmpty).toHaveBeenCalledWith(podium)
+    expect(podium.removePlayer).not.toHaveBeenCalled()
+    expect(podium.setPlayerDisconnected).toHaveBeenCalledWith("manager")
+  })
+
+  it("names a leaving player by the id they hold, not by the sending socket", async () => {
+    const { handlers } = await registerHandlers()
+    const lobby = {
+      ...makeManagedGame("lobby", false),
+      inLobby: true,
+      lecture: false,
+      players: [{ id: "old-socket", clientId: MANAGER_CLIENT_ID }],
+      removePlayer: vi.fn(),
+      setPlayerDisconnected: vi.fn(),
+    }
+    mocks.registry.getPlayerGame.mockReturnValueOnce(lobby)
+
+    handlers.get(EVENTS.PLAYER.LEAVE)?.({ gameId: "lobby" } as never)
+
+    expect(lobby.removePlayer).toHaveBeenCalledWith("old-socket")
+  })
+
+  it("refuses a manager reconnect from a client that logged out", async () => {
+    const { handlers, emit } = await registerHandlers()
+    const game = { reconnectManager: vi.fn() }
+    mocks.registry.getManagerGame.mockReturnValue(game)
+
+    handlers.get(EVENTS.MANAGER.RECONNECT)?.({ gameId: "g" } as never)
+
+    expect(game.reconnectManager).not.toHaveBeenCalled()
+    expect(emit).toHaveBeenCalledWith(EVENTS.MANAGER.UNAUTHORIZED)
+  })
+
+  it("answers a host whose config cannot be read instead of throwing", async () => {
+    const { handlers, socket, emit } = await registerHandlers()
+    manager.login(socket)
+    const { getGameConfig } = await import("@razzia/socket/services/config")
+    vi.mocked(getGameConfig).mockImplementationOnce(() => {
+      throw new SyntaxError("Unexpected end of JSON input")
+    })
+    vi.mocked(mocks.getQuizz).mockReturnValue([quiz])
+    const { resolveVisuals } = await import("@razzia/socket/services/visuals")
+    vi.mocked(resolveVisuals).mockImplementationOnce(() => ({}))
+
+    expect(() =>
+      handlers.get(EVENTS.GAME.CREATE)?.("quiz-1" as never),
+    ).not.toThrow()
+    expect(mocks.Game).not.toHaveBeenCalled()
+    expect(emit).toHaveBeenCalledWith(
+      EVENTS.GAME.ERROR_MESSAGE,
+      "errors:manager.failedToReadConfig",
+    )
+  })
+
+  it("slows down a client sweeping invite codes", async () => {
+    const { handlers, emit } = await registerHandlers()
+    mocks.registry.getGameByInviteCode.mockReturnValue(undefined)
+
+    for (let i = 0; i < 40; i += 1) {
+      handlers.get(EVENTS.PLAYER.JOIN)?.(String(100000 + i) as never)
+    }
+
+    expect(emit).toHaveBeenLastCalledWith(
+      EVENTS.GAME.ERROR_MESSAGE,
+      "errors:manager.tooManyAttempts",
+    )
+  })
+
+  it("lets a whole class sharing one address mistype codes, and one student's sweep never blocks another", async () => {
+    mocks.registry.getGameByInviteCode.mockReturnValue(undefined)
+
+    // 60 students on one address, three typos each.
+    await Promise.all(
+      Array.from({ length: 60 }, async (_, student) => {
+        const { handlers } = await registerHandlers(
+          `student-${student}-client-id`,
+          "192.168.7.7",
+        )
+
+        for (let typo = 0; typo < 3; typo += 1) {
+          handlers.get(EVENTS.PLAYER.JOIN)?.(String(200000 + typo) as never)
+        }
+      }),
+    )
+
+    // One student sweeping codes is locked out alone.
+    const sweeper = await registerHandlers("sweeper-client-id", "192.168.7.7")
+
+    for (let guess = 0; guess < 12; guess += 1) {
+      sweeper.handlers.get(EVENTS.PLAYER.JOIN)?.(
+        String(400000 + guess) as never,
+      )
+    }
+
+    expect(sweeper.emit).toHaveBeenLastCalledWith(
+      EVENTS.GAME.ERROR_MESSAGE,
+      "errors:manager.tooManyAttempts",
+    )
+
+    const late = await registerHandlers("late-student-client-id", "192.168.7.7")
+    late.handlers.get(EVENTS.PLAYER.JOIN)?.("200000" as never)
+
+    expect(late.emit).toHaveBeenLastCalledWith(
+      EVENTS.GAME.ERROR_MESSAGE,
+      "errors:game.notFound",
+    )
   })
 })

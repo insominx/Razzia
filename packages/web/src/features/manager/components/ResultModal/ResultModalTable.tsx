@@ -1,7 +1,7 @@
 import {
   ANSWER_IDENTITY,
   ANSWERS_LABELS,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { useResultModal } from "@razzia/web/features/manager/contexts/result-modal-context"
 import clsx from "clsx"
 import { Check, X } from "lucide-react"
@@ -10,6 +10,10 @@ import { useTranslation } from "react-i18next"
 const ResultModalTable = () => {
   const { questionResult, getPlayerPoints } = useResultModal()
   const { t } = useTranslation()
+
+  if (!questionResult) {
+    return null
+  }
 
   return (
     <table className="w-full text-sm">
@@ -67,7 +71,7 @@ const ResultModalTable = () => {
                 )}
               </td>
               <td className="text-text-body px-4 py-2.5 text-right font-semibold">
-                {getPlayerPoints(pa.playerName)}
+                {getPlayerPoints(pa.playerName) ?? "—"}
               </td>
             </tr>
           )

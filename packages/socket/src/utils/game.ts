@@ -7,7 +7,7 @@ export const withGame = (
   gameId: string | undefined,
   socket: Socket,
   callback: (_game: Game) => void | Promise<void>,
-): void => {
+): void | Promise<void> => {
   if (!gameId) {
     socket.emit("game:errorMessage", "errors:game.notFound")
 
@@ -23,7 +23,8 @@ export const withGame = (
     return
   }
 
-  callback(game)
+  // Handed back so a failing async action reaches the handler guard.
+  return callback(game)
 }
 
 const drawInviteCode = customAlphabet("0123456789", 6)
@@ -68,13 +69,17 @@ export const orderToPoint = (index: number, totalPlayers: number): number => {
 }
 
 export const timeToPoint = (startTime: number, secondes: number): number => {
+  if (!(secondes > 0)) {
+    return 0
+  }
+
   let points = MAX_POINTS
 
   const actualTime = Date.now()
   const tempsPasseEnSecondes = (actualTime - startTime) / 1000
 
   points -= (MAX_POINTS / secondes) * tempsPasseEnSecondes
-  points = Math.max(0, points)
+  points = Math.min(MAX_POINTS, Math.max(0, points))
 
   return points
 }

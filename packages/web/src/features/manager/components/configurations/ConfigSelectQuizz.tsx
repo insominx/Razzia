@@ -14,9 +14,14 @@ import { useTranslation } from "react-i18next"
 const ConfigSelectQuizz = () => {
   const { socket } = useSocket()
   const { quizz: quizzList } = useConfig()
-  const [selected, setSelected] = useState<string | null>(null)
+  const [picked, setSelected] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const { t } = useTranslation()
+  // The list is asked for again after a reconnect: a quizz that is gone from
+  // it is no longer chosen, so Start never sends an id the server dropped.
+  const selected = quizzList.some((quizz) => quizz.id === picked)
+    ? picked
+    : null
 
   useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
     setCreating(false)
@@ -79,7 +84,19 @@ const ConfigSelectQuizz = () => {
             )}
             onClick={handleSelect(quizz.id)}
           >
-            {quizz.subject}
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate">{quizz.subject}</span>
+              {quizz.questionCount !== undefined && (
+                <span
+                  data-question-count
+                  className="text-text-muted text-sm font-normal"
+                >
+                  {t("manager:quizz.questionCount", {
+                    count: quizz.questionCount,
+                  })}
+                </span>
+              )}
+            </span>
 
             <div
               className={clsx(

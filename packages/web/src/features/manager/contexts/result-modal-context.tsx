@@ -1,22 +1,25 @@
 import type { GameResult, QuestionResult } from "@razzia/common/types/game"
 import {
+  buildPointsByName,
+  computeQuestionStats,
+  type QuestionStats,
+} from "@razzia/web/features/manager/contexts/result-stats"
+import {
   createContext,
   useContext,
+  useMemo,
   useState,
   type PropsWithChildren,
 } from "react"
 
-interface ResultModalContextType {
+interface ResultModalContextType extends QuestionStats {
   result: GameResult
-  questionResult: QuestionResult
+  // Null for a result that holds no questions.
+  questionResult: QuestionResult | null
   questionIndex: number
   total: number
-  totalPlayers: number
-  answeredCount: number
-  correctCount: number
-  correctPct: number
-  maxAnswerCount: number
-  getPlayerPoints: (_name: string) => number
+  // Null when the player is not in the final standings.
+  getPlayerPoints: (_name: string) => number | null
   goNext: () => void
   goPrev: () => void
   onClose: () => void
@@ -30,34 +33,26 @@ type Props = PropsWithChildren<{
 }>
 
 export const ResultModalProvider = ({ children, result, onClose }: Props) => {
-  const [questionIndex, setQuestionIndex] = useState(0)
+  const [requestedIndex, setQuestionIndex] = useState(0)
 
-  const questionResult = result.questions[questionIndex]
   const total = result.questions.length
-  const totalPlayers = result.players.length
+  const questionIndex = Math.max(0, Math.min(requestedIndex, total - 1))
+  const questionResult: QuestionResult | null =
+    result.questions.at(questionIndex) ?? null
 
-  const answeredCount = questionResult.playerAnswers.filter(
-    (pa) => pa.answerId !== null,
-  ).length
-
-  const correctCount = questionResult.playerAnswers.filter(
-    (pa) =>
-      pa.answerId !== null && questionResult.solutions.includes(pa.answerId),
-  ).length
-
-  const correctPct =
-    totalPlayers > 0 ? Math.round((correctCount / totalPlayers) * 100) : 0
-
-  const maxAnswerCount = Math.max(
-    1,
-    ...questionResult.answers.map(
-      (_, ai) =>
-        questionResult.playerAnswers.filter((pa) => pa.answerId === ai).length,
-    ),
+  const stats = useMemo(
+    () =>
+      computeQuestionStats(
+        questionResult ?? { answers: [], solutions: [], playerAnswers: [] },
+      ),
+    [questionResult],
+  )
+  const pointsByName = useMemo(
+    () => buildPointsByName(result.players),
+    [result.players],
   )
 
-  const getPlayerPoints = (name: string) =>
-    result.players.find((p) => p.username === name)?.points ?? 0
+  const getPlayerPoints = (name: string) => pointsByName.get(name) ?? null
 
   const goNext = () => setQuestionIndex((i) => Math.min(i + 1, total - 1))
 
@@ -66,15 +61,11 @@ export const ResultModalProvider = ({ children, result, onClose }: Props) => {
   return (
     <ResultModalContext.Provider
       value={{
+        ...stats,
         result,
         questionResult,
         questionIndex,
         total,
-        totalPlayers,
-        answeredCount,
-        correctCount,
-        correctPct,
-        maxAnswerCount,
         getPlayerPoints,
         goNext,
         goPrev,

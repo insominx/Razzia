@@ -5,6 +5,8 @@ export class CooldownTimer {
   private readonly io: Server
   private readonly gameId: string
   private active = false
+  private interval: ReturnType<typeof setInterval> | null = null
+  private finish: (() => void) | null = null
 
   constructor(io: Server, gameId: string) {
     this.io = io
@@ -18,25 +20,28 @@ export class CooldownTimer {
 
     this.active = true
 
-    if (seconds === NO_TIME_LIMIT) {
-      return new Promise<void>((resolve) => {
-        const interval = setInterval(() => {
-          if (!this.active) {
-            clearInterval(interval)
-            resolve()
-          }
-        }, 1000)
-      })
-    }
-
-    let count = seconds - 1
-
     return new Promise<void>((resolve) => {
-      const interval = setInterval(() => {
-        if (!this.active || count <= 0) {
-          this.active = false
-          clearInterval(interval)
-          resolve()
+      this.finish = () => {
+        if (this.interval) {
+          clearInterval(this.interval)
+        }
+
+        this.interval = null
+        this.finish = null
+        this.active = false
+        resolve()
+      }
+
+      // An untimed question only ends when it is aborted.
+      if (seconds === NO_TIME_LIMIT) {
+        return
+      }
+
+      let count = seconds - 1
+
+      this.interval = setInterval(() => {
+        if (count <= 0) {
+          this.finish?.()
 
           return
         }
@@ -47,7 +52,9 @@ export class CooldownTimer {
     })
   }
 
+  // Ends the countdown now, not on its next tick: whoever awaits it moves on
+  // at once.
   abort() {
-    this.active &&= false
+    this.finish?.()
   }
 }

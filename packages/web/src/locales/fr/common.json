@@ -22,5 +22,6 @@
     "unmute": "Rétablir le son",
     "volume": "Volume"
   },
-  "submit": "Valider"
+  "submit": "Valider",
+  "reconnecting": "Reconnexion…"
 }

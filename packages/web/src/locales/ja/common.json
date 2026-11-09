@@ -22,5 +22,6 @@
     "unmute": "ミュート解除",
     "volume": "音量"
   },
-  "submit": "送信"
+  "submit": "送信",
+  "reconnecting": "再接続中…"
 }

@@ -10,20 +10,40 @@ export const QUESTION_SENTENCE_MS_PER_CHAR = 80
 
 export const QUESTION_SENTENCE_MIN_DWELL_MS = 400
 
-export const splitQuestionSentences = (text: string): string[] => {
-  const parts = text
-    .split(/(?<=[.!?])\s+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
+export const QUESTION_SENTENCE_MAX_DWELL_MS = 8_000
 
-  return parts.length > 0 ? parts : [text]
+export const QUESTION_PROMPT_REVEAL_MAX_MS = 30_000
+
+export const splitQuestionSentences = (text: string): string[] => {
+  // No lookbehind: Safari before 16.4 fails to parse the whole module.
+  const parts: string[] = []
+  const boundary = /[.!?]\s+/g
+  let start = 0
+  let match = boundary.exec(text)
+
+  while (match) {
+    const end = match.index + 1
+
+    parts.push(text.slice(start, end))
+    start = match.index + match[0].length
+    match = boundary.exec(text)
+  }
+
+  parts.push(text.slice(start))
+
+  const sentences = parts.map((part) => part.trim()).filter(Boolean)
+
+  return sentences.length > 0 ? sentences : [text]
 }
 
 export const getQuestionSentenceIntervalMs = (sentence: string): number =>
   QUESTION_SENTENCE_FADE_MS +
   Math.max(
     QUESTION_SENTENCE_MIN_DWELL_MS,
-    sentence.length * QUESTION_SENTENCE_MS_PER_CHAR,
+    Math.min(
+      QUESTION_SENTENCE_MAX_DWELL_MS,
+      sentence.length * QUESTION_SENTENCE_MS_PER_CHAR,
+    ),
   )
 
 export const getQuestionSentenceStartElapsed = (
@@ -48,9 +68,10 @@ export const getQuestionPromptRevealMs = (text: string): number => {
     return QUESTION_CONTENT_ENTER_MS
   }
 
-  return (
+  return Math.min(
+    QUESTION_PROMPT_REVEAL_MAX_MS,
     getQuestionSentenceStartElapsed(text, sentences.length - 1) +
-    QUESTION_SENTENCE_FADE_MS
+      QUESTION_SENTENCE_FADE_MS,
   )
 }
 

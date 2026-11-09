@@ -26,6 +26,38 @@ const stubSession = () => {
 const importStore = async () =>
   (await import("@razzia/web/features/game/stores/manager")).useManagerStore
 
+describe("a kept result is a settled review", () => {
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("keeps the results but not the live reveal's stamps, so a review does not replay it", async () => {
+    stubSession()
+    const store = await importStore()
+    store.getState().setGameId("g-1")
+    store.getState().setStatus(STATUS.SHOW_RESPONSES, {
+      ...results(1),
+      resultsAt: 1_000,
+      serverNow: 1_100,
+    })
+
+    const { 0: kept } = store.getState().responses
+
+    expect(kept.question).toBe("Q1")
+    expect(kept.resultsAt).toBeUndefined()
+    expect(kept.serverNow).toBeUndefined()
+
+    // The live screen still has its stamps; only the kept copy is settled.
+    const live = store.getState().status
+
+    expect(live?.data).toMatchObject({ resultsAt: 1_000, serverNow: 1_100 })
+  })
+})
+
 describe("a deck frame's results across a reload", () => {
   beforeEach(() => {
     vi.resetModules()

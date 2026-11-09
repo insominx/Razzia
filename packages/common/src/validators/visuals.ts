@@ -1,7 +1,9 @@
 import { z } from "zod"
 import {
   DEFAULT_DIALECT,
+  DEFAULT_SHOW_INTENSITY,
   DEFAULT_SOUND_THEME,
+  SHOW_INTENSITIES,
   SOUND_THEMES,
 } from "@razzia/common/types/visuals"
 import { BACKGROUND_IMAGE_EXTENSION_PATTERN } from "@razzia/common/utils/background-image"
@@ -40,7 +42,24 @@ export const soundThemeValidator = z.enum(SOUND_THEMES, {
   error: "errors:visuals.invalidSoundTheme",
 })
 
+export const showIntensityValidator = z.enum(SHOW_INTENSITIES, {
+  error: "errors:visuals.invalidShowIntensity",
+})
+
 export const gameVisualsConfigValidator = visualsConfigValidator.extend({
+  // A damaged background in game.json must not lock the manager out: drop it
+  // (the password is validated separately and stays strict).
+  background: backgroundRefValidator.optional().catch((context) => {
+    console.warn(
+      "Ignoring an invalid background in game.json:",
+      context.issues[0]?.message,
+    )
+
+    return undefined
+  }),
+  showIntensity: showIntensityValidator
+    .catch(DEFAULT_SHOW_INTENSITY)
+    .optional(),
   dialect: dialectValidator.catch(DEFAULT_DIALECT).optional(),
   soundTheme: soundThemeValidator.catch(DEFAULT_SOUND_THEME).optional(),
 })

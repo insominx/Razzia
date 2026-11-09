@@ -13,6 +13,8 @@ interface Props {
   onSubmit?: () => void
   length?: number
   className?: string
+  /** Puts the cursor in the first cell, so a PIN can be typed on arrival. */
+  autoFocus?: boolean
 }
 
 const PinInput = ({
@@ -21,6 +23,7 @@ const PinInput = ({
   onSubmit,
   length = 6,
   className,
+  autoFocus = false,
 }: Props) => {
   const refs = useRef<Array<HTMLInputElement | null>>([])
 
@@ -73,7 +76,11 @@ const PinInput = ({
     (index: number) => (e: ChangeEvent<HTMLInputElement>) => {
       const char = e.target.value.replace(/\D/gu, "").slice(-1)
 
+      // Emptied without a Backspace key (soft keyboards, cut, autofill): the
+      // cell is cleared, or the controlled input would snap back to its digit.
       if (!char) {
+        update(index, "")
+
         return
       }
 
@@ -102,6 +109,7 @@ const PinInput = ({
           type="text"
           inputMode="numeric"
           maxLength={1}
+          autoFocus={autoFocus && i === 0}
           value={digit}
           onChange={handleChange(i)}
           onKeyDown={handleKeyDown(i)}

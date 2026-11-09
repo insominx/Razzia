@@ -4,11 +4,15 @@ import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
 interface Props {
-  trigger: ReactNode
+  // Omit it to drive the dialog from outside with `open`/`onOpenChange`,
+  // for example from a router blocker.
+  trigger?: ReactNode
   title: string
   description: string
   confirmLabel?: string
   onConfirm: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const AlertDialog = ({
@@ -17,12 +21,16 @@ const AlertDialog = ({
   description,
   confirmLabel,
   onConfirm,
+  open,
+  onOpenChange,
 }: Props) => {
   const { t } = useTranslation()
 
   return (
-    <RadixAlertDialog.Root>
-      <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>
+    <RadixAlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      {trigger && (
+        <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>
+      )}
 
       <RadixAlertDialog.Portal>
         <RadixAlertDialog.Overlay className="bg-overlay data-[state=open]:animate-rz-fade-in fixed inset-0 z-50" />

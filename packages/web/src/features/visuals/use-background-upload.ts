@@ -37,8 +37,10 @@ export const useBackgroundUpload = (options?: {
       })
       await options?.onSuccess?.(uploaded)
     } catch (error) {
+      // Only a translation key may reach t(); anything else is a raw browser
+      // or parser message.
       const message =
-        error instanceof Error
+        error instanceof Error && error.message.startsWith("errors:")
           ? error.message
           : "errors:visuals.backgroundUploadFailed"
 

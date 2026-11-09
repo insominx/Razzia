@@ -22,5 +22,9 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     setupFiles: ["./src/test/setup.ts"],
+    // A test that imports a game screen pulls in the whole score behind it
+    // (engine, scenes, both legacy packs), which takes seconds on a busy
+    // machine; the default five would make those tests flaky, not fast.
+    testTimeout: 20_000,
   },
 })

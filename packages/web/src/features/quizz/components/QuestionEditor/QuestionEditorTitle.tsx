@@ -1,10 +1,12 @@
 import AutoGrowTextarea from "@razzia/web/components/AutoGrowTextarea"
+import { questionFitProblems } from "@razzia/web/features/game/utils/question-fit"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import { useTranslation } from "react-i18next"
 
 const QuestionEditorTitle = () => {
   const { updateQuestion, currentIndex, currentQuestion } = useQuizzEditor()
   const { t } = useTranslation()
+  const problems = questionFitProblems(currentQuestion)
 
   const handleChangeQuestion = (question: string) => {
     updateQuestion(currentIndex, { question })
@@ -18,6 +20,16 @@ const QuestionEditorTitle = () => {
         value={currentQuestion.question}
         onValueChange={handleChangeQuestion}
       />
+      {problems.map((problem) => (
+        <p
+          key={problem}
+          role="status"
+          data-fit-warning={problem}
+          className="text-warning border-border border-t px-4 py-2 text-center text-sm font-semibold"
+        >
+          {t(`quizz:fitWarning.${problem}`)}
+        </p>
+      ))}
     </div>
   )
 }

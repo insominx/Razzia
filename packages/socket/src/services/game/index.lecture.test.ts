@@ -150,6 +150,19 @@ describe("Game lecture mode", () => {
     })
   })
 
+  it("tells the host a reconnected phone's new socket id", () => {
+    const setup = createGame()
+    setup.game.join(createClient("p1", "alice-client").socket, "Alice")
+    setup.emitted.length = 0
+
+    setup.game.setPlayerDisconnected("p1")
+    setup.game.reconnectPlayer(createClient("p1-back", "alice-client").socket)
+
+    expect(
+      sentTo(setup.emitted, "manager", EVENTS.MANAGER.NEW_PLAYER),
+    ).toMatchObject([{ id: "p1-back", username: "Alice" }])
+  })
+
   it("turns a newcomer away while a question is running", async () => {
     const setup = createGame()
     setup.game.join(createClient("p1", "alice-client").socket, "Alice")
@@ -276,17 +289,33 @@ describe("Game lecture mode", () => {
     expect(setup.game.players.map(({ id }) => id)).toEqual(["p1-new"])
   })
 
-  it("still refuses a second connection in a normal game", () => {
+  it("lets a normal game player's newest connection take over too", () => {
     const setup = createGame(false)
     setup.game.join(createClient("p1", "alice-client").socket, "Alice")
 
     const second = createClient("p1-new", "alice-client")
     setup.game.reconnectPlayer(second.socket)
 
-    expect(second.emitted).toContainEqual({
-      event: EVENTS.GAME.RESET,
-      payload: "errors:game.playerAlreadyConnected",
-    })
-    expect(setup.game.players.map(({ id }) => id)).toEqual(["p1"])
+    expect(sentTo(setup.emitted, "p1", EVENTS.GAME.RESET)).toEqual([
+      "errors:game.openedElsewhere",
+    ])
+    expect(second.emitted.map(({ event }) => event)).toContain(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )
+    expect(setup.game.players.map(({ id }) => id)).toEqual(["p1-new"])
+  })
+
+  it("moves the host to the newest connection and tells the old one", () => {
+    const setup = createGame(false)
+    const second = createClient("manager-new", "manager-client")
+    setup.game.reconnectManager(second.socket)
+
+    expect(sentTo(setup.emitted, "manager", EVENTS.GAME.RESET)).toEqual([
+      "errors:game.openedElsewhere",
+    ])
+    expect(second.emitted.map(({ event }) => event)).toContain(
+      EVENTS.MANAGER.SUCCESS_RECONNECT,
+    )
+    expect(setup.game.manager.id).toBe("manager-new")
   })
 })

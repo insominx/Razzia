@@ -114,9 +114,17 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
         return { status, review, reviewEndsWithScreen: false }
       }
 
+      // The kept copy is only ever shown again as a review, which is a settled
+      // grid. Its stamps belong to the live reveal; kept, they would start the
+      // whole reveal again (flood, count, strike) every time it is reviewed.
+      const kept = {
+        ...status.data,
+        resultsAt: undefined,
+        serverNow: undefined,
+      }
       const responses = {
         ...state.responses,
-        [status.data.questionNumber - 1]: status.data,
+        [status.data.questionNumber - 1]: kept,
       }
       saveResponses(state.gameId, responses)
 

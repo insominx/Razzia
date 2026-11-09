@@ -1,69 +1,52 @@
 import HudModule from "@razzia/web/features/game/components/HudModule"
-import { ringDashOffset } from "@razzia/web/features/game/utils/timer-ring"
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
-
-const HEIGHT_TOKEN = /(^|:)h-/u
-
-const heightClasses = (element: Element) =>
-  (element.getAttribute("class") ?? "")
-    .split(" ")
-    .filter((token) => HEIGHT_TOKEN.test(token))
-    .sort()
+import { cleanup, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it } from "vitest"
 
 describe("HudModule", () => {
-  it("renders a plain boxed readout without a ring", () => {
+  afterEach(cleanup)
+
+  it("shows one number with a small label", () => {
+    render(<HudModule label="ANSWERED" value="3/18" role="sequence" />)
+
+    expect(screen.getByText("ANSWERED")).toBeInTheDocument()
+    expect(screen.getByText("3/18")).toBeInTheDocument()
+  })
+
+  it("draws no ring or box around the number", () => {
     const { container } = render(
-      <HudModule label="RESPONSES" value="3 / 18" role="sequence" />,
+      <HudModule label="TIME" value="17" role="info" />,
     )
 
-    expect(screen.getByText("RESPONSES")).toBeTruthy()
-    expect(screen.getByText("3 / 18")).toBeTruthy()
     expect(container.querySelector("svg")).toBeNull()
+    expect(container.querySelector("[data-hud-value]")).toHaveTextContent("17")
   })
 
-  it("centers the countdown value inside the ring instead of covering it", () => {
-    const { container } = render(
-      <HudModule
-        label="TIME"
-        value="17"
-        role="info"
-        countdown={{ remaining: 17, total: 20 }}
-      />,
-    )
+  it("sets the number big on the stage and plain off it", () => {
+    render(<HudModule label="TIME" value="17" role="info" />)
 
-    const svg = container.querySelector("svg")
-    const svgClass = svg?.getAttribute("class") ?? ""
+    const value = screen.getByText("17")
 
-    expect(screen.getByText("17")).toBeTruthy()
-    expect(svgClass).toContain("inset-0")
-    expect(svgClass).not.toContain("-right-5")
-    expect(svgClass).not.toContain("z-0")
-
-    const progress = container.querySelector(".rz-timer-ring")
-    expect(progress?.getAttribute("stroke-dashoffset")).toBe(
-      String(ringDashOffset(17, 20)),
-    )
+    expect(value).toHaveClass("text-[2.25rem]")
+    expect(value).toHaveClass("stage:text-[5rem]")
+    expect(value).toHaveClass("tabular-nums")
   })
 
-  it("gives ring and boxed readouts the same value slot so labels align", () => {
-    const { container } = render(
-      <div>
-        <HudModule
-          label="TIME"
-          value="17"
-          role="info"
-          countdown={{ remaining: 17, total: 20 }}
-        />
-        <HudModule label="RESPONSES" value="3 / 18" role="sequence" />
-      </div>,
+  it("heats the number up when time is short", () => {
+    const { rerender } = render(
+      <HudModule label="TIME" value="4" role="info" urgent />,
     )
 
-    const slots = [...container.querySelectorAll("[data-hud-slot]")]
-    const heights = slots.map(heightClasses)
+    expect(screen.getByText("4")).toHaveClass("text-warning")
 
-    expect(slots).toHaveLength(2)
-    expect(heights[0]).toEqual(["2xl:h-24", "h-14", "md:h-16"])
-    expect(heights[1]).toEqual(heights[0])
+    rerender(<HudModule label="TIME" value="14" role="info" />)
+
+    expect(screen.getByText("14")).toHaveClass("text-text-primary")
+    expect(screen.getByText("14")).not.toHaveClass("text-warning")
+  })
+
+  it("keeps the label in its role colour", () => {
+    render(<HudModule label="TIME" value="17" role="info" />)
+
+    expect(screen.getByText("TIME")).toHaveClass("text-info")
   })
 })

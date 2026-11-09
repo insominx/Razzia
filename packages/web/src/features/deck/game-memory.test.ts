@@ -49,6 +49,16 @@ describe("deck game memory", () => {
     ).toBeNull()
   })
 
+  it("does not trust a game remembered at a time still to come", () => {
+    const storage = memoryStorage()
+
+    rememberGame({ storage, quiz: "vehicle-physics", gameId: "g1", now: 1e12 })
+
+    expect(
+      recallGame({ storage, quiz: "vehicle-physics", now: 1_000 }),
+    ).toBeNull()
+  })
+
   it("starts over from unreadable storage", () => {
     const storage = memoryStorage()
     storage.setItem("razzia_deck_games", "{not json")

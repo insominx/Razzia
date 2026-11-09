@@ -7,6 +7,7 @@ import {
 } from "@razzia/web/features/game/contexts/socket-context"
 import ResultModal from "@razzia/web/features/manager/components/ResultModal"
 import { useConfig } from "@razzia/web/features/manager/contexts/config-context"
+import { emitMutation } from "@razzia/web/features/manager/emit-mutation"
 import { Trash2 } from "lucide-react"
 import { useCallback, useState } from "react"
 import toast from "react-hot-toast"
@@ -26,6 +27,7 @@ const ConfigResults = () => {
   const { socket } = useSocket()
   const { results } = useConfig()
   const [selectedResult, setSelectedResult] = useState<GameResult | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const { t } = useTranslation()
 
   useEvent(
@@ -38,8 +40,22 @@ const ConfigResults = () => {
   }
 
   const handleDelete = (id: string) => () => {
-    socket.emit(EVENTS.RESULTS.DELETE, id)
-    toast.success(t("manager:result.deleted"))
+    if (deletingId) {
+      return
+    }
+
+    setDeletingId(id)
+    emitMutation(socket, [EVENTS.RESULTS.DELETE, id], (response) => {
+      setDeletingId(null)
+
+      if (!response) {
+        toast.error(t("errors:result.failedToDelete"))
+      } else if ("error" in response) {
+        toast.error(t(response.error))
+      } else {
+        toast.success(t("manager:result.deleted"))
+      }
+    })
   }
 
   return (
@@ -52,6 +68,7 @@ const ConfigResults = () => {
           >
             <button
               className="min-w-0 flex-1 text-left"
+              disabled={deletingId === r.id}
               onClick={handleOpen(r.id)}
             >
               <p className="truncate font-medium">{r.subject}</p>
@@ -62,7 +79,11 @@ const ConfigResults = () => {
             </button>
             <AlertDialog
               trigger={
-                <button className="hover:bg-danger-tint rounded-rz-sm ml-2 shrink-0 p-2">
+                <button
+                  className="hover:bg-danger-tint rounded-rz-sm ml-2 shrink-0 p-2 disabled:opacity-50"
+                  disabled={deletingId !== null}
+                  aria-label={t("common:delete")}
+                >
                   <Trash2 className="text-danger size-4" />
                 </button>
               }

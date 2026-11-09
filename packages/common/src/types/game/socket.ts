@@ -16,9 +16,10 @@ import type {
   BackgroundRef,
   Dialect,
   ResolvedVisuals,
+  ShowIntensity,
   SoundTheme,
 } from "@razzia/common/types/visuals"
-import { Server as ServerIO, Socket as SocketIO } from "socket.io"
+import type { Server as ServerIO, Socket as SocketIO } from "socket.io"
 
 export type Server = ServerIO<ClientToServerEvents, ServerToClientEvents>
 
@@ -60,10 +61,7 @@ export interface ServerToClientEvents {
   [EVENTS.GAME.START_COOLDOWN]: () => void
   [EVENTS.GAME.COOLDOWN]: (_count: number) => void
   [EVENTS.GAME.RESET]: (_message: string) => void
-  [EVENTS.GAME.UPDATE_QUESTION]: (_data: {
-    current: number
-    total: number
-  }) => void
+  [EVENTS.GAME.UPDATE_QUESTION]: (_data: GameUpdateQuestion) => void
   [EVENTS.GAME.PLAYER_ANSWER]: (_count: number) => void
 
   // Player events
@@ -160,13 +158,24 @@ export interface ClientToServerEvents {
     _request: { soundTheme: SoundTheme },
     _callback?: (_response: ManagerMutationResponse) => void,
   ) => void
+  [EVENTS.MANAGER.SHOW_INTENSITY_SET]: (
+    _request: { showIntensity: ShowIntensity },
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
   [EVENTS.MANAGER.LOGOUT]: () => void
 
   // Quizz actions
   [EVENTS.QUIZZ.GET]: (_id: string) => void
   [EVENTS.QUIZZ.SAVE]: (_quizz: unknown) => void
   [EVENTS.QUIZZ.UPDATE]: (_data: QuizzWithId) => void
-  [EVENTS.QUIZZ.DELETE]: (_id: string) => void
+  [EVENTS.QUIZZ.RESTORE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
+  [EVENTS.QUIZZ.DELETE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
 
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void
@@ -181,7 +190,10 @@ export interface ClientToServerEvents {
 
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void
-  [EVENTS.RESULTS.DELETE]: (_id: string) => void
+  [EVENTS.RESULTS.DELETE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
 
   // Common
   disconnect: () => void

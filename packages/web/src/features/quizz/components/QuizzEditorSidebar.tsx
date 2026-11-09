@@ -100,6 +100,12 @@ const QuizzEditorSidebar = () => {
     removeQuestion(index)
   }
 
+  // Escape mid-drag cancels instead of ending it; without this the flag would
+  // stay set and swallow every later click on a card.
+  const handleDragCancel = () => {
+    isDragging.current = false
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     isDragging.current = false
     const { active, over } = event
@@ -123,6 +129,7 @@ const QuizzEditorSidebar = () => {
           isDragging.current = true
         }}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <SortableContext
           items={questions.map((q) => q.id)}

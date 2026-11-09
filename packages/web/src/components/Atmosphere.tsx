@@ -1,8 +1,12 @@
-import background from "@razzia/web/assets/background.png"
 import {
   averageLuminance,
   isDarkPhoto,
 } from "@razzia/web/features/visuals/photo-luminance"
+import {
+  BEAM_MOODS,
+  type Mood,
+  MOODS,
+} from "@razzia/web/features/game/stores/mood"
 import clsx from "clsx"
 import { useState } from "react"
 
@@ -14,6 +18,10 @@ type Props =
       recipe: "photo"
       backgroundUrl?: string
       placement?: PhotoPlacement
+      /** The colour of the light. Defaults to the cool, quiet one. */
+      mood?: Mood
+      /** Leaves out beams and embers (Calm, Silent, reduced motion). */
+      calm?: boolean
     }
 
 const Atmosphere = (props: Props) => {
@@ -32,23 +40,43 @@ const Atmosphere = (props: Props) => {
 
   return (
     <PhotoAtmosphere
-      key={props.backgroundUrl ?? "bundled"}
+      key={props.backgroundUrl ?? "backdrop"}
       backgroundUrl={props.backgroundUrl}
       placement={props.placement}
+      mood={props.mood}
+      calm={props.calm}
     />
   )
 }
 
+const BEAMS = ["left", "right"] as const
+
+/** Twelve embers, spread by CSS; they only exist while the room runs warm. */
+const EMBERS = Array.from({ length: 12 }, (_, index) => index)
+
+/**
+ * Light made in code: a deep navy gradient, a coloured glow per mood that
+ * crossfades as the game moves, and (in the full show) beams at the opening
+ * and the finale and embers in the last seconds. There is no photo by default,
+ * so a phone downloads nothing for it; a teacher's uploaded background sits
+ * above the gradient and under the glow.
+ */
 const PhotoAtmosphere = ({
   backgroundUrl,
   placement = "viewport",
+  mood = "cool",
+  calm = false,
 }: {
   backgroundUrl?: string
   placement?: PhotoPlacement
+  mood?: Mood
+  calm?: boolean
 }) => {
   const [failed, setFailed] = useState(false)
   const [darkPhoto, setDarkPhoto] = useState(false)
-  const src = failed ? background : (backgroundUrl ?? background)
+  const photo = backgroundUrl && !failed ? backgroundUrl : null
+  const beams = !calm && BEAM_MOODS.includes(mood)
+  const embers = !calm && mood === "warm"
 
   return (
     <div
@@ -58,28 +86,54 @@ const PhotoAtmosphere = ({
       )}
       aria-hidden="true"
     >
-      <div className="bg-canvas absolute inset-0" />
-      <img
-        className={clsx(
-          "h-full w-full object-contain select-none",
-          darkPhoto && "[filter:var(--rz-dark-photo-lift)]",
-        )}
-        src={src}
-        alt=""
-        role="presentation"
-        onLoad={(event) => {
-          setDarkPhoto(isDarkPhoto(averageLuminance(event.currentTarget)))
-        }}
-        onError={() => {
-          setFailed(true)
-          setDarkPhoto(false)
-        }}
-      />
-      {!darkPhoto && (
+      <div className="rz-backdrop absolute inset-0" />
+      {photo && (
+        // Positioned, so it paints above the backdrop; an unpositioned image
+        // would sit under the absolute layer behind it and never show.
+        <img
+          className={clsx(
+            "absolute inset-0 h-full w-full object-contain select-none",
+            darkPhoto && "[filter:var(--rz-dark-photo-lift)]",
+          )}
+          src={photo}
+          alt=""
+          role="presentation"
+          onLoad={(event) => {
+            setDarkPhoto(isDarkPhoto(averageLuminance(event.currentTarget)))
+          }}
+          onError={() => {
+            setFailed(true)
+            setDarkPhoto(false)
+          }}
+        />
+      )}
+      {photo && !darkPhoto && (
         <div
           className="absolute inset-0 [background:var(--rz-scrim)]"
           data-atmosphere-scrim=""
         />
+      )}
+      {MOODS.map((candidate) => (
+        <div
+          key={candidate}
+          className={clsx("rz-mood", `rz-mood-${candidate}`)}
+          data-mood={candidate}
+          data-on={candidate === mood ? "" : undefined}
+        />
+      ))}
+      {BEAMS.map((side) => (
+        <div
+          key={side}
+          className={clsx("rz-beam", `rz-beam-${side}`)}
+          data-on={beams ? "" : undefined}
+        />
+      ))}
+      {embers && (
+        <div className="rz-embers" data-embers="">
+          {EMBERS.map((index) => (
+            <span key={index} className="rz-ember" />
+          ))}
+        </div>
       )}
     </div>
   )

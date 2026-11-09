@@ -2,8 +2,9 @@
   "correct": "Bravo!",
   "gamePinLabel": "PIN del gioco:",
   "hud": {
-    "responses": "Risposte",
-    "time": "Tempo"
+    "responses": "Risposto",
+    "time": "Tempo",
+    "opensIn": "Si apre tra"
   },
   "joinInstruction": "Unisciti al gioco su",
   "leaderboard": "Classifica",
@@ -17,8 +18,6 @@
     "other": "{{rank}}° posto"
   },
   "rankSuffix": "° posto",
-  "resultBehind": ", dietro ",
-  "resultTop": "Hai terminato ",
   "startGame": "Inizia il gioco",
   "usernamePlaceholder": "Nome utente qui",
   "waitingForAnswers": "In attesa delle risposte dei giocatori",
@@ -34,5 +33,53 @@
   "yourAnswer": "La tua risposta",
   "lectureNextQuestion": "La prossima domanda arriva durante la lezione.",
   "lectureFinalStandings": "La classifica finale arriva alla fine della lezione.",
-  "lectureJoinHint": "Partecipa su {{url}} · PIN {{pin}}"
+  "lectureJoinHint": "Partecipa su {{url}} · PIN {{pin}}",
+  "reveal": {
+    "time": "TEMPO",
+    "allIn": "TUTTI PRONTI",
+    "headline": {
+      "crowdWrong": "Solo {{right}} su {{of}} hanno risposto bene. {{wrong}} sono caduti in {{letters}}.",
+      "crowdRight": "{{right}} su {{of}} hanno risposto bene.",
+      "everyone": "Hanno risposto bene tutti.",
+      "nobody": "Nessuno ha risposto."
+    },
+    "fastest": "Il più veloce: {{name}}, {{seconds}} s"
+  },
+  "noAnswer": "Nessuna risposta",
+  "itWas": "Era",
+  "streak": "{{count}} di fila",
+  "standing": "Sei {{place}}",
+  "standingBehind": "Sei {{place}}, dietro a {{name}}",
+  "lockedIn": "Risposta inviata",
+  "answeredOf": "{{answered}} su {{total}} hanno risposto",
+  "standingUp": "▲{{count}} dall'ultima domanda",
+  "standingDown": "▼{{count}} dall'ultima domanda",
+  "standingGap": "{{points}} dietro a {{name}}. Ancora una risposta veloce e lo superi.",
+  "standingLeader": "Sei in testa. Continua così.",
+  "finishedSummary": "{{points}} punti · {{rank}} su {{total}}",
+  "medal": {
+    "1": "Oro",
+    "2": "Argento",
+    "3": "Bronzo"
+  },
+  "board": {
+    "newLeader": "{{name}} supera {{other}} e va in testa",
+    "overtook": "{{name}} supera {{other}}",
+    "enters": "{{name}} entra nella top 5",
+    "biggestGain": "{{name}} ha guadagnato di più: +{{points}}",
+    "tight": "Solo {{points}} punti tra {{name}} e {{other}}",
+    "leads": "{{name}} è in testa con {{points}}"
+  },
+  "questionOf": "Domanda {{number}} di {{total}}",
+  "finalQuestion": "Ultima domanda",
+  "go": "VIA",
+  "seatsMore": "+{{count}} altri",
+  "youreIn": "Sei dentro, {{name}}",
+  "playersHere": "{{count}} presenti",
+  "standingLevel": "Pari con {{name}}. Ancora una risposta veloce e lo superi.",
+  "leave": {
+    "title": "Chiudere la stanza?",
+    "description": "Se esci, la partita termina per tutti quelli che sono dentro.",
+    "confirm": "Chiudi la stanza"
+  }
 }

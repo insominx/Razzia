@@ -29,3 +29,30 @@ export const calculatePercentages = (
 
   return result
 }
+
+export interface VoteShare {
+  count: number
+  /** Whole percent of the people who answered, 0–100. */
+  percent: number
+}
+
+/**
+ * One share per answer slot, in slot order. A share is of the people who
+ * answered, not of everyone in the room, so a slot nobody picked is 0 and a
+ * question nobody answered is all zeros rather than a divide by nothing.
+ */
+export const voteShares = (
+  responses: Record<number, number>,
+  answerCount: number,
+): VoteShare[] => {
+  const counts = Array.from(
+    { length: answerCount },
+    (_, slot) => responses[slot] || 0,
+  )
+  const total = counts.reduce((sum, count) => sum + count, 0)
+
+  return counts.map((count) => ({
+    count,
+    percent: total ? Math.round((count / total) * 100) : 0,
+  }))
+}

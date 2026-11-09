@@ -10,10 +10,13 @@
 
 import { Route as rootRouteImport } from './pages/__root'
 import { Route as authLayoutRouteImport } from './pages/(auth)/layout'
+import { Route as RehearseIndexRouteImport } from './pages/rehearse/index'
 import { Route as authIndexRouteImport } from './pages/(auth)/index'
+import { Route as RehearseFrameRouteImport } from './pages/rehearse/frame'
 import { Route as PartyGameIdRouteImport } from './pages/party/$gameId'
 import { Route as ManagerConfigRouteImport } from './pages/manager/config'
 import { Route as DevGalleryRouteImport } from './pages/dev/gallery'
+import { Route as DevFrameRouteImport } from './pages/dev/frame'
 import { Route as ManagerQuizzLayoutRouteImport } from './pages/manager/quizz/layout'
 import { Route as ManagerQuizzIndexRouteImport } from './pages/manager/quizz/index'
 import { Route as authManagerIndexRouteImport } from './pages/(auth)/manager/index'
@@ -24,10 +27,20 @@ const authLayoutRoute = authLayoutRouteImport.update({
   id: '/(auth)',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RehearseIndexRoute = RehearseIndexRouteImport.update({
+  id: '/rehearse/',
+  path: '/rehearse/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const authIndexRoute = authIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => authLayoutRoute,
+} as any)
+const RehearseFrameRoute = RehearseFrameRouteImport.update({
+  id: '/rehearse/frame',
+  path: '/rehearse/frame',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PartyGameIdRoute = PartyGameIdRouteImport.update({
   id: '/party/$gameId',
@@ -42,6 +55,11 @@ const ManagerConfigRoute = ManagerConfigRouteImport.update({
 const DevGalleryRoute = DevGalleryRouteImport.update({
   id: '/dev/gallery',
   path: '/dev/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevFrameRoute = DevFrameRouteImport.update({
+  id: '/dev/frame',
+  path: '/dev/frame',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManagerQuizzLayoutRoute = ManagerQuizzLayoutRouteImport.update({
@@ -72,20 +90,26 @@ const ManagerQuizzQuizzIdRoute = ManagerQuizzQuizzIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/manager/quizz': typeof ManagerQuizzLayoutRouteWithChildren
+  '/dev/frame': typeof DevFrameRoute
   '/dev/gallery': typeof DevGalleryRoute
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
+  '/rehearse/frame': typeof RehearseFrameRoute
   '/': typeof authIndexRoute
+  '/rehearse/': typeof RehearseIndexRoute
   '/manager/quizz/$quizzId': typeof ManagerQuizzQuizzIdRoute
   '/party/manager/$gameId': typeof PartyManagerGameIdRoute
   '/manager/': typeof authManagerIndexRoute
   '/manager/quizz/': typeof ManagerQuizzIndexRoute
 }
 export interface FileRoutesByTo {
+  '/dev/frame': typeof DevFrameRoute
   '/dev/gallery': typeof DevGalleryRoute
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
+  '/rehearse/frame': typeof RehearseFrameRoute
   '/': typeof authIndexRoute
+  '/rehearse': typeof RehearseIndexRoute
   '/manager/quizz/$quizzId': typeof ManagerQuizzQuizzIdRoute
   '/party/manager/$gameId': typeof PartyManagerGameIdRoute
   '/manager': typeof authManagerIndexRoute
@@ -95,10 +119,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(auth)': typeof authLayoutRouteWithChildren
   '/manager/quizz': typeof ManagerQuizzLayoutRouteWithChildren
+  '/dev/frame': typeof DevFrameRoute
   '/dev/gallery': typeof DevGalleryRoute
   '/manager/config': typeof ManagerConfigRoute
   '/party/$gameId': typeof PartyGameIdRoute
+  '/rehearse/frame': typeof RehearseFrameRoute
   '/(auth)/': typeof authIndexRoute
+  '/rehearse/': typeof RehearseIndexRoute
   '/manager/quizz/$quizzId': typeof ManagerQuizzQuizzIdRoute
   '/party/manager/$gameId': typeof PartyManagerGameIdRoute
   '/(auth)/manager/': typeof authManagerIndexRoute
@@ -108,20 +135,26 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/manager/quizz'
+    | '/dev/frame'
     | '/dev/gallery'
     | '/manager/config'
     | '/party/$gameId'
+    | '/rehearse/frame'
     | '/'
+    | '/rehearse/'
     | '/manager/quizz/$quizzId'
     | '/party/manager/$gameId'
     | '/manager/'
     | '/manager/quizz/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/dev/frame'
     | '/dev/gallery'
     | '/manager/config'
     | '/party/$gameId'
+    | '/rehearse/frame'
     | '/'
+    | '/rehearse'
     | '/manager/quizz/$quizzId'
     | '/party/manager/$gameId'
     | '/manager'
@@ -130,10 +163,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/(auth)'
     | '/manager/quizz'
+    | '/dev/frame'
     | '/dev/gallery'
     | '/manager/config'
     | '/party/$gameId'
+    | '/rehearse/frame'
     | '/(auth)/'
+    | '/rehearse/'
     | '/manager/quizz/$quizzId'
     | '/party/manager/$gameId'
     | '/(auth)/manager/'
@@ -143,9 +179,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   authLayoutRoute: typeof authLayoutRouteWithChildren
   ManagerQuizzLayoutRoute: typeof ManagerQuizzLayoutRouteWithChildren
+  DevFrameRoute: typeof DevFrameRoute
   DevGalleryRoute: typeof DevGalleryRoute
   ManagerConfigRoute: typeof ManagerConfigRoute
   PartyGameIdRoute: typeof PartyGameIdRoute
+  RehearseFrameRoute: typeof RehearseFrameRoute
+  RehearseIndexRoute: typeof RehearseIndexRoute
   PartyManagerGameIdRoute: typeof PartyManagerGameIdRoute
 }
 
@@ -158,12 +197,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rehearse/': {
+      id: '/rehearse/'
+      path: '/rehearse'
+      fullPath: '/rehearse/'
+      preLoaderRoute: typeof RehearseIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(auth)/': {
       id: '/(auth)/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof authIndexRouteImport
       parentRoute: typeof authLayoutRoute
+    }
+    '/rehearse/frame': {
+      id: '/rehearse/frame'
+      path: '/rehearse/frame'
+      fullPath: '/rehearse/frame'
+      preLoaderRoute: typeof RehearseFrameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/party/$gameId': {
       id: '/party/$gameId'
@@ -184,6 +237,13 @@ declare module '@tanstack/react-router' {
       path: '/dev/gallery'
       fullPath: '/dev/gallery'
       preLoaderRoute: typeof DevGalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/frame': {
+      id: '/dev/frame'
+      path: '/dev/frame'
+      fullPath: '/dev/frame'
+      preLoaderRoute: typeof DevFrameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manager/quizz': {
@@ -254,9 +314,12 @@ const ManagerQuizzLayoutRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   authLayoutRoute: authLayoutRouteWithChildren,
   ManagerQuizzLayoutRoute: ManagerQuizzLayoutRouteWithChildren,
+  DevFrameRoute: DevFrameRoute,
   DevGalleryRoute: DevGalleryRoute,
   ManagerConfigRoute: ManagerConfigRoute,
   PartyGameIdRoute: PartyGameIdRoute,
+  RehearseFrameRoute: RehearseFrameRoute,
+  RehearseIndexRoute: RehearseIndexRoute,
   PartyManagerGameIdRoute: PartyManagerGameIdRoute,
 }
 export const routeTree = rootRouteImport

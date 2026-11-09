@@ -1,12 +1,15 @@
 {
   "auth": {
     "invalidInviteCode": "Ungültiger Einladungscode",
+    "usernameInvalid": "Der Benutzername enthält ungültige Zeichen",
+    "usernameTaken": "Dieser Benutzername ist bereits vergeben",
     "usernameTooLong": "Der Benutzername darf nicht mehr als 20 Zeichen haben",
     "usernameTooShort": "Der Benutzername muss mindestens 4 Zeichen haben"
   },
   "game": {
     "alreadyStarted": "Dieses Spiel hat bereits begonnen",
     "expired": "Spiel abgelaufen",
+    "full": "Dieses Spiel ist voll",
     "kickedByManager": "Du wurdest vom Manager entfernt",
     "managerAlreadyConnected": "Manager bereits verbunden",
     "managerDisconnected": "Manager getrennt",
@@ -19,6 +22,7 @@
   "manager": {
     "failedToReadConfig": "Spielkonfiguration konnte nicht gelesen werden",
     "invalidPassword": "Ungültiges Passwort",
+    "tooManyAttempts": "Zu viele Versuche. Bitte später erneut versuchen.",
     "passwordNotConfigured": "Manager-Passwort ist nicht konfiguriert",
     "unauthorized": "Nicht autorisiert"
   },
@@ -33,12 +37,18 @@
     "failedToSave": "Quiz ist unvollständig, stelle sicher, dass alle Fragen einen Titel und mindestens eine richtige Antwort haben",
     "failedToUpdate": "Quiz konnte nicht aktualisiert werden",
     "invalidMediaUrl": "Die Medien-URL muss eine gültige URL sein",
+    "invalidSolution": "Lösungen müssen eindeutig sein und zu vorhandenen Antworten passen",
+    "invalidTime": "Die Zeit muss unbegrenzt sein oder 1 bis 600 Sekunden betragen",
     "noQuestions": "Ein Quiz muss mindestens eine Frage haben",
     "notFound": "Quiz nicht gefunden",
     "questionEmpty": "Die Frage darf nicht leer sein",
     "subjectEmpty": "Das Thema darf nicht leer sein",
+    "textTooLong": "Der Text ist zu lang",
     "tooFewAnswers": "Eine Frage muss mindestens 2 Antworten haben",
-    "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben"
+    "tooManyAnswers": "Eine Frage darf nicht mehr als 4 Antworten haben",
+    "tooManyQuestions": "Ein Quiz darf höchstens 200 Fragen haben",
+    "failedToRestore": "Die gelieferte Version konnte nicht wiederhergestellt werden",
+    "noCommittedVersion": "Für dieses Quiz gibt es keine gelieferte Version"
   },
   "visuals": {
     "backgroundClearFailed": "Hintergrund konnte nicht entfernt werden",
@@ -53,11 +63,17 @@
     "invalidDialect": "Der Designmodus ist ungültig",
     "invalidSoundTheme": "Das Soundthema ist ungültig",
     "soundThemeSetFailed": "Soundthema konnte nicht aktualisiert werden",
-    "unsupportedBackgroundType": "Verwende ein PNG-, JPEG-, WebP- oder GIF-Bild"
+    "tooManyPendingBackgrounds": "Zu viele hochgeladene Hintergründe warten auf ihre Verwendung. Versuche es später erneut",
+    "unsupportedBackgroundType": "Verwende ein PNG-, JPEG-, WebP- oder GIF-Bild",
+    "invalidShowIntensity": "Wähle Voll, Ruhig oder Stumm",
+    "showIntensitySetFailed": "Die Show-Intensität konnte nicht geändert werden"
   },
   "route": {
     "back": "Zurück zur Startseite",
     "description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
     "title": "Etwas ist schiefgelaufen"
+  },
+  "result": {
+    "failedToDelete": "Ergebnis konnte nicht gelöscht werden"
   }
 }

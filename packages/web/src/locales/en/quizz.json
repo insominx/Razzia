@@ -35,5 +35,42 @@
     "title": "Discard unsaved changes?",
     "description": "Your edits to this quiz have not been saved.",
     "discard": "Discard"
+  },
+  "fitWarning": {
+    "card": "May not fit the projector",
+    "prompt": "This question is long for the projector. Shorten it or split it into sentences, or it may be cut off.",
+    "answer": "An answer is longer than 90 characters and may not fit its tile."
+  },
+  "rehearse": {
+    "button": "Rehearse",
+    "buttonHint": "Play this quiz on the projector and phone screens as it is now, unsaved edits included",
+    "unavailable": "Your browser would not keep the draft, so the rehearsal could not open.",
+    "title": "Rehearsal: {{subject}}",
+    "empty": "Nothing to rehearse yet. Open a quiz in the editor and choose Rehearse.",
+    "previousQuestion": "Previous question",
+    "nextQuestion": "Next question",
+    "questionOf": "Question {{current}} of {{total}}",
+    "view": {
+      "host": "Projector",
+      "phone": "Phone"
+    },
+    "screens": {
+      "question": "Question",
+      "answers": "Answers open",
+      "reveal": "The count · room right",
+      "reveal-wrong": "The count · room wrong",
+      "wait": "Locked in",
+      "verdict": "Right",
+      "verdict-wrong": "Wrong",
+      "verdict-none": "No answer"
+    },
+    "replay": "Replay",
+    "frameTitle": "Rehearsal screen",
+    "keys": "← → screen · ↑ ↓ question · R replay · P projector or phone",
+    "placeholder": {
+      "subject": "Untitled quiz",
+      "question": "Your question goes here",
+      "answer": "Answer"
+    }
   }
 }

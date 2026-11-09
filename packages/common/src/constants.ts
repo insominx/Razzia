@@ -46,6 +46,7 @@ export const EVENTS = {
     GLOBAL_BACKGROUND_CLEAR: "manager:globalBackgroundClear",
     DIALECT_SET: "manager:dialectSet",
     SOUND_THEME_SET: "manager:soundThemeSet",
+    SHOW_INTENSITY_SET: "manager:showIntensitySet",
     LOGOUT: "manager:logout",
     UNAUTHORIZED: "manager:unauthorized",
     PLAY_QUESTION: "manager:playQuestion",
@@ -60,6 +61,7 @@ export const EVENTS = {
     UPDATE: "quizz:update",
     UPDATE_SUCCESS: "quizz:updateSuccess",
     DELETE: "quizz:delete",
+    RESTORE: "quizz:restore",
     ERROR: "quizz:error",
   },
   RESULTS: {

@@ -5,3 +5,13 @@ config/game.json
 config/assets
 config/results
 config/quizz/_*.mjs
+.env
+.env.*
+.secrets
+.workflow
+razzia-workflow
+.github
+**/dist
+*.log
+*.pem
+*.key

@@ -56,6 +56,13 @@ const deckCommandSchema = z.discriminatedUnion("type", [
     type: z.literal("controls"),
     shown: z.boolean(),
   }),
+  // What is behind the quiz: its own night-sky backdrop ("own", the default),
+  // or nothing, so the slide the page sits on shows through ("slide").
+  z.object({
+    ...envelope,
+    type: z.literal("backdrop"),
+    mode: z.enum(["own", "slide"]),
+  }),
 ])
 
 export type DeckCommand = z.infer<typeof deckCommandSchema>
@@ -157,6 +164,12 @@ const isTextEntry = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement &&
   (target.isContentEditable || TEXT_ENTRY_TAGS.has(target.tagName))
 
+// A dialog (the kick confirmation) owns the keys while it is open: Escape
+// closes it and Space presses its buttons.
+const isInDialog = (target: EventTarget | null): boolean =>
+  target instanceof Element &&
+  target.closest('[role="dialog"],[role="alertdialog"]') !== null
+
 export const toForwardedKey = (
   event: KeyLike,
 ): { key: string; code: string; repeat: boolean } | null => {
@@ -166,7 +179,8 @@ export const toForwardedKey = (
     event.metaKey ||
     event.altKey ||
     event.isComposing ||
-    isTextEntry(event.target)
+    isTextEntry(event.target) ||
+    isInDialog(event.target)
   ) {
     return null
   }

@@ -23,11 +23,17 @@ vi.mock("react-hot-toast", () => ({
 }))
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options ? `${key}:${JSON.stringify(options)}` : key,
+  }),
 }))
 
 const config: ManagerConfig = {
-  quizz: [{ id: "quiz-1", subject: "Quiz One" }],
+  quizz: [
+    { id: "quiz-1", subject: "Quiz One", questionCount: 6 },
+    { id: "quiz-2", subject: "Quiz Two" },
+  ],
   results: [],
   game: { resolvedVisuals: {} },
 }
@@ -38,7 +44,7 @@ const renderSelect = () => {
       <ConfigSelectQuizz />
     </ConfigProvider>,
   )
-  fireEvent.click(screen.getByRole("button", { name: "Quiz One" }))
+  fireEvent.click(screen.getByRole("button", { name: /Quiz One/u }))
 
   return screen.getByRole("button", { name: "manager:quizz.startGame" })
 }
@@ -78,5 +84,55 @@ describe("ConfigSelectQuizz game creation", () => {
 
     fireEvent.click(start)
     expect(emit).toHaveBeenCalledTimes(2)
+  })
+
+  it("says how many questions each quiz has, when the server says so", () => {
+    render(
+      <ConfigProvider data={config}>
+        <ConfigSelectQuizz />
+      </ConfigProvider>,
+    )
+
+    const counts = [...document.querySelectorAll("[data-question-count]")]
+
+    expect(counts.map((count) => count.textContent)).toEqual([
+      'manager:quizz.questionCount:{"count":6}',
+    ])
+  })
+})
+
+describe("ConfigSelectQuizz after the list is refreshed", () => {
+  beforeEach(() => {
+    emit.mockReset()
+    handlers.clear()
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("forgets a chosen quizz that the refreshed list no longer has", () => {
+    const { rerender } = render(
+      <ConfigProvider data={config}>
+        <ConfigSelectQuizz />
+      </ConfigProvider>,
+    )
+    fireEvent.click(screen.getByRole("button", { name: /Quiz One/u }))
+    expect(
+      screen.getByRole("button", { name: "manager:quizz.startGame" }),
+    ).toBeEnabled()
+
+    rerender(
+      <ConfigProvider data={{ ...config, quizz: [config.quizz[1]] }}>
+        <ConfigSelectQuizz />
+      </ConfigProvider>,
+    )
+
+    const start = screen.getByRole("button", {
+      name: "manager:quizz.startGame",
+    })
+    expect(start).toBeDisabled()
+    fireEvent.click(start)
+    expect(emit).not.toHaveBeenCalled()
   })
 })

@@ -10,6 +10,7 @@
     "typeCheck": true
   },
   "plugins": ["typescript"],
+  "ignorePatterns": [".workflow/**", "razzia-workflow/**"],
   "overrides": [
     {
       "files": ["packages/web/**/*.{ts,tsx}"],

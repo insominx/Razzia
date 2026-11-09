@@ -253,20 +253,114 @@ describe("background lifecycle", () => {
     expect(fs.existsSync(agedPath)).toBe(false)
   })
 
-  it("preserves every current-process pending upload even after grace", async () => {
+  it("protects a pending upload only until its pending TTL expires", async () => {
     const {
+      BACKGROUND_PENDING_TTL_MS,
       getBackgroundAssetPath,
       storeBackgroundAsset,
       sweepBackgroundAssets,
     } = await import("@razzia/socket/services/visuals")
-    const uploaded = storeBackgroundAsset("pending.png", pngBytes)
+    const uploaded = storeBackgroundAsset("pending.png", pngBytes, "client-a")
     const uploadedPath = getBackgroundAssetPath(uploaded.ref.path) ?? ""
     const old = new Date(Date.now() - 2 * 60 * 60 * 1000)
     fs.utimesSync(uploadedPath, old, old)
 
+    // Still within the TTL: kept even though the file itself is aged.
     sweepBackgroundAssets()
 
     expect(fs.existsSync(uploadedPath)).toBe(true)
+
+    // An abandoned upload is no longer exempt once the TTL has passed.
+    const realNow = Date.now()
+    vi.spyOn(Date, "now").mockReturnValue(realNow + BACKGROUND_PENDING_TTL_MS)
+
+    sweepBackgroundAssets()
+
+    expect(fs.existsSync(uploadedPath)).toBe(false)
+  })
+
+  it("stops counting expired pending uploads against the caps", async () => {
+    const {
+      BACKGROUND_PENDING_TTL_MS,
+      MAX_PENDING_BACKGROUNDS_PER_CLIENT,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+
+    for (
+      let index = 0;
+      index < MAX_PENDING_BACKGROUNDS_PER_CLIENT;
+      index += 1
+    ) {
+      storeBackgroundAsset("fill.png", pngBytes, "client-a")
+    }
+
+    expect(() =>
+      storeBackgroundAsset("over.png", pngBytes, "client-a"),
+    ).toThrow("errors:visuals.tooManyPendingBackgrounds")
+
+    const realNow = Date.now()
+    vi.spyOn(Date, "now").mockReturnValue(realNow + BACKGROUND_PENDING_TTL_MS)
+
+    expect(() =>
+      storeBackgroundAsset("again.png", pngBytes, "client-a"),
+    ).not.toThrow()
+  })
+
+  it("caps pending uploads per client without blocking other clients", async () => {
+    const {
+      MAX_PENDING_BACKGROUNDS_PER_CLIENT,
+      getBackgroundAssetPath,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const paths: string[] = []
+
+    for (
+      let index = 0;
+      index < MAX_PENDING_BACKGROUNDS_PER_CLIENT;
+      index += 1
+    ) {
+      paths.push(storeBackgroundAsset("a.png", pngBytes, "client-a").ref.path)
+    }
+
+    const before = fs.readdirSync(
+      path.dirname(getBackgroundAssetPath(paths[0]) ?? ""),
+    ).length
+
+    expect(() => storeBackgroundAsset("a.png", pngBytes, "client-a")).toThrow(
+      "errors:visuals.tooManyPendingBackgrounds",
+    )
+    // Rejected before anything touched the disk.
+    expect(
+      fs.readdirSync(path.dirname(getBackgroundAssetPath(paths[0]) ?? "")),
+    ).toHaveLength(before)
+    expect(() =>
+      storeBackgroundAsset("b.png", pngBytes, "client-b"),
+    ).not.toThrow()
+  })
+
+  it("caps total pending uploads across clients and frees slots when adopted", async () => {
+    const {
+      MAX_PENDING_BACKGROUNDS_TOTAL,
+      finalizeBackgroundMutation,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const refs = []
+
+    for (let index = 0; index < MAX_PENDING_BACKGROUNDS_TOTAL; index += 1) {
+      refs.push(
+        storeBackgroundAsset("t.png", pngBytes, `client-${index % 10}`).ref,
+      )
+    }
+
+    expect(() =>
+      storeBackgroundAsset("t.png", pngBytes, "client-fresh"),
+    ).toThrow("errors:visuals.tooManyPendingBackgrounds")
+
+    finalizeBackgroundMutation(undefined, refs[0])
+
+    expect(() =>
+      storeBackgroundAsset("t.png", pngBytes, "client-fresh"),
+    ).not.toThrow()
   })
 
   it("uses zero grace at startup to reclaim an abandoned upload", async () => {
@@ -371,6 +465,50 @@ describe("serveConfigAsset", () => {
 })
 
 describe("serveBackgroundUpload", () => {
+  it("rejects an upload over the pending cap before reading the body", async () => {
+    const {
+      MAX_PENDING_BACKGROUNDS_PER_CLIENT,
+      serveBackgroundUpload,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    vi.spyOn(console, "error").mockImplementation(() => undefined)
+
+    for (
+      let index = 0;
+      index < MAX_PENDING_BACKGROUNDS_PER_CLIENT;
+      index += 1
+    ) {
+      storeBackgroundAsset("fill.png", pngBytes, "manager-1")
+    }
+
+    const onSpy = vi.fn()
+    const request = {
+      url: "/config-assets/backgrounds",
+      method: "POST",
+      headers: { "x-client-id": "manager-1" },
+      on: onSpy,
+      destroy: () => undefined,
+    } as unknown as IncomingMessage
+    let status = 0
+    let body = ""
+    const response = {
+      writeHead: (code: number) => {
+        status = code
+      },
+      end: (payload?: string) => {
+        body = payload ?? ""
+      },
+    } as unknown as ServerResponse
+
+    await serveBackgroundUpload(request, response, () => true)
+
+    expect(status).toBe(400)
+    expect(JSON.parse(body)).toEqual({
+      error: "errors:visuals.tooManyPendingBackgrounds",
+    })
+    expect(onSpy).not.toHaveBeenCalled()
+  })
+
   it("stores only by default and can set global via query", async () => {
     const { serveBackgroundUpload } =
       await import("@razzia/socket/services/visuals")
@@ -447,6 +585,7 @@ describe("resolveVisuals", () => {
 
     expect(resolveVisuals(undefined, getGameConfig())).toEqual({
       soundTheme: "techno",
+      showIntensity: "full",
     })
     expect(
       resolveVisuals(
@@ -456,15 +595,160 @@ describe("resolveVisuals", () => {
     ).toEqual({
       backgroundUrl: "/config-assets/backgrounds/quiz.png",
       soundTheme: "techno",
+      showIntensity: "full",
     })
   })
 
-  it("defaults sound theme to classic when game config omits it", async () => {
+  it("defaults sound theme to the show's own score when game config omits it", async () => {
     const { resolveVisuals } = await import("@razzia/socket/services/visuals")
     const { getGameConfig } = await import("@razzia/socket/services/config")
 
     expect(resolveVisuals(undefined, getGameConfig())).toEqual({
-      soundTheme: "classic",
+      soundTheme: "show",
+      showIntensity: "full",
     })
+  })
+
+  it("resolves a configured show intensity, and defaults to full", async () => {
+    fs.writeFileSync(
+      path.join(configRoot, "game.json"),
+      JSON.stringify({
+        managerPassword: "secret",
+        visuals: { showIntensity: "calm" },
+      }),
+    )
+
+    const { resolveVisuals } = await import("@razzia/socket/services/visuals")
+    const { getGameConfig } = await import("@razzia/socket/services/config")
+
+    expect(resolveVisuals(undefined, getGameConfig()).showIntensity).toBe(
+      "calm",
+    )
+  })
+})
+
+describe("live game backgrounds", () => {
+  it("keeps a replaced global background while a running game shows it", async () => {
+    const {
+      backgroundPathFromUrl,
+      getBackgroundAssetPath,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const first = storeBackgroundAsset("one.png", pngBytes)
+    setGlobalBackground(first.ref)
+    const firstPath = getBackgroundAssetPath(first.ref.path) ?? ""
+    setLiveBackgroundPathsProvider(() => [
+      backgroundPathFromUrl(first.url) ?? "",
+    ])
+
+    const second = storeBackgroundAsset("two.png", pngBytes)
+    setGlobalBackground(second.ref)
+
+    expect(fs.existsSync(firstPath)).toBe(true)
+  })
+
+  it("keeps a cleared global background while a running game shows it", async () => {
+    const {
+      clearGlobalBackground,
+      getBackgroundAssetPath,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const uploaded = storeBackgroundAsset("clear.png", pngBytes)
+    setGlobalBackground(uploaded.ref)
+    setLiveBackgroundPathsProvider(() => [uploaded.ref.path])
+
+    clearGlobalBackground()
+
+    expect(fs.existsSync(getBackgroundAssetPath(uploaded.ref.path) ?? "")).toBe(
+      true,
+    )
+  })
+
+  it("deletes the file once no running game shows it", async () => {
+    const {
+      clearGlobalBackground,
+      cleanupBackgroundAssetsOnStartup,
+      getBackgroundAssetPath,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const uploaded = storeBackgroundAsset("later.png", pngBytes)
+    const uploadedPath = getBackgroundAssetPath(uploaded.ref.path) ?? ""
+    setGlobalBackground(uploaded.ref)
+    let live: string[] = [uploaded.ref.path]
+    setLiveBackgroundPathsProvider(() => live)
+
+    clearGlobalBackground()
+    expect(fs.existsSync(uploadedPath)).toBe(true)
+
+    live = []
+    const result = cleanupBackgroundAssetsOnStartup()
+
+    expect(result.deleted).toBe(1)
+    expect(fs.existsSync(uploadedPath)).toBe(false)
+  })
+
+  it("keeps every file when the provider throws", async () => {
+    const {
+      clearGlobalBackground,
+      getBackgroundAssetPath,
+      reclaimBackgroundAssets,
+      setGlobalBackground,
+      setLiveBackgroundPathsProvider,
+      storeBackgroundAsset,
+    } = await import("@razzia/socket/services/visuals")
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const uploaded = storeBackgroundAsset("boom.png", pngBytes)
+    const uploadedPath = getBackgroundAssetPath(uploaded.ref.path) ?? ""
+    const orphan = storeBackgroundAsset("orphan.png", pngBytes)
+    const orphanPath = getBackgroundAssetPath(orphan.ref.path) ?? ""
+    setGlobalBackground(uploaded.ref)
+    setLiveBackgroundPathsProvider(() => {
+      throw new Error("registry unavailable")
+    })
+
+    clearGlobalBackground()
+    const result = reclaimBackgroundAssets({ minimumAgeMs: 0 })
+
+    expect(fs.existsSync(uploadedPath)).toBe(true)
+    expect(fs.existsSync(orphanPath)).toBe(true)
+    expect(result.deleted).toBe(0)
+    expect(result.retained).toBe(result.examined)
+    expect(warn).toHaveBeenCalled()
+  })
+
+  it("turns a public url back into the path it came from", async () => {
+    const { backgroundPathFromUrl, publicBackgroundUrl } =
+      await import("@razzia/socket/services/visuals")
+
+    for (const name of ["room.png", "my room-abc.webp", "café #1 (x).jpg"]) {
+      expect(backgroundPathFromUrl(publicBackgroundUrl(name))).toBe(name)
+    }
+  })
+
+  it("gives undefined for anything that is not a background url", async () => {
+    const { backgroundPathFromUrl } =
+      await import("@razzia/socket/services/visuals")
+
+    for (const url of [
+      undefined,
+      null,
+      42,
+      "",
+      "room.png",
+      "/config-assets/backgrounds/",
+      "/config-assets/backgrounds/%E0%A4%A.png",
+      "/config-assets/backgrounds/..%2Fevil.png",
+      "/config-assets/backgrounds/a%2Fb.png",
+      "/config-assets/backgrounds/notes.txt",
+      "/elsewhere/room.png",
+    ]) {
+      expect(backgroundPathFromUrl(url), String(url)).toBeUndefined()
+    }
   })
 })

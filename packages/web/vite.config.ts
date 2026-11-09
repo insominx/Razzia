@@ -4,6 +4,11 @@ import react from "@vitejs/plugin-react"
 import { fileURLToPath } from "url"
 import { defineConfig } from "vite"
 import { version } from "../../package.json"
+import { fsDeny, parseAllowedHosts } from "./vite.security"
+
+const configDir = fileURLToPath(new URL("../../config", import.meta.url))
+// Comma-separated host names the dev and preview servers answer to, or "*".
+const allowedHosts = parseAllowedHosts(process.env.RAZZIA_ALLOWED_HOSTS)
 
 export default defineConfig({
   define: {
@@ -33,6 +38,8 @@ export default defineConfig({
   server: {
     port: 3000,
     host: "0.0.0.0",
+    allowedHosts,
+    fs: { deny: fsDeny(configDir) },
     proxy: {
       "/ws": {
         target: "http://localhost:3001",
@@ -46,6 +53,7 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: "0.0.0.0",
+    allowedHosts,
   },
   build: {
     chunkSizeWarningLimit: 2000,

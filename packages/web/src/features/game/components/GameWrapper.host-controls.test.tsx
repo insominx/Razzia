@@ -18,6 +18,7 @@ vi.mock("@razzia/web/features/game/components/LectureJoinHint", () => ({
 
 vi.mock("@razzia/web/features/game/contexts/socket-context", () => ({
   useEvent: vi.fn(),
+  useSocket: () => ({ isConnected: true }),
 }))
 
 vi.mock("@razzia/web/features/game/stores/player", () => ({
@@ -26,6 +27,23 @@ vi.mock("@razzia/web/features/game/stores/player", () => ({
 
 vi.mock("@razzia/web/features/game/stores/question", () => ({
   useQuestionStore: () => ({ setQuestionStates: vi.fn() }),
+}))
+
+vi.mock("@razzia/web/features/game/audio/score", () => ({
+  score: {
+    configure: vi.fn(),
+    start: vi.fn(),
+    cue: vi.fn(),
+    stop: vi.fn(),
+    setRound: vi.fn(),
+    dispose: vi.fn(),
+    debug: vi.fn(),
+  },
+}))
+
+vi.mock("@razzia/web/features/game/hooks/use-show-intensity", () => ({
+  useCalmVisuals: () => false,
+  useShowIntensity: () => "full",
 }))
 
 vi.mock("@razzia/web/features/game/stores/sound", () => ({

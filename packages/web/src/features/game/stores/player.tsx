@@ -24,7 +24,13 @@ interface PlayerStore<T> {
   status: Status<T> | null
   visuals: ResolvedVisuals
   lastAnswer: LastAnswer | null
+  /**
+   * The lobby head count. The server sends it as a phone joins or reconnects,
+   * before the Wait screen exists, so it is kept here rather than there.
+   */
+  playersHere: number | null
 
+  setPlayersHere: (_count: number) => void
   setGameId: (_gameId: string | null) => void
   setVisuals: (_visuals: ResolvedVisuals) => void
 
@@ -46,11 +52,13 @@ const initialState = {
   status: null,
   visuals: {},
   lastAnswer: null,
+  playersHere: null,
 }
 
 export const usePlayerStore = create<PlayerStore<StatusDataMap>>((set) => ({
   ...initialState,
 
+  setPlayersHere: (playersHere) => set({ playersHere }),
   setGameId: (gameId) => set({ gameId }),
   setVisuals: (visuals) => set({ visuals }),
 

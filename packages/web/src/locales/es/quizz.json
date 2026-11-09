@@ -35,5 +35,42 @@
     "title": "¿Descartar los cambios sin guardar?",
     "description": "Tus cambios en este cuestionario no se han guardado.",
     "discard": "Descartar"
+  },
+  "fitWarning": {
+    "card": "Puede que no quepa en el proyector",
+    "prompt": "Esta pregunta es larga para el proyector. Acórtala o divídela en frases, o podría cortarse.",
+    "answer": "Una respuesta tiene más de 90 caracteres y puede que no quepa en su casilla."
+  },
+  "rehearse": {
+    "button": "Ensayar",
+    "buttonHint": "Reproduce este cuestionario en las pantallas del proyector y del móvil tal como está ahora, con los cambios sin guardar",
+    "unavailable": "El navegador no guardó el borrador, así que no se pudo abrir el ensayo.",
+    "title": "Ensayo: {{subject}}",
+    "empty": "Todavía no hay nada que ensayar. Abre un cuestionario en el editor y elige Ensayar.",
+    "previousQuestion": "Pregunta anterior",
+    "nextQuestion": "Pregunta siguiente",
+    "questionOf": "Pregunta {{current}} de {{total}}",
+    "view": {
+      "host": "Proyector",
+      "phone": "Móvil"
+    },
+    "screens": {
+      "question": "Pregunta",
+      "answers": "Respuestas abiertas",
+      "reveal": "El recuento · la sala acierta",
+      "reveal-wrong": "El recuento · la sala falla",
+      "wait": "Enviada",
+      "verdict": "Correcta",
+      "verdict-wrong": "Incorrecta",
+      "verdict-none": "Sin respuesta"
+    },
+    "replay": "Repetir",
+    "frameTitle": "Pantalla del ensayo",
+    "keys": "← → pantalla · ↑ ↓ pregunta · R repetir · P proyector o móvil",
+    "placeholder": {
+      "subject": "Cuestionario sin título",
+      "question": "Aquí va tu pregunta",
+      "answer": "Respuesta"
+    }
   }
 }

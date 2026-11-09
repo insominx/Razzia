@@ -25,6 +25,10 @@
       "techno": {
         "description": "Pack techno completo: base techno durante las respuestas y sonidos techno de interfaz y podio.",
         "title": "Techno"
+      },
+      "show": {
+        "title": "Show",
+        "description": "Una banda sonora generada que sigue la ronda: suave al leer, un drop al abrir las respuestas y un golpe en el veredicto. Sube un poco con cada pregunta."
       }
     },
     "invalidType": "Elige un archivo de imagen",
@@ -34,7 +38,22 @@
     "upload": "Subir fondo",
     "uploading": "Subiendo",
     "globalDefaultHelp": "Fondo global predeterminado para partidas sin override del cuestionario.",
-    "uploadLimits": "PNG, JPEG, WebP o GIF de hasta 5 MB."
+    "uploadLimits": "PNG, JPEG, WebP o GIF de hasta 5 MB.",
+    "showIntensity": {
+      "label": "Intensidad del espectáculo",
+      "full": {
+        "title": "Completo",
+        "description": "Destellos y golpes de sonido que llenan toda la pantalla, un foco sobre la respuesta más elegida y la música completa."
+      },
+      "calm": {
+        "title": "Tranquilo",
+        "description": "Sin golpes a pantalla completa, foco ni haces de luz. El veredicto ocurre en la ficha. Música 12 dB más baja, sin ritmo mientras se responde."
+      },
+      "silent": {
+        "title": "Silencio",
+        "description": "Tranquilo, sin ningún audio."
+      }
+    }
   },
   "quizz": {
     "create": "Crear cuestionario",
@@ -42,12 +61,22 @@
     "deleteConfirm": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
     "deleted": "Cuestionario eliminado",
     "import": "Importar cuestionario desde JSON",
+    "importTooLarge": "El archivo del cuestionario es demasiado grande para importarlo (máx. 900 KB)",
     "none": "Aún no se ha creado ningún cuestionario",
     "notFound": "No se encontró ningún cuestionario",
     "pleaseCreate": "Por favor crea un cuestionario primero",
     "pleaseSelect": "Por favor selecciona un cuestionario",
     "startGame": "Iniciar juego",
-    "invalidJson": "Archivo JSON no válido"
+    "invalidJson": "Archivo JSON no válido",
+    "questionCount_one": "{{count}} pregunta",
+    "questionCount_other": "{{count}} preguntas",
+    "edited": "Editado",
+    "editedTitle": "Editado aquí: difiere de la versión incluida con este servidor",
+    "editedNote": "Los cuestionarios marcados como Editado difieren de la versión incluida con este servidor. Las actualizaciones del servidor conservan tus cambios y nunca los sobrescriben. Restaurar recupera la versión incluida.",
+    "restore": "Restaurar versión incluida",
+    "restoreConfirm": "¿Reemplazar tus cambios en «{{name}}» por la versión incluida con este servidor? Tus cambios se perderán.",
+    "restoreAction": "Restaurar",
+    "restored": "Versión incluida restaurada"
   },
   "result": {
     "delete": "Eliminar resultado",

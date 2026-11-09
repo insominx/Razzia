@@ -4,7 +4,7 @@ import {
   ANSWER_IDENTITY,
   ANSWERS_LABELS,
   answerSlotPlacement,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { useQuizzEditor } from "@razzia/web/features/quizz/contexts/quizz-editor-context"
 import clsx from "clsx"
 import { Check, Minus, Plus } from "lucide-react"

@@ -1,12 +1,15 @@
 {
   "auth": {
     "invalidInviteCode": "Código de invitación inválido",
+    "usernameInvalid": "El nombre de usuario contiene caracteres no válidos",
+    "usernameTaken": "Este nombre de usuario ya está en uso",
     "usernameTooLong": "El nombre de usuario no puede superar los 20 caracteres",
     "usernameTooShort": "El nombre de usuario no puede tener menos de 4 caracteres"
   },
   "game": {
     "alreadyStarted": "Esta partida ya ha comenzado",
     "expired": "Partida expirada",
+    "full": "Esta partida está llena",
     "kickedByManager": "Has sido expulsado por el administrador",
     "managerAlreadyConnected": "El administrador ya está conectado",
     "managerDisconnected": "El administrador se ha desconectado",
@@ -19,6 +22,7 @@
   "manager": {
     "failedToReadConfig": "Error al leer la configuración del juego",
     "invalidPassword": "Contraseña incorrecta",
+    "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo más tarde.",
     "passwordNotConfigured": "La contraseña del administrador no está configurada",
     "unauthorized": "No estás autorizado"
   },
@@ -33,12 +37,18 @@
     "failedToSave": "El cuestionario está incompleto, asegúrate de que todas las preguntas tengan un título y al menos una respuesta correcta",
     "failedToUpdate": "Error al actualizar el cuestionario",
     "invalidMediaUrl": "La URL del medio debe ser una URL válida",
+    "invalidSolution": "Las soluciones deben ser únicas y corresponder a respuestas existentes",
+    "invalidTime": "El tiempo debe ser ilimitado o de 1 a 600 segundos",
     "noQuestions": "Un cuestionario debe tener al menos una pregunta",
     "notFound": "Cuestionario no encontrado",
     "questionEmpty": "La pregunta no puede estar vacía",
     "subjectEmpty": "El tema no puede estar vacío",
+    "textTooLong": "El texto es demasiado largo",
     "tooFewAnswers": "Una pregunta debe tener al menos 2 respuestas",
-    "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas"
+    "tooManyAnswers": "Una pregunta no puede tener más de 4 respuestas",
+    "tooManyQuestions": "Un cuestionario no puede tener más de 200 preguntas",
+    "failedToRestore": "No se pudo restaurar la versión incluida",
+    "noCommittedVersion": "Este cuestionario no tiene una versión incluida que restaurar"
   },
   "visuals": {
     "backgroundClearFailed": "Error al borrar el fondo",
@@ -53,11 +63,17 @@
     "invalidDialect": "El modo de diseño no es válido",
     "invalidSoundTheme": "El tema de sonido no es válido",
     "soundThemeSetFailed": "Error al actualizar el tema de sonido",
-    "unsupportedBackgroundType": "Usa una imagen PNG, JPEG, WebP o GIF"
+    "tooManyPendingBackgrounds": "Hay demasiados fondos subidos esperando a usarse. Inténtalo de nuevo más tarde",
+    "unsupportedBackgroundType": "Usa una imagen PNG, JPEG, WebP o GIF",
+    "invalidShowIntensity": "Elige Completo, Tranquilo o Silencio",
+    "showIntensitySetFailed": "No se pudo cambiar la intensidad del espectáculo"
   },
   "route": {
     "back": "Volver al inicio",
     "description": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
     "title": "Algo salió mal"
+  },
+  "result": {
+    "failedToDelete": "Error al eliminar el resultado"
   }
 }

@@ -3,7 +3,7 @@ import type { QuestionMedia } from "@razzia/common/types/game"
 import {
   ANSWER_IDENTITY,
   ANSWERS_LABELS,
-} from "@razzia/web/features/game/utils/constants"
+} from "@razzia/web/features/game/utils/game-constants"
 import { useResultModal } from "@razzia/web/features/manager/contexts/result-modal-context"
 import clsx from "clsx"
 import { Check, Clock, ImageOff, Music, Video, X } from "lucide-react"
@@ -52,16 +52,17 @@ const MediaPreview = ({ media }: { media?: QuestionMedia }) => {
 }
 
 const ResultModalAnswers = () => {
-  const { questionResult, totalPlayers, answeredCount } = useResultModal()
+  const { questionResult, answerCounts, noAnswerCount } = useResultModal()
   const { t } = useTranslation()
 
-  const noAnswerCount = totalPlayers - answeredCount
+  if (!questionResult) {
+    return null
+  }
 
   const rows: AnswerRow[] = [
     ...questionResult.answers.map((label, ai) => ({
       label,
-      count: questionResult.playerAnswers.filter((pa) => pa.answerId === ai)
-        .length,
+      count: answerCounts[ai] ?? 0,
       isCorrect: questionResult.solutions.includes(ai),
       color: ANSWER_IDENTITY[ai % 4],
       answerLabel: ANSWERS_LABELS[ai % 4],

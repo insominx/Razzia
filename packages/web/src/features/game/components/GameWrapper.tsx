@@ -1,14 +1,32 @@
 import { EVENTS } from "@razzia/common/constants"
-import type { Status } from "@razzia/common/types/game/status"
+import { STATUS, type Status } from "@razzia/common/types/game/status"
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import Button from "@razzia/web/components/Button"
 import Loader from "@razzia/web/components/Loader"
 import LectureJoinHint from "@razzia/web/features/game/components/LectureJoinHint"
 import VolumeControl from "@razzia/web/features/game/components/VolumeControl"
-import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
+import {
+  useEvent,
+  useSocket,
+} from "@razzia/web/features/game/contexts/socket-context"
+import {
+  useCalmVisuals,
+  useShowIntensity,
+} from "@razzia/web/features/game/hooks/use-show-intensity"
+import { useLaunchStore } from "@razzia/web/features/game/stores/launch"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import {
+  moodForStatus,
+  useMoodStore,
+} from "@razzia/web/features/game/stores/mood"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
+import {
+  score,
+  useScoreConfig,
+  useScoreRound,
+} from "@razzia/web/features/game/audio"
+import { useSoundTheme } from "@razzia/web/features/game/hooks/use-sfx"
 import { useSoundStore } from "@razzia/web/features/game/stores/sound"
 import { MANAGER_SKIP_BTN } from "@razzia/web/features/game/utils/constants"
 import clsx from "clsx"
@@ -17,10 +35,26 @@ import {
   type PropsWithChildren,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
+
+/**
+ * How long Next stays held after a click with no answer from the server. The
+ * held button only stops a double click; a command lost on a dropped connection
+ * must not leave the host without one.
+ */
+export const NEXT_RETRY_MS = 4_000
+
+/**
+ * After the screen or its command changes, a click is still the one aimed at
+ * the old screen: a double click, or Enter held on the focused button, lands
+ * here a moment after the server's answer. Skip becomes Abort on the very next
+ * screen, so that second click would end the question it just opened.
+ */
+export const SCREEN_SETTLE_MS = 600
 
 type Props = PropsWithChildren & {
   statusName: Status | undefined
@@ -42,43 +76,133 @@ const GameWrapper = ({
 }: Props) => {
   const { player } = usePlayerStore()
   const { setQuestionStates } = useQuestionStore()
+  const questionStates = useQuestionStore((state) => state.questionStates)
+  const intensity = useShowIntensity()
+  const theme = useSoundTheme()
   const { t } = useTranslation()
+  const { isConnected } = useSocket()
+  const moodOverride = useMoodStore((state) => state.override)
+  const calm = useCalmVisuals()
   const [isDisabled, setIsDisabled] = useState(false)
   const next = statusName ? MANAGER_SKIP_BTN[statusName] : null
   const hostControls = useManagerStore((state) => state.hostControls)
+  const managerStatus = useManagerStore((state) => state.status)
+  // Set only on the host of a lecture game.
+  const lecture = useManagerStore((state) => state.lecture)
   const controls = manager && hostControls
 
   useLayoutEffect(() => {
     useSoundStore.getState().bindSurface(manager ? "manager" : "player")
   }, [manager])
 
-  useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total }) => {
+  // The score follows this session's pack, intensity and round, and stops with
+  // the game: leaving the page must not leave a bed playing. A lecture deck
+  // plays its questions by slide, so its round is how many it has played: the
+  // last slide's question, asked early, is not the final one. A phone learns
+  // what was played from the question's update.
+  const playedSoFar = lecture?.played ?? questionStates?.played
+  useScoreConfig({ intensity, theme, surface: manager ? "host" : "player" })
+  useScoreRound(
+    playedSoFar
+      ? Math.max(1, playedSoFar.length)
+      : (questionStates?.current ?? 1),
+    questionStates?.total ?? 0,
+  )
+
+  useEffect(
+    () => () => {
+      score.stop()
+    },
+    [],
+  )
+
+  // GO is the card's that directly follows the countdown. Any other screen
+  // first means that card was missed (a reconnect past it), and a GO left armed
+  // would flash on some later question's card.
+  useEffect(() => {
+    if (
+      statusName !== undefined &&
+      statusName !== STATUS.SHOW_START &&
+      statusName !== STATUS.SHOW_PREPARED
+    ) {
+      useLaunchStore.getState().disarm()
+    }
+  }, [statusName])
+
+  useEvent(EVENTS.GAME.UPDATE_QUESTION, ({ current, total, played }) => {
     setQuestionStates({
       current,
       total,
+      // A lecture's played questions: how a phone draws its pips.
+      ...(played ? { played } : {}),
     })
   })
 
   useEvent(EVENTS.GAME.ERROR_MESSAGE, (message) => {
-    toast.error(t(message))
+    // One toast per error: mashed buttons replace it instead of stacking.
+    toast.error(t(message), { id: message })
     console.log(t(message))
     setIsDisabled(false)
   })
 
+  // Any word from the server answers the click. A click sent while the socket
+  // was down can be lost, and the reconnect then restores the very same screen:
+  // a new status object, or the connection itself coming back, frees it too.
   useEffect(() => {
     setIsDisabled(false)
-  }, [nextActionKey, statusName])
+  }, [nextActionKey, statusName, managerStatus, isConnected])
+
+  const changedAt = useRef<number | null>(null)
+  const seenFirstScreen = useRef(false)
+
+  useEffect(() => {
+    if (!seenFirstScreen.current) {
+      seenFirstScreen.current = true
+
+      return
+    }
+
+    changedAt.current = Date.now()
+  }, [nextActionKey, statusName, managerStatus])
+
+  useEffect(() => {
+    if (!isDisabled) {
+      return
+    }
+
+    const timer = setTimeout(() => setIsDisabled(false), NEXT_RETRY_MS)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [isDisabled])
 
   const handleNext = () => {
+    if (
+      isDisabled ||
+      (changedAt.current !== null &&
+        Date.now() - changedAt.current < SCREEN_SETTLE_MS)
+    ) {
+      return
+    }
+
     setIsDisabled(true)
     onNext?.()
   }
 
   return (
-    <section className="relative flex min-h-dvh">
-      <Atmosphere recipe="photo" backgroundUrl={backgroundUrl} />
+    // A phone is one screen tall, so the tiles stay pinned and only the prompt
+    // scrolls. The stage grows instead, so a layout that does not fit shows up
+    // as a page that scrolls (and as a failure in the Director's fit report).
+    <section className="stage:h-auto stage:min-h-dvh relative flex h-dvh">
+      <Atmosphere
+        recipe="photo"
+        backgroundUrl={backgroundUrl}
+        mood={moodOverride ?? moodForStatus(statusName)}
+        calm={calm}
+      />
 
-      <div className="z-10 flex w-full flex-1 flex-col justify-between">
+      <div className="z-10 flex min-h-0 w-full flex-1 flex-col justify-between">
         {!statusName ? (
           <div className="flex h-full w-full flex-1 flex-col items-center justify-center">
             <Loader className="h-30" />
@@ -88,7 +212,9 @@ const GameWrapper = ({
           </div>
         ) : (
           <>
-            <div className="flex w-full items-center gap-2 p-4">
+            {/* On the stage the controls float over the corners: they are for
+                the teacher, and the room's frame belongs to the question. */}
+            <div className="stage:absolute stage:inset-x-0 stage:top-0 stage:z-20 flex w-full items-center gap-2 p-4">
               <div className="flex flex-1 items-center justify-between">
                 {controls && next && (
                   <Button
@@ -98,6 +224,7 @@ const GameWrapper = ({
                         "pointer-events-none": isDisabled,
                       },
                     )}
+                    disabled={isDisabled}
                     onClick={handleNext}
                   >
                     {t(next)}
@@ -118,6 +245,15 @@ const GameWrapper = ({
 
               <VolumeControl />
             </div>
+
+            {!isConnected && (
+              <p
+                role="status"
+                className="bg-warning text-on-accent stage:top-4 stage:px-6 stage:py-2 stage:text-[1.5rem] absolute top-3 left-1/2 z-50 -translate-x-1/2 rounded-full px-4 py-1.5 text-sm font-bold"
+              >
+                {t("common:reconnecting")}
+              </p>
+            )}
 
             <LayoutGroup id={manager ? "manager-game" : "player-game"}>
               {children}

@@ -29,19 +29,77 @@ export const emitConfig = (socket: SocketContext["socket"]) => {
   })
 }
 
-class Manager {
-  private loggedClients = new Set<string>()
+// A login is forgotten after this long without any authorized call, so a
+// forgotten tab or a one-off visitor does not stay logged in forever. Every
+// authorized call (and a host reconnecting to a game) starts the time again.
+export const LOGIN_IDLE_MS = 12 * 60 * 60_000
 
-  isLogged(socket: Socket) {
-    return this.loggedClients.has(getClientId(socket))
+// Hard bound on remembered logins; the least recently used one goes first.
+export const MAX_LOGGED_CLIENTS = 500
+
+class Manager {
+  // The client id maps to the time of its last authorized call. A Map keeps insertion order
+  // and a refresh re-inserts, so the first entry is always the least recently
+  // used one and the expired ones are all at the front.
+  private loggedClients = new Map<string, number>()
+
+  private isActive(clientId: string, now: number) {
+    const lastSeen = this.loggedClients.get(clientId)
+
+    if (lastSeen === undefined) {
+      return false
+    }
+
+    if (now - lastSeen >= LOGIN_IDLE_MS) {
+      this.loggedClients.delete(clientId)
+
+      return false
+    }
+
+    return true
   }
 
+  private touch(clientId: string, now: number) {
+    this.loggedClients.delete(clientId)
+    this.loggedClients.set(clientId, now)
+  }
+
+  private prune(now: number) {
+    for (const [clientId, lastSeen] of this.loggedClients) {
+      if (
+        now - lastSeen < LOGIN_IDLE_MS &&
+        this.loggedClients.size <= MAX_LOGGED_CLIENTS
+      ) {
+        return
+      }
+
+      this.loggedClients.delete(clientId)
+    }
+  }
+
+  // Asking refreshes: a host who is still using the app is never logged out
+  // under their hands, only one who has been gone for the whole window.
   isLoggedByClientId(clientId: string) {
-    return this.loggedClients.has(clientId)
+    const now = Date.now()
+
+    if (!this.isActive(clientId, now)) {
+      return false
+    }
+
+    this.touch(clientId, now)
+
+    return true
+  }
+
+  isLogged(socket: Socket) {
+    return this.isLoggedByClientId(getClientId(socket))
   }
 
   login(socket: Socket) {
-    this.loggedClients.add(getClientId(socket))
+    const now = Date.now()
+
+    this.touch(getClientId(socket), now)
+    this.prune(now)
   }
 
   logout(socket: Socket) {
@@ -70,3 +128,27 @@ class Manager {
 }
 
 export default new Manager()
+
+// For a plain request for the config: a config problem must reach the host as
+// a message, not as a silent nothing.
+export const emitConfigOrError = (socket: SocketContext["socket"]) => {
+  try {
+    emitConfig(socket)
+  } catch (error) {
+    console.error("Failed to read the config:", error)
+    socket.emit(
+      EVENTS.MANAGER.ERROR_MESSAGE,
+      "errors:manager.failedToReadConfig",
+    )
+  }
+}
+
+// The refresh after a change that is already saved: if it fails, the change
+// must not be reported as failed.
+export const emitConfigSafely = (socket: SocketContext["socket"]) => {
+  try {
+    emitConfig(socket)
+  } catch (error) {
+    console.error("Failed to refresh the config after a change:", error)
+  }
+}

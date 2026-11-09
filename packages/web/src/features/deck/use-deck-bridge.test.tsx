@@ -207,6 +207,21 @@ describe("useDeckBridge", () => {
     )
   })
 
+  it("lets the slide show through when the deck asks, and not otherwise", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+
+    expect(document.documentElement.dataset.backdrop).toBeUndefined()
+
+    sendCommand({ type: "backdrop", mode: "slide" })
+    expect(document.documentElement.dataset.backdrop).toBe("slide")
+
+    sendCommand({ type: "backdrop", mode: "own" })
+    expect(document.documentElement.dataset.backdrop).toBeUndefined()
+  })
+
   it("starts quiet and goes quiet again when the deck hides the page", () => {
     stubStorage()
     const { unmount } = renderHook(() => {
@@ -453,6 +468,127 @@ describe("useDeckBridge", () => {
     })
   })
 
+  it("answers a command that arrives before any hello, and a replaced queued one", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+
+    sendCommand({ type: "play", question: 0 })
+    sendCommand({ type: "play", question: 1 })
+
+    expect(postedOf("result")).toEqual([
+      expect.objectContaining({ command: "play", outcome: "queued" }),
+      expect.objectContaining({
+        command: "play",
+        outcome: "ignored",
+        reason: "superseded",
+      }),
+      expect.objectContaining({ command: "play", outcome: "queued" }),
+    ])
+  })
+
+  it("answers a queued command when the deck closes the game", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    sendCommand({ type: "play", question: 2 })
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    expect(postedOf("result")).toContainEqual(
+      expect.objectContaining({
+        command: "play",
+        outcome: "ignored",
+        reason: "closed",
+      }),
+    )
+  })
+
+  it("does not accept the attached game for a different quiz", () => {
+    const storage = stubStorage()
+    mocks.router.pathname = "/manager/config"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    fire(EVENTS.MANAGER.GAME_CREATED, {
+      gameId: "g-1",
+      inviteCode: "123456",
+      visuals: {},
+    })
+    attachTo({ name: STATUS.SHOW_ROOM, data: {} })
+    expect(postedOf("result")).toContainEqual(
+      expect.objectContaining({ command: "ensureGame", outcome: "accepted" }),
+    )
+    postMessage.mockClear()
+
+    sendCommand({ type: "ensureGame", quiz: "other-quiz" })
+
+    expect(postedOf("result")).not.toContainEqual(
+      expect.objectContaining({ command: "ensureGame", outcome: "accepted" }),
+    )
+    expect(storage.getItem("razzia_deck_games") ?? "").not.toContain(
+      "other-quiz",
+    )
+    expect(mocks.navigate).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "/manager/config" }),
+    )
+  })
+
+  it("closes a game that was created after the deck had already left", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    mocks.router.pathname = "/manager/config"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "hello" })
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    fire(EVENTS.MANAGER.GAME_CREATED, {
+      gameId: "g-orphan",
+      inviteCode: "123456",
+      visuals: {},
+    })
+
+    expect(mocks.socket.emit).toHaveBeenCalledWith(EVENTS.MANAGER.LEAVE, {
+      gameId: "g-orphan",
+    })
+    expect(storage.getItem("razzia_deck_games") ?? "").not.toContain("g-orphan")
+  })
+
+  it("lets an open dialog keep Escape and Space", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+
+    const dialog = document.createElement("div")
+    dialog.setAttribute("role", "alertdialog")
+    const button = document.createElement("button")
+    dialog.append(button)
+    document.body.append(dialog)
+    const escape = new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    })
+
+    act(() => {
+      button.dispatchEvent(escape)
+    })
+    dialog.remove()
+
+    expect(postedOf("key")).toEqual([])
+    expect(escape.defaultPrevented).toBe(false)
+  })
+
   it("forgets one game's results when another game starts", () => {
     act(() => {
       useManagerStore.getState().setGameId("g-1")
@@ -528,6 +664,81 @@ describe("useDeckBridge", () => {
     expect(storage.getItem("razzia_deck_games")).toContain("g-new")
   })
 
+  // The created game's answer goes to the connection that asked for it.
+  it("asks again for a lecture game when the connection drops before the answer", () => {
+    stubStorage()
+    mocks.router.pathname = "/manager/config"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+
+    mocks.connection.isConnected = false
+    rerender()
+    mocks.connection.isConnected = true
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toHaveLength(2)
+  })
+
+  it("asks again for a lecture game once a host the server forgot logs back in", () => {
+    stubStorage()
+    mocks.router.pathname = "/manager/config"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+
+    fire(EVENTS.MANAGER.UNAUTHORIZED)
+    expect(mocks.navigate).toHaveBeenLastCalledWith({
+      to: "/manager",
+      replace: true,
+    })
+    mocks.router.pathname = "/manager"
+    rerender()
+    fire(EVENTS.MANAGER.CONFIG, config)
+    mocks.router.pathname = "/manager/config"
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toHaveLength(2)
+  })
+
+  it("asks again for a lecture game that never came, but not sooner", () => {
+    vi.useFakeTimers()
+    stubStorage()
+    mocks.router.pathname = "/manager/config"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    sendCommand({ type: "ensureGame", quiz: QUIZ })
+    const creates = () =>
+      mocks.socket.emit.mock.calls.filter(
+        ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+      )
+
+    act(() => {
+      vi.advanceTimersByTime(9_999)
+    })
+    rerender()
+    expect(creates()).toHaveLength(1)
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(creates()).toHaveLength(2)
+  })
+
   it("opens the config page before creating", () => {
     stubStorage()
     mocks.router.pathname = "/party/manager/old"
@@ -599,12 +810,12 @@ describe("useDeckBridge", () => {
     )
   })
 
-  it.each([
-    ["End quiz", { type: "close", quiz: QUIZ }],
-    ["Restart quiz", { type: "ensureGame", quiz: QUIZ, restart: "always" }],
-  ])("stops asking for the old game after %s", (_label, command) => {
+  // The server ignores a leave from any connection but the game's manager, so
+  // leaving before this one is back in would keep the room open.
+  it("holds End quiz until it is back in, then closes the game", () => {
     vi.useFakeTimers()
-    stubStorage()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
     mocks.router.pathname = "/party/manager/g-1"
     renderHook(() => {
       useDeckBridge()
@@ -612,18 +823,138 @@ describe("useDeckBridge", () => {
     sendCommand({ type: "hello" })
     fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
 
-    sendCommand(command)
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "queued",
+    })
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(lastState()).toMatchObject({ reattaching: true })
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+    expect(mocks.socket.emit).toHaveBeenCalledWith(EVENTS.MANAGER.RECONNECT, {
+      gameId: "g-1",
+    })
+
+    fire(EVENTS.MANAGER.SUCCESS_RECONNECT, {})
+
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "accepted",
+    })
+    expect(lastState()).toMatchObject({ reattaching: false, gameId: null })
+
     mocks.socket.emit.mockClear()
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-
     expect(mocks.socket.emit).not.toHaveBeenCalledWith(
       EVENTS.MANAGER.RECONNECT,
-      {
-        gameId: "g-1",
-      },
+      expect.anything(),
     )
+  })
+
+  it("holds Restart quiz until it is back in, then opens a new lobby", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    const { rerender } = renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.MANAGER.CONFIG, config)
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+
+    sendCommand({ type: "ensureGame", quiz: QUIZ, restart: "always" })
+
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "ensureGame",
+      outcome: "queued",
+    })
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(lastState()).toMatchObject({ reattaching: true })
+
+    fire(EVENTS.MANAGER.SUCCESS_RECONNECT, {})
+
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+
+    mocks.router.pathname = "/manager/config"
+    rerender()
+
+    const creates = mocks.socket.emit.mock.calls.filter(
+      ([event]) => event === EVENTS.GAME.CREATE_LECTURE,
+    )
+
+    expect(creates).toEqual([[EVENTS.GAME.CREATE_LECTURE, QUIZ]])
+  })
+
+  it("gives up a held End quiz when it cannot get back in", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    act(() => {
+      vi.advanceTimersByTime(95_000)
+    })
+
+    expect(errorCodes()).toContain("reattachFailed")
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "ignored",
+      reason: "reattachFailed",
+    })
+    expect(lastState()).toMatchObject({ reattaching: false })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/manager/config",
+      replace: true,
+    })
+
+    // A late answer for the old game closes nothing.
+    mocks.navigate.mockClear()
+    fire(EVENTS.MANAGER.SUCCESS_RECONNECT, {})
+    expect(postedOf("result").at(-1)).toMatchObject({ outcome: "ignored" })
+  })
+
+  it("closes a held End quiz when the server says the game is gone", () => {
+    vi.useFakeTimers()
+    const storage = stubStorage()
+    rememberInStorage(storage, "g-1")
+    mocks.router.pathname = "/party/manager/g-1"
+    renderHook(() => {
+      useDeckBridge()
+    })
+    sendCommand({ type: "hello" })
+    fire(EVENTS.GAME.RESET, "errors:game.managerAlreadyConnected")
+    sendCommand({ type: "close", quiz: QUIZ })
+
+    fire(EVENTS.GAME.RESET, "errors:game.expired")
+
+    expect(postedOf("result").at(-1)).toMatchObject({
+      command: "close",
+      outcome: "accepted",
+    })
+    expect(storage.getItem("razzia_deck_games")).not.toContain("g-1")
+    expect(lastState()).toMatchObject({ reattaching: false })
   })
 
   it("stops asking for a game the server says is gone", () => {

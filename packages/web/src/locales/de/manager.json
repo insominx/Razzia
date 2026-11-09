@@ -25,6 +25,10 @@
       "techno": {
         "description": "Komplettes Techno-Paket: Techno-Bett während der Antworten plus Techno-Sounds für Oberfläche und Podium.",
         "title": "Techno"
+      },
+      "show": {
+        "title": "Show",
+        "description": "Eine erzeugte Musik, die der Runde folgt: leise beim Lesen, ein Drop, wenn die Antworten öffnen, und ein Schlag zur Auflösung. Sie steigt mit jeder Frage ein wenig."
       }
     },
     "invalidType": "Wähle eine Bilddatei aus",
@@ -34,7 +38,22 @@
     "upload": "Hintergrund hochladen",
     "uploading": "Wird hochgeladen",
     "globalDefaultHelp": "Dies ist der globale Standardhintergrund für Spiele ohne Quiz-Override.",
-    "uploadLimits": "PNG, JPEG, WebP oder GIF bis 5 MB."
+    "uploadLimits": "PNG, JPEG, WebP oder GIF bis 5 MB.",
+    "showIntensity": {
+      "label": "Show-Intensität",
+      "full": {
+        "title": "Voll",
+        "description": "Licht- und Klangschläge über das ganze Bild, ein Scheinwerfer auf die meistgewählte Antwort und die volle Musik."
+      },
+      "calm": {
+        "title": "Ruhig",
+        "description": "Keine bildfüllenden Schläge, kein Scheinwerfer, keine Lichtstrahlen. Das Urteil erscheint auf der Kachel. Musik 12 dB leiser, ohne Groove beim Antworten."
+      },
+      "silent": {
+        "title": "Stumm",
+        "description": "Ruhig, ganz ohne Ton."
+      }
+    }
   },
   "quizz": {
     "create": "Quiz erstellen",
@@ -42,12 +61,22 @@
     "deleteConfirm": "Möchtest du \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     "deleted": "Quiz gelöscht",
     "import": "Quiz aus JSON importieren",
+    "importTooLarge": "Die Quiz-Datei ist zu groß zum Importieren (max. 900 KB)",
     "none": "Noch kein Quiz erstellt",
     "notFound": "Kein Quiz gefunden",
     "pleaseCreate": "Bitte erstelle zuerst ein Quiz",
     "pleaseSelect": "Bitte wähle ein Quiz aus",
     "startGame": "Spiel starten",
-    "invalidJson": "Ungültige JSON-Datei"
+    "invalidJson": "Ungültige JSON-Datei",
+    "questionCount_one": "{{count}} Frage",
+    "questionCount_other": "{{count}} Fragen",
+    "edited": "Bearbeitet",
+    "editedTitle": "Hier bearbeitet: weicht von der mit diesem Server gelieferten Version ab",
+    "editedNote": "Als Bearbeitet markierte Quizze weichen von der mit diesem Server gelieferten Version ab. Server-Updates behalten deine Änderungen und überschreiben sie nie. Wiederherstellen bringt die gelieferte Version zurück.",
+    "restore": "Gelieferte Version wiederherstellen",
+    "restoreConfirm": "Deine Änderungen an „{{name}}“ durch die mit diesem Server gelieferte Version ersetzen? Deine Änderungen gehen verloren.",
+    "restoreAction": "Wiederherstellen",
+    "restored": "Gelieferte Version wiederhergestellt"
   },
   "result": {
     "delete": "Ergebnis löschen",

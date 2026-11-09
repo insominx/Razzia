@@ -2,8 +2,9 @@
   "correct": "正解！",
   "gamePinLabel": "ゲームPIN:",
   "hud": {
-    "responses": "回答数",
-    "time": "時間"
+    "responses": "回答済み",
+    "time": "時間",
+    "opensIn": "開始まで"
   },
   "joinInstruction": "以下でゲームに参加してください",
   "leaderboard": "リーダーボード",
@@ -17,8 +18,6 @@
     "other": "{{rank}}位"
   },
   "rankSuffix": "位",
-  "resultBehind": "、差は ",
-  "resultTop": "あなたの順位は ",
   "startGame": "ゲーム開始",
   "usernamePlaceholder": "ユーザー名を入力",
   "waitingForAnswers": "プレイヤーの回答を待っています",
@@ -34,5 +33,53 @@
   "yourAnswer": "あなたの回答",
   "lectureNextQuestion": "次の問題は講義の途中で出題されます。",
   "lectureFinalStandings": "最終順位は講義の最後に発表されます。",
-  "lectureJoinHint": "{{url}} で参加 · PIN {{pin}}"
+  "lectureJoinHint": "{{url}} で参加 · PIN {{pin}}",
+  "reveal": {
+    "time": "終了",
+    "allIn": "全員回答",
+    "headline": {
+      "crowdWrong": "正解は{{of}}人中{{right}}人だけ。{{wrong}}人が{{letters}}にだまされました。",
+      "crowdRight": "{{of}}人中{{right}}人が正解。",
+      "everyone": "全員正解！",
+      "nobody": "誰も回答しませんでした。"
+    },
+    "fastest": "最速：{{name}}（{{seconds}}秒）"
+  },
+  "noAnswer": "未回答",
+  "itWas": "正解は",
+  "streak": "{{count}}問連続",
+  "standing": "現在{{place}}",
+  "standingBehind": "現在{{place}}（{{name}}さんの次）",
+  "lockedIn": "回答を確定",
+  "answeredOf": "{{total}}人中{{answered}}人が回答",
+  "standingUp": "前の問題から▲{{count}}",
+  "standingDown": "前の問題から▼{{count}}",
+  "standingGap": "{{name}}さんまであと{{points}}点。次の素早い正解で追い抜けます。",
+  "standingLeader": "トップです。この調子！",
+  "finishedSummary": "{{points}}点 · {{total}}人中{{rank}}位",
+  "medal": {
+    "1": "金",
+    "2": "銀",
+    "3": "銅"
+  },
+  "board": {
+    "newLeader": "{{name}}さんが{{other}}さんを抜いて首位に",
+    "overtook": "{{name}}さんが{{other}}さんを抜いた！",
+    "enters": "{{name}}さんがトップ5入り",
+    "biggestGain": "{{name}}さんが最多得点：+{{points}}",
+    "tight": "{{name}}さんと{{other}}さんの差はわずか{{points}}点",
+    "leads": "{{name}}さんが{{points}}点で首位"
+  },
+  "questionOf": "{{total}}問中{{number}}問目",
+  "finalQuestion": "最終問題",
+  "go": "スタート",
+  "seatsMore": "ほか{{count}}人",
+  "youreIn": "{{name}}さん、参加できました",
+  "playersHere": "{{count}}人が参加中",
+  "standingLevel": "{{name}}さんと同点です。次の素早い正解で追い抜けます。",
+  "leave": {
+    "title": "ルームを閉じますか？",
+    "description": "退出すると、参加している全員のゲームが終了します。",
+    "confirm": "ルームを閉じる"
+  }
 }

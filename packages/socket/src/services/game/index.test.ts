@@ -87,6 +87,51 @@ describe("restampReconnectStatus", () => {
     expect(showQuestionStatus.data.serverNow).toBe(1_100)
   })
 
+  it("refreshes serverNow on the staged verdict, so a reconnect lands at the right beat", () => {
+    const result: {
+      name: typeof STATUS.SHOW_RESULT
+      data: StatusDataMap["SHOW_RESULT"]
+    } = {
+      name: STATUS.SHOW_RESULT,
+      data: {
+        correct: true,
+        message: "game:correct",
+        points: 840,
+        myPoints: 9_640,
+        rank: 1,
+        aheadOfMe: null,
+        resultsAt: 5_000,
+        serverNow: 5_000,
+      },
+    }
+    const responses: {
+      name: typeof STATUS.SHOW_RESPONSES
+      data: StatusDataMap["SHOW_RESPONSES"]
+    } = {
+      name: STATUS.SHOW_RESPONSES,
+      data: {
+        questionNumber: 1,
+        question: "Which?",
+        responses: { 0: 3 },
+        solutions: [0],
+        answers: ["A", "B"],
+        resultsAt: 5_000,
+        serverNow: 5_000,
+      },
+    }
+
+    for (const status of [result, responses]) {
+      const restamped = restampReconnectStatus(status, 7_250)
+
+      expect(restamped).not.toBe(status)
+      expect(restamped.data).toMatchObject({
+        resultsAt: 5_000,
+        serverNow: 7_250,
+      })
+      expect(status.data.serverNow).toBe(5_000)
+    }
+  })
+
   it("leaves WAIT selected and unchanged", () => {
     const wait = {
       name: STATUS.WAIT,
@@ -365,7 +410,7 @@ describe("Game reconnect from an attached socket", () => {
     expect(statusOnResync()?.name).toBe(STATUS.SHOW_START)
   })
 
-  it("resyncs the attached manager and still refuses another tab", () => {
+  it("resyncs the attached manager and lets the newest connection take over", () => {
     const manager = createClient("manager", "manager-client")
     const game = new Game({
       io: createIo().io,
@@ -381,13 +426,16 @@ describe("Game reconnect from an attached socket", () => {
     expect(manager.emitted.map(({ event }) => event)).toContain(
       EVENTS.MANAGER.SUCCESS_RECONNECT,
     )
-    expect(otherTab.emitted).toContainEqual({
-      event: EVENTS.GAME.RESET,
-      payload: "errors:game.managerAlreadyConnected",
-    })
+    expect(otherTab.emitted.map(({ event }) => event)).toContain(
+      EVENTS.MANAGER.SUCCESS_RECONNECT,
+    )
+    expect(otherTab.emitted).not.toContainEqual(
+      expect.objectContaining({ event: EVENTS.GAME.RESET }),
+    )
+    expect(game.manager.id).toBe("manager-tab-2")
   })
 
-  it("resyncs the attached player and still refuses another tab", () => {
+  it("resyncs the attached player and lets the newest connection take over", () => {
     const game = new Game({
       io: createIo().io,
       socket: createClient("manager", "manager-client").socket,
@@ -404,10 +452,13 @@ describe("Game reconnect from an attached socket", () => {
     expect(alice.emitted.map(({ event }) => event)).toContain(
       EVENTS.PLAYER.SUCCESS_RECONNECT,
     )
-    expect(otherTab.emitted).toContainEqual({
-      event: EVENTS.GAME.RESET,
-      payload: "errors:game.playerAlreadyConnected",
-    })
+    expect(otherTab.emitted.map(({ event }) => event)).toContain(
+      EVENTS.PLAYER.SUCCESS_RECONNECT,
+    )
+    expect(otherTab.emitted).not.toContainEqual(
+      expect.objectContaining({ event: EVENTS.GAME.RESET }),
+    )
+    expect(game.players.map(({ id }) => id)).toEqual(["p1-tab-2"])
   })
 })
 
@@ -584,5 +635,154 @@ describe("Game with a player who drops out", () => {
 
     await vi.advanceTimersByTimeAsync(6_000)
     expect(responses()).toHaveLength(1)
+  })
+})
+
+describe("Game host controls", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const lobby = () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: {
+        subject: "Controls",
+        questions: [{ ...awayQuizz.questions[0], time: 60 }],
+      },
+      visuals: {},
+    })
+    const alice = createClient("p1", "alice-client")
+    const bobby = createClient("p2", "bobby-client")
+
+    game.join(alice.socket, "Alice")
+    game.join(bobby.socket, "Bobby")
+
+    return { game, emitted, manager, alice, bobby }
+  }
+
+  it("ignores start and kick from a player or a stranger", () => {
+    const { game, emitted, alice } = lobby()
+    const stranger = createClient("stranger", "stranger-client")
+    emitted.length = 0
+
+    for (const socket of [alice.socket, stranger.socket]) {
+      void game.start(socket)
+      game.kickPlayer(socket, "p2")
+    }
+
+    expect(game.started).toBe(false)
+    expect(game.players.map(({ username }) => username)).toEqual([
+      "Alice",
+      "Bobby",
+    ])
+    expect(emitted).toEqual([])
+  })
+
+  it("ignores abort from a player and from the host's old socket", async () => {
+    const { game, emitted, manager, alice } = lobby()
+    void game.start(manager.socket)
+    await vi.advanceTimersByTimeAsync(20_000)
+    const statuses = () =>
+      emitted.filter(
+        ({ payload }) =>
+          (payload as { name?: string } | undefined)?.name ===
+          STATUS.SHOW_RESPONSES,
+      )
+
+    game.abortRound(alice.socket)
+    expect(statuses()).toEqual([])
+
+    game.setManagerDisconnected()
+    game.abortRound(manager.socket)
+    game.kickPlayer(manager.socket, "p2")
+
+    expect(statuses()).toEqual([])
+    expect(game.players).toHaveLength(2)
+    expect(emitted.map(({ event }) => event)).not.toContain(
+      EVENTS.MANAGER.PLAYER_KICKED,
+    )
+  })
+
+  it("starts no timers when the game closes during the start screen", async () => {
+    const { game, emitted, manager } = lobby()
+    void game.start(manager.socket)
+
+    game.close("errors:game.managerDisconnected")
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(emitted.map(({ event }) => event)).not.toContain(
+      EVENTS.GAME.START_COOLDOWN,
+    )
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it("does not let a kicked player back into the lobby", () => {
+    const { game, manager } = lobby()
+
+    game.kickPlayer(manager.socket, "p1")
+    const back = createClient("p1-again", "alice-client")
+    game.join(back.socket, "Alice2")
+
+    expect(game.isKicked("alice-client")).toBe(true)
+    expect(back.emitted).toEqual([
+      {
+        event: EVENTS.GAME.ERROR_MESSAGE,
+        payload: "errors:game.kickedByManager",
+      },
+    ])
+    expect(game.players.map(({ username }) => username)).toEqual(["Bobby"])
+  })
+})
+
+describe("Game hardening", () => {
+  const lobby = () => {
+    const { io, emitted } = createIo()
+    const manager = createClient("manager", "manager-client")
+    const game = new Game({
+      io,
+      socket: manager.socket,
+      quizz: {
+        subject: "Controls",
+        questions: [{ ...awayQuizz.questions[0], time: 60 }],
+      },
+      visuals: {},
+    })
+
+    return { game, emitted, manager }
+  }
+
+  it("takes no more than 200 players, however many client ids a script invents", () => {
+    const { game } = lobby()
+
+    for (let i = 0; i < 200; i += 1) {
+      game.join(createClient(`s${i}`, `c${i}`).socket, `player-${i}`)
+    }
+
+    const late = createClient("late", "late-client")
+    game.join(late.socket, "latecomer")
+
+    expect(game.players).toHaveLength(200)
+    expect(late.emitted).toEqual([
+      { event: EVENTS.GAME.ERROR_MESSAGE, payload: "errors:game.full" },
+    ])
+  })
+
+  it("ignores a disconnect from a socket no player holds", () => {
+    const { game, emitted } = lobby()
+    game.join(createClient("p1", "alice-client").socket, "Alice")
+    const before = emitted.length
+
+    game.setPlayerDisconnected("stale-socket")
+
+    expect(game.players[0].connected).toBe(true)
+    expect(emitted).toHaveLength(before)
   })
 })

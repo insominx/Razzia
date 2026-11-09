@@ -30,7 +30,11 @@ const readMemory = (storage: MemoryStorage | null, now: number): Memory => {
 
     return Object.fromEntries(
       Object.entries(parsed).filter(
-        ([, entry]) => isRemembered(entry) && now - entry.at < MAX_AGE_MS,
+        ([, entry]) =>
+          // An entry dated ahead of now would otherwise never run out.
+          isRemembered(entry) &&
+          now - entry.at >= 0 &&
+          now - entry.at < MAX_AGE_MS,
       ),
     ) as Memory
   } catch {

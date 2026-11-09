@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const { howler } = vi.hoisted(() => ({
   howler: {
-    ctx: null as { resume: () => Promise<void> } | null,
+    ctx: null as { resume: () => Promise<void>; state?: string } | null,
     volume: vi.fn(),
     mute: vi.fn(),
   },
@@ -272,6 +272,28 @@ describe("useSoundStore", () => {
     useSoundStore.getState().unlock()
 
     expect(howler.ctx?.resume).toHaveBeenCalled()
+  })
+
+  it("unlock swallows a rejected resume and skips a closed context", async () => {
+    const rejected: unknown[] = []
+    const onRejection = (reason: unknown) => rejected.push(reason)
+
+    process.on("unhandledRejection", onRejection)
+
+    const useSoundStore = await importStore()
+    const failing = vi.fn().mockRejectedValue(new Error("InvalidStateError"))
+
+    howler.ctx = { resume: failing, state: "suspended" }
+    useSoundStore.getState().unlock()
+    howler.ctx = { resume: failing, state: "closed" }
+    useSoundStore.getState().unlock()
+    await new Promise((resolve) => {
+      setTimeout(resolve, 20)
+    })
+    process.off("unhandledRejection", onRejection)
+
+    expect(failing).toHaveBeenCalledTimes(1)
+    expect(rejected).toEqual([])
   })
 
   it("unlock is a no-op when there is no audio context", async () => {
