@@ -215,6 +215,17 @@ describe("getPollResultById", () => {
     expect(() => getPollResultById("../game")).toThrow()
   })
 
+  it("finds a result only under its own name, whatever the file system thinks of case", () => {
+    savePollResult(record("1700-aaaa1111"))
+
+    expect(getPollResultById("1700-aaaa1111").id).toBe("1700-aaaa1111")
+    expect(() => getPollResultById("1700-AAAA1111")).toThrow()
+    expect(() => deletePollResult("1700-AAAA1111")).toThrow(ItemNotFoundError)
+    expect(readdirSync(join(root, "poll-results"))).toEqual([
+      "1700-aaaa1111.json",
+    ])
+  })
+
   it("keeps a client's line break out of the message the server logs", () => {
     const messageOf = (call: () => unknown): string => {
       try {

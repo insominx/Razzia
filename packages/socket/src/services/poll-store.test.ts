@@ -66,6 +66,19 @@ describe("getPollById", () => {
     expect(() => getPollById("../game")).toThrow()
   })
 
+  it("finds a poll only under its own name, whatever the file system thinks of case", () => {
+    writePollFile("lunch.json", lunch)
+
+    expect(getPollById("lunch").id).toBe("lunch")
+    expect(() => getPollById("LUNCH")).toThrow()
+    expect(() => getPollById("Lunch")).toThrow()
+    expect(() => updatePoll("LUNCH", lunch)).toThrow("errors:poll.notFound")
+    expect(() => deletePoll("LUNCH")).toThrow(ItemNotFoundError)
+    // Nothing was read, written or removed under the other spelling.
+    expect(readdirSync(join(root, "polls"))).toEqual(["lunch.json"])
+    expect(stored("lunch")).toMatchObject({ question: "Lunch?" })
+  })
+
   it("keeps a client's line break out of the message the server logs", () => {
     const messageOf = (call: () => unknown): string => {
       try {

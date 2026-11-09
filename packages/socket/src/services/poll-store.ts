@@ -24,6 +24,17 @@ import { nanoid } from "nanoid"
 
 const POLLS_DIR = "polls"
 
+// A file system may answer "LUNCH" with lunch.json (Windows and macOS ignore case,
+// Linux does not). An id is the file's own name everywhere, so a poll cannot run, or be
+// recorded, under a spelling that is not its name.
+const hasFile = (dir: string, file: string): boolean => {
+  try {
+    return fs.readdirSync(dir).includes(file)
+  } catch {
+    return false
+  }
+}
+
 const parsePoll = (data: unknown, label: string) => {
   const result = pollValidator.safeParse(data)
 
@@ -44,7 +55,7 @@ export const getPollById = (id: string): PollWithId => {
   assertSafeId(id)
   const filePath = getConfigPath(`${POLLS_DIR}/${id}.json`)
 
-  if (!fs.existsSync(filePath)) {
+  if (!hasFile(getConfigPath(POLLS_DIR), `${id}.json`)) {
     throw new Error(`Poll ${logSafe(id)} not found`)
   }
 
@@ -156,7 +167,7 @@ export const updatePoll = (id: string, data: unknown): string => {
 
   assertSafeId(id)
 
-  if (!fs.existsSync(getConfigPath(`${POLLS_DIR}/${id}.json`))) {
+  if (!hasFile(getConfigPath(POLLS_DIR), `${id}.json`)) {
     throw new Error("errors:poll.notFound")
   }
 
@@ -171,7 +182,7 @@ export const deletePoll = (id: string): void => {
 
   const filePath = getConfigPath(`${POLLS_DIR}/${id}.json`)
 
-  if (!fs.existsSync(filePath)) {
+  if (!hasFile(getConfigPath(POLLS_DIR), `${id}.json`)) {
     throw new ItemNotFoundError(`Poll ${logSafe(id)} not found`)
   }
 
@@ -293,7 +304,7 @@ export const getPollResultsMeta = (): PollResultMeta[] => {
 export const getPollResultById = (id: string): PollResultRecord => {
   assertSafeId(id)
 
-  if (!fs.existsSync(getConfigPath(`${RESULTS_DIR}/${id}.json`))) {
+  if (!hasFile(getConfigPath(RESULTS_DIR), `${id}.json`)) {
     throw new Error(`Poll result ${logSafe(id)} not found`)
   }
 
@@ -306,7 +317,7 @@ export const deletePollResult = (id: string): void => {
 
   const filePath = getConfigPath(`${RESULTS_DIR}/${id}.json`)
 
-  if (!fs.existsSync(filePath)) {
+  if (!hasFile(getConfigPath(RESULTS_DIR), `${id}.json`)) {
     throw new ItemNotFoundError(`Poll result ${logSafe(id)} not found`)
   }
 

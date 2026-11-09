@@ -319,10 +319,11 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     }),
   )
 
-  // A poll runs beside the quiz. Its commands answer through the ack with an
-  // outcome; a client may leave the ack out, whatever the types say.
-  // The command runs first and the ack only reports it: a call with the ack
-  // left out must still do its work.
+  // A poll runs beside the quiz. Once the room is found, its commands answer
+  // through the ack with an outcome. An unknown room gets `game:errorMessage` and
+  // no ack, as for every game command, so the pages time out and unlock. A client
+  // may also leave the ack out, whatever the types say: the command runs first
+  // and the ack only reports it, so a call with the ack left out still does its work.
   socket.on(EVENTS.MANAGER.START_POLL, (message, ack) =>
     withGame(gameIdOf(message), socket, (game) => {
       const pollId = textOf(fieldsOf(message).pollId)
