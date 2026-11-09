@@ -27,6 +27,12 @@ export const usePollLane = (gameId: string | null) => {
     usePollStore.getState().applyTally(tally)
   })
 
+  // The host's "n of m voted" needs m, and the room announces it on every
+  // join and leave and to a host who comes back.
+  useEvent(EVENTS.GAME.TOTAL_PLAYERS, (count) => {
+    usePollStore.getState().setPlayerTotal(count)
+  })
+
   useEffect(() => {
     if (gameId) {
       socket.emit(EVENTS.POLL.SYNC, { gameId })

@@ -22,6 +22,9 @@ interface Props {
   // How many names to list under an option before counting the rest. The
   // projector has room for a few; a list on the manager page has room for all.
   namesLimit?: number
+  // A sealed poll that is still open: the options only, with no count, no
+  // share and no bar, because the host's screen has not been told any.
+  sealed?: boolean
 }
 
 /**
@@ -35,6 +38,7 @@ const PollBars = ({
   mine = null,
   voters,
   namesLimit = NAMES_SHOWN,
+  sealed = false,
 }: Props) => {
   const { t } = useTranslation()
   const tier = optionTier(options)
@@ -83,26 +87,30 @@ const PollBars = ({
                 >
                   {option}
                 </span>
-                <span
-                  data-poll-count
-                  className="text-text-primary stage:text-[2.6875rem] shrink-0 font-mono text-lg font-bold tabular-nums"
-                >
-                  {count}
-                  <span className="text-text-muted stage:text-[1.75rem] ml-2 text-sm font-medium">
-                    {percent}%
+                {!sealed && (
+                  <span
+                    data-poll-count
+                    className="text-text-primary stage:text-[2.6875rem] shrink-0 font-mono text-lg font-bold tabular-nums"
+                  >
+                    {count}
+                    <span className="text-text-muted stage:text-[1.75rem] ml-2 text-sm font-medium">
+                      {percent}%
+                    </span>
                   </span>
-                </span>
+                )}
               </div>
 
-              <div
-                aria-hidden="true"
-                className="bg-panel stage:mt-3 stage:h-4 mt-2 h-2 overflow-hidden rounded-full"
-              >
+              {!sealed && (
                 <div
-                  className="bg-brand ease-calm h-full rounded-full transition-[width] duration-[var(--rz-dur-base)] motion-reduce:transition-none"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
+                  aria-hidden="true"
+                  className="bg-panel stage:mt-3 stage:h-4 mt-2 h-2 overflow-hidden rounded-full"
+                >
+                  <div
+                    className="bg-brand ease-calm h-full rounded-full transition-[width] duration-[var(--rz-dur-base)] motion-reduce:transition-none"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              )}
 
               {picked && (
                 <p className="text-brand stage:text-[1.5rem] mt-2 text-xs font-bold tracking-[0.12em] uppercase">

@@ -19,15 +19,20 @@ import { useTranslation } from "react-i18next"
 const QUESTION_ID = "poll-question"
 
 /**
- * The room's poll, on the host's screen: the votes as they come in, then, when
- * the host closes it, the result, until the host says Done. The quiz screen
- * under it is untouched.
+ * The room's poll, on the host's screen: the question and how many have voted
+ * while it is open (and, when the poll is live, the votes as they come in),
+ * then, when the host closes it, the result, until the host says Done. The quiz
+ * screen under it is untouched.
+ *
+ * It draws what the server sent. A sealed poll is sent without counts until
+ * the close, so an open poll with none is shown as the options alone.
  */
 const HostPollOverlay = () => {
   const snapshot = usePollStore((state) => state.snapshot)
   const gameId = useManagerStore((state) => state.gameId)
   const backgroundUrl = useManagerStore((state) => state.visuals.backgroundUrl)
-  const players = useManagerStore((state) => state.players.length)
+  const lobbyPlayers = useManagerStore((state) => state.players.length)
+  const playerTotal = usePollStore((state) => state.playerTotal)
   const { socket } = useSocket()
   const { t } = useTranslation()
   // A click is answered once; a second one while it waits would only repeat it.
@@ -39,8 +44,12 @@ const HostPollOverlay = () => {
 
   const { question, options, anonymous, phase } = snapshot
   const closed = phase === "closed"
+  const sealed = !closed && snapshot.counts === undefined
   const counts = snapshot.counts ?? options.map(() => 0)
   const total = snapshot.total ?? 0
+  // The room's own count when it has sent one; the lobby's list only fills in
+  // the lobby and on a reconnect, so it misses a student who joined since.
+  const players = playerTotal ?? lobbyPlayers
 
   const send = async (
     event:
@@ -111,6 +120,17 @@ const HostPollOverlay = () => {
               ? t("poll:noOneVoted")
               : t("poll:voted", { voted: total, total: players })}
           </p>
+          {/* A label, like the one above the question: it tells the presenter
+              what the screen is doing. The room does not have to read it, so
+              it is not held to the room-readable size (STYLE.md). */}
+          {sealed && (
+            <p
+              data-poll-sealed
+              className="text-text-muted stage:text-[1.5rem] text-xs font-bold tracking-[0.12em] uppercase"
+            >
+              {t("poll:host.sealedNote")}
+            </p>
+          )}
         </header>
 
         <PollBars
@@ -118,6 +138,7 @@ const HostPollOverlay = () => {
           counts={counts}
           total={total}
           voters={snapshot.voters}
+          sealed={sealed}
         />
       </main>
     </PollFrame>

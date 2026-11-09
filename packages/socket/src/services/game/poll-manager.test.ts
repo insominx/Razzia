@@ -23,6 +23,9 @@ const poll = (anonymous = true): PollWithId => ({
   question: "Lunch?",
   options: ["Pizza", "Soup", "Salad"],
   anonymous,
+  // These tests are about the host's live counts; the sealed default has its
+  // own tests in poll-manager.sealed.test.ts.
+  live: true,
 })
 
 const player = (id: string, name: string, connected = true): Player => ({
@@ -123,6 +126,7 @@ describe("PollManager starting", () => {
       phase: "open",
       counts: [0, 0, 0],
       total: 0,
+      live: true,
     })
   })
 })

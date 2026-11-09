@@ -19,6 +19,9 @@ export const pollValidator = z
       .max(POLL_LIMITS.MAX_OPTIONS, "errors:poll.tooManyOptions"),
     // Votes are private unless the author says otherwise.
     anonymous: z.boolean().default(true),
+    // Results are sealed until the close unless the author asks to show them
+    // as the votes come in. Absent means sealed.
+    live: z.boolean().optional(),
   })
   .superRefine((poll, ctx) => {
     const seen = new Set<string>()

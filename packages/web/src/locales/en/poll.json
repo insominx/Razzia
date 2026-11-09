@@ -20,7 +20,8 @@
   "host": {
     "close": "Close poll",
     "done": "Done",
-    "closedNote": "Poll closed"
+    "closedNote": "Poll closed",
+    "sealedNote": "Results appear when the poll is closed."
   },
   "launcher": {
     "button": "Poll",
@@ -29,7 +30,8 @@
     "options_one": "{{count}} option",
     "options_other": "{{count}} options",
     "anonymous": "Anonymous",
-    "named": "Named"
+    "named": "Named",
+    "live": "Live results"
   },
   "outcome": {
     "busy": "A question or another poll is showing. Try again when it is done.",
@@ -50,8 +52,11 @@
     "removeOption": "Remove option {{letter}}",
     "optionsHint": "Two to six options. Everyone in the room votes on one of them.",
     "anonymousLabel": "Anonymous votes",
-    "anonymousOn": "No names are shown or saved. In a small group, watching the live counts can still hint at who voted what.",
+    "anonymousOn": "No names are shown or saved.",
     "anonymousOff": "You see each player's name next to their vote, and players are told.",
+    "liveLabel": "Show results while people vote",
+    "liveOff": "The screen shows how many have voted. The results appear when you close the poll.",
+    "liveOn": "The screen shows the results as votes come in. In a small group, watching the counts can still hint at who voted what.",
     "fitWarning": "May not fit the projector. Shorten the question or the options.",
     "saved": "Poll saved",
     "updated": "Poll updated",

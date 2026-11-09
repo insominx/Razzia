@@ -177,6 +177,7 @@ const HostPollLauncher = () => {
                 {poll.anonymous
                   ? t("poll:launcher.anonymous")
                   : t("poll:launcher.named")}
+                {poll.live && ` · ${t("poll:launcher.live")}`}
               </span>
             </button>
           ))}

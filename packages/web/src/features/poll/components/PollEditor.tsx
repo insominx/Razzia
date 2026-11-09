@@ -37,20 +37,23 @@ const startingOptions = (initial?: PollWithId): OptionDraft[] =>
   (initial?.options ?? ["", ""]).map((text) => ({ key: uuid(), text }))
 
 // What Save sends, so retyping the original text reads as clean again.
-const snapshot = (
-  question: string,
-  options: OptionDraft[],
-  anonymous: boolean,
-) =>
+const snapshot = (draft: {
+  question: string
+  options: OptionDraft[]
+  anonymous: boolean
+  live: boolean
+}) =>
   JSON.stringify({
-    question,
-    options: options.map((option) => option.text),
-    anonymous,
+    question: draft.question,
+    options: draft.options.map((option) => option.text),
+    anonymous: draft.anonymous,
+    live: draft.live,
   })
 
 /**
- * One poll's editor: its question, two to six options, and whether votes are
- * anonymous. It names a new poll once, when it opens, so every try at saving
+ * One poll's editor: its question, two to six options, whether votes are
+ * anonymous, and whether the screen shows results while people vote (sealed
+ * until the close is the default). It names a new poll once, when it opens, so every try at saving
  * it lands on the same poll (as the quiz editor does for a quiz).
  */
 const PollEditor = ({ initial }: Props) => {
@@ -60,20 +63,24 @@ const PollEditor = ({ initial }: Props) => {
   const [question, setQuestion] = useState(initial?.question ?? "")
   const [options, setOptions] = useState(() => startingOptions(initial))
   const [anonymous, setAnonymous] = useState(initial?.anonymous ?? true)
+  const [live, setLive] = useState(initial?.live ?? false)
   // A save sent and not yet answered: a second click must not send it again.
   const [saving, setSaving] = useState(false)
   const [showProblem, setShowProblem] = useState(false)
   const [newId] = useState(newPollId)
   const [initialSnapshot] = useState(() =>
-    snapshot(question, options, anonymous),
+    snapshot({ question, options, anonymous, live }),
   )
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isDirty = snapshot(question, options, anonymous) !== initialSnapshot
+  const isDirty =
+    snapshot({ question, options, anonymous, live }) !== initialSnapshot
+  // `live` is sent only when it is on: a poll without it is sealed.
   const poll = {
     question,
     options: options.map((option) => option.text),
     anonymous,
+    ...(live ? { live: true } : {}),
   }
   const validation = pollValidator.safeParse(poll)
   const problem = validation.success ? null : validation.error.issues[0].message
@@ -340,6 +347,28 @@ const PollEditor = ({ initial }: Props) => {
               id="poll-anonymous"
               checked={anonymous}
               onCheckedChange={setAnonymous}
+              className="bg-panel focus-visible:outline-brand data-[state=checked]:bg-brand ease-calm relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus-visible:outline-2"
+            >
+              <Switch.Thumb className="bg-surface border-border ease-calm block size-4 translate-x-0.5 rounded-full border transition-transform data-[state=checked]:translate-x-4.5" />
+            </Switch.Root>
+          </section>
+
+          <section className="bg-surface border-border rounded-rz-lg flex items-start justify-between gap-4 border p-4">
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="poll-live"
+                className="text-text-primary text-sm font-semibold"
+              >
+                {t("poll:editor.liveLabel")}
+              </label>
+              <p className="text-text-muted text-sm">
+                {live ? t("poll:editor.liveOn") : t("poll:editor.liveOff")}
+              </p>
+            </div>
+            <Switch.Root
+              id="poll-live"
+              checked={live}
+              onCheckedChange={setLive}
               className="bg-panel focus-visible:outline-brand data-[state=checked]:bg-brand ease-calm relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus-visible:outline-2"
             >
               <Switch.Thumb className="bg-surface border-border ease-calm block size-4 translate-x-0.5 rounded-full border transition-transform data-[state=checked]:translate-x-4.5" />

@@ -183,11 +183,23 @@ export class PollManager {
       return null
     }
 
+    const base = {
+      ...baseOf(this.poll, this.phase),
+      ...(this.poll.live ? { live: true as const } : {}),
+    }
+
+    // Sealed: the host is told how many have voted and nothing else, no
+    // counts and no names, until the close. Every way the host's screen learns
+    // of an open poll (start, sync, reconnect) comes through here.
+    if (this.isSealed()) {
+      return { ...base, total: this.votes.size }
+    }
+
     const counts = this.currentCounts()
     const voters = this.currentVoters()
 
     return {
-      ...baseOf(this.poll, this.phase),
+      ...base,
       counts,
       total: sum(counts),
       ...(voters ? { voters } : {}),
@@ -221,6 +233,11 @@ export class PollManager {
       mine: this.votes.get(clientId) ?? null,
       ...(counts ? { counts, total: sum(counts) } : {}),
     }
+  }
+
+  // Open and not live. The counts exist only in this object until the close.
+  private isSealed(): boolean {
+    return this.phase === "open" && this.poll?.live !== true
   }
 
   private currentCounts(): number[] {
@@ -337,16 +354,23 @@ export class PollManager {
       return
     }
 
+    const tally = this.isSealed()
+      ? { pollId: this.poll.id, total: this.votes.size }
+      : this.fullTally(this.poll.id)
+
+    this.opts.io.to(this.opts.getManagerId()).emit(EVENTS.POLL.TALLY, tally)
+  }
+
+  private fullTally(pollId: string): PollTally {
     const counts = this.currentCounts()
     const voters = this.currentVoters()
-    const tally: PollTally = {
-      pollId: this.poll.id,
+
+    return {
+      pollId,
       counts,
       total: sum(counts),
       ...(voters ? { voters } : {}),
     }
-
-    this.opts.io.to(this.opts.getManagerId()).emit(EVENTS.POLL.TALLY, tally)
   }
 }
 
