@@ -4,7 +4,7 @@
     "usernameInvalid": "Username contains invalid characters",
     "usernameTaken": "This username is already taken",
     "usernameTooLong": "Username cannot exceed 20 characters",
-    "usernameTooShort": "Username cannot be less than 4 characters"
+    "usernameTooShort": "Please enter a name"
   },
   "game": {
     "alreadyStarted": "This game has already started",

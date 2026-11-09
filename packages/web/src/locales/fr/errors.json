@@ -4,7 +4,7 @@
     "usernameInvalid": "Le pseudo contient des caractères invalides",
     "usernameTaken": "Ce pseudo est déjà pris",
     "usernameTooLong": "Le pseudo ne peut pas dépasser 20 caractères",
-    "usernameTooShort": "Le pseudo doit faire au moins 4 caractères"
+    "usernameTooShort": "Veuillez saisir un pseudo"
   },
   "game": {
     "alreadyStarted": "Cette partie a déjà commencé",

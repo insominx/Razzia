@@ -22,7 +22,7 @@ export const usernameValidator = z
   .pipe(
     z
       .string()
-      .min(4, "errors:auth.usernameTooShort")
+      .min(1, "errors:auth.usernameTooShort")
       .max(20, "errors:auth.usernameTooLong"),
   )
 

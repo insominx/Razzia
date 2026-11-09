@@ -4,7 +4,7 @@
     "usernameInvalid": "ユーザー名に無効な文字が含まれています",
     "usernameTaken": "このユーザー名は既に使用されています",
     "usernameTooLong": "ユーザー名は20文字以内にしてください",
-    "usernameTooShort": "ユーザー名は4文字以上にしてください"
+    "usernameTooShort": "ユーザー名を入力してください"
   },
   "game": {
     "alreadyStarted": "このゲームはすでに始まっています",
