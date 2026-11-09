@@ -1,6 +1,7 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { PollOutcome } from "@razzia/common/types/poll"
 import Button from "@razzia/web/components/Button"
+import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
 import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import PollBars from "@razzia/web/features/poll/components/PollBars"
@@ -18,6 +19,18 @@ import { useTranslation } from "react-i18next"
 
 const QUESTION_ID = "poll-question"
 
+// What the line above the question says about who can see the votes. On the
+// manager's own screen the host sees names beside the votes of a named poll.
+// In a deck's frame this screen is the projector and draws no name, so it says
+// where the names are instead of claiming the host sees them here.
+const privacyKey = (anonymous: boolean) => {
+  if (anonymous) {
+    return "poll:privacy.anonymous"
+  }
+
+  return IS_DECK_EMBED ? "poll:privacy.namedStage" : "poll:privacy.named"
+}
+
 /**
  * The room's poll, on the host's screen: the question and how many have voted
  * while it is open (and, when the poll is live, the votes as they come in),
@@ -26,11 +39,18 @@ const QUESTION_ID = "poll-question"
  *
  * It draws what the server sent. A sealed poll is sent without counts until
  * the close, so an open poll with none is shown as the options alone.
+ *
+ * In a deck's frame this screen is the projector. Names are never drawn there,
+ * even for a named poll (they are saved in the result and shown on the manager
+ * page afterwards), and Close and Done show only while the presenter has
+ * Razzia's own controls up (the deck's Q key): the deck closes and dismisses
+ * the poll from the clicker.
  */
 const HostPollOverlay = () => {
   const snapshot = usePollStore((state) => state.snapshot)
   const gameId = useManagerStore((state) => state.gameId)
   const backgroundUrl = useManagerStore((state) => state.visuals.backgroundUrl)
+  const hostControls = useManagerStore((state) => state.hostControls)
   const lobbyPlayers = useManagerStore((state) => state.players.length)
   const playerTotal = usePollStore((state) => state.playerTotal)
   const { socket } = useSocket()
@@ -77,31 +97,35 @@ const HostPollOverlay = () => {
   }
 
   return (
-    <PollFrame backgroundUrl={backgroundUrl} labelledBy={QUESTION_ID}>
-      <div className="absolute top-4 left-4 z-10">
-        <Button
-          className="bg-surface border-border text-text-primary hover:bg-panel border px-4"
-          disabled={pending}
-          onClick={() => {
-            void send(
-              closed ? EVENTS.MANAGER.DISMISS_POLL : EVENTS.MANAGER.CLOSE_POLL,
-            )
-          }}
-        >
-          {closed ? t("poll:host.done") : t("poll:host.close")}
-        </Button>
-      </div>
+    <PollFrame
+      backgroundUrl={backgroundUrl}
+      labelledBy={QUESTION_ID}
+      deckKeys={IS_DECK_EMBED}
+    >
+      {hostControls && (
+        <div className="absolute top-4 left-4 z-10">
+          <Button
+            className="bg-surface border-border text-text-primary hover:bg-panel border px-4"
+            disabled={pending}
+            onClick={() => {
+              void send(
+                closed
+                  ? EVENTS.MANAGER.DISMISS_POLL
+                  : EVENTS.MANAGER.CLOSE_POLL,
+              )
+            }}
+          >
+            {closed ? t("poll:host.done") : t("poll:host.close")}
+          </Button>
+        </div>
+      )}
 
       <main className="stage:max-w-[105rem] stage:gap-6 stage:px-0 stage:pb-[5.4rem] stage:pt-[5.5rem] mx-auto flex min-h-0 w-full flex-1 flex-col items-center gap-4 overflow-y-auto px-4 pt-20 pb-6">
         <header className="stage:gap-3 flex w-full flex-col items-center gap-2 text-center">
           <p className="text-brand stage:text-[1.5rem] text-xs font-bold tracking-[0.12em] uppercase">
             {closed ? t("poll:host.closedNote") : t("poll:label")}
             {" · "}
-            <span className="text-text-muted">
-              {anonymous
-                ? t("poll:privacy.anonymous")
-                : t("poll:privacy.named")}
-            </span>
+            <span className="text-text-muted">{t(privacyKey(anonymous))}</span>
           </p>
           <h2
             id={QUESTION_ID}
@@ -137,7 +161,7 @@ const HostPollOverlay = () => {
           options={options}
           counts={counts}
           total={total}
-          voters={snapshot.voters}
+          voters={IS_DECK_EMBED ? undefined : snapshot.voters}
           sealed={sealed}
         />
       </main>

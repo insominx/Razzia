@@ -2,7 +2,8 @@
   "label": "Encuesta",
   "privacy": {
     "anonymous": "Los votos son anónimos",
-    "named": "El anfitrión puede ver quién vota qué"
+    "named": "El anfitrión ve quién vota qué. Los nombres se guardan y el resto no los ve.",
+    "namedStage": "Los nombres se guardan con los votos y no se muestran aquí"
   },
   "changeHint": "Puedes cambiar tu voto hasta que el anfitrión cierre la encuesta.",
   "yourVote": "Tu voto",
@@ -38,6 +39,7 @@
     "notFound": "No se encontró esa encuesta. Puede que se haya eliminado.",
     "notLecture": "Las encuestas necesitan una sala de clase.",
     "notManager": "Solo el anfitrión puede lanzar encuestas.",
+    "invalid": "No se pudo iniciar la encuesta: no es válida.",
     "noAck": "El servidor no respondió. Inténtalo de nuevo.",
     "none": "Nada que hacer: la encuesta ya estaba cerrada."
   },

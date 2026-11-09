@@ -8,6 +8,9 @@ interface Props {
   backgroundUrl?: string
   // The id of the element that names this dialog, for screen readers.
   labelledBy: string
+  // In a deck's frame the deck drives the room, so keys pressed inside this
+  // dialog still go to the deck (see `toForwardedKey`).
+  deckKeys?: boolean
   children: ReactNode
 }
 
@@ -16,7 +19,12 @@ interface Props {
  * screen it covers and below the host's own dialogs (z-50), such as the one
  * that asks before leaving the room.
  */
-const PollFrame = ({ backgroundUrl, labelledBy, children }: Props) => {
+const PollFrame = ({
+  backgroundUrl,
+  labelledBy,
+  deckKeys = false,
+  children,
+}: Props) => {
   const calm = useCalmVisuals()
   const { isConnected } = useSocket()
   const { t } = useTranslation()
@@ -33,6 +41,8 @@ const PollFrame = ({ backgroundUrl, labelledBy, children }: Props) => {
       role="dialog"
       aria-modal="true"
       aria-labelledby={labelledBy}
+      data-poll-frame
+      data-deck-keys={deckKeys ? "" : undefined}
       tabIndex={-1}
       className="animate-rz-fade-in bg-canvas fixed inset-0 z-40 flex flex-col outline-none"
     >

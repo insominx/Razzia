@@ -15,6 +15,13 @@ export interface Poll {
 
 export type PollWithId = Poll & { id: string }
 
+// A poll typed on a slide and sent with the command that starts it. The id is
+// the deck's label for it, kept in the saved result; nothing is written to the
+// stored polls. It is checked on the server like any poll, and is a slug.
+export type InlinePoll = Omit<PollWithId, "anonymous"> & {
+  anonymous?: boolean
+}
+
 export interface PollMeta {
   id: string
   question: string
@@ -67,6 +74,19 @@ export type PollOutcome =
   | "notFound"
   | "busy"
   | "none"
+  // An inline definition that failed the poll rules.
+  | "invalid"
+
+// A poll that closed in this room: what a deck needs to know that it ran, and
+// how it came out. Never a name.
+export interface PollDone {
+  id: string
+  counts: number[]
+  total: number
+  // The room closed while it was open. A live room cannot report this; it is
+  // for the record a closed room leaves behind.
+  partial?: boolean
+}
 
 export type PollVoteOutcome =
   | "accepted"

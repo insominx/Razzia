@@ -2,7 +2,8 @@
   "label": "Sondage",
   "privacy": {
     "anonymous": "Les votes sont anonymes",
-    "named": "L'animateur voit qui vote pour quoi"
+    "named": "L’animateur voit qui vote pour quoi. Les noms sont enregistrés, les autres ne les voient pas.",
+    "namedStage": "Les noms sont enregistrés avec les votes et ne sont pas affichés ici"
   },
   "changeHint": "Vous pouvez changer votre vote tant que l'animateur n'a pas fermé le sondage.",
   "yourVote": "Votre vote",
@@ -38,6 +39,7 @@
     "notFound": "Ce sondage est introuvable. Il a peut-être été supprimé.",
     "notLecture": "Les sondages nécessitent une salle de cours.",
     "notManager": "Seul l'animateur peut lancer des sondages.",
+    "invalid": "Le sondage n’a pas pu démarrer : il n’est pas valide.",
     "noAck": "Le serveur n'a pas répondu. Réessayez.",
     "none": "Rien à faire : le sondage était déjà fermé."
   },

@@ -1,6 +1,7 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { LectureOutcome } from "@razzia/common/types/game"
 import { STATUS } from "@razzia/common/types/game/status"
+import type { PollOutcome } from "@razzia/common/types/poll"
 import { applyBackdrop } from "@razzia/web/features/deck/backdrop"
 import { isAllowedDeckOrigin } from "@razzia/web/features/deck/embed"
 import {
@@ -18,7 +19,10 @@ import {
   type BridgeMessageBody,
   type BridgeState,
   type DeckCommand,
+  isPollCommand,
+  isPollStart,
   parseDeckCommand,
+  type PollCommand,
   PROTOCOL_VERSION,
   type RoundCommand,
   toForwardedKey,
@@ -29,6 +33,7 @@ import {
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { useSoundStore } from "@razzia/web/features/game/stores/sound"
+import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -41,6 +46,15 @@ const REATTACH_FOR_MS = 90_000
 // A command queued longer than this would start a question wherever the deck
 // has moved on to since.
 const QUEUE_FOR_MS = 10_000
+
+// The sound is off whenever the deck cannot be seeing this page, while a
+// review is up, and while a poll shows: the lobby stays mounted under a poll,
+// and its music bed and join chimes would otherwise play under the question.
+const isSilent = (
+  visible: boolean,
+  review: number | null,
+  pollShowing: boolean,
+): boolean => !visible || review !== null || pollShowing
 
 const LOGIN_PATH = "/manager"
 const CONFIG_PATH = "/manager/config"
@@ -69,6 +83,8 @@ export const useDeckBridge = () => {
   })
   const { gameId, status, config, lecture, setConfig, responses, review } =
     useManagerStore()
+  const poll = usePollStore((store) => store.snapshot)
+  const pollShowing = poll !== null
 
   const [deckOrigin, setDeckOrigin] = useState<string | null>(null)
   // The same origin, written the moment a message arrives: a reply sent from
@@ -115,6 +131,7 @@ export const useDeckBridge = () => {
     reviewable: Object.keys(responses)
       .map(Number)
       .sort((a, b) => a - b),
+    poll,
   })
   const stateRef = useRef(state)
 
@@ -251,11 +268,80 @@ export const useDeckBridge = () => {
     }
   }
 
+  const reportPollOutcome = (
+    command: PollCommand,
+    error: Error | null,
+    outcome?: PollOutcome,
+  ) => {
+    if (error || !outcome) {
+      post({ type: "error", code: "noAck", command: command.type })
+
+      return
+    }
+
+    post({
+      type: "result",
+      command: command.type,
+      outcome: outcome === "accepted" ? "accepted" : "ignored",
+      ...(outcome === "accepted" ? {} : { reason: outcome }),
+    })
+
+    if (outcome === "invalid") {
+      post({ type: "error", code: "pollInvalid", command: command.type })
+    }
+  }
+
+  // Poll commands are never queued, unlike a question: a start that ran late
+  // would open a vote on whatever slide the deck has moved on to, so a page
+  // that is not yet the room's manager answers `notAttached` and the deck
+  // decides what the presenter sees.
+  const runPoll = (command: PollCommand) => {
+    if (!attached || !gameId) {
+      post({
+        type: "result",
+        command: command.type,
+        outcome: "ignored",
+        reason: "notAttached",
+      })
+
+      return
+    }
+
+    if (!lecture) {
+      post({
+        type: "result",
+        command: command.type,
+        outcome: "ignored",
+        reason: "notLecture",
+      })
+
+      return
+    }
+
+    const answer = (error: Error | null, outcome?: PollOutcome) => {
+      reportPollOutcome(command, error, outcome)
+    }
+    const send = socket.timeout(ACK_TIMEOUT_MS)
+
+    if (command.type === "startPoll") {
+      send.emit(
+        EVENTS.MANAGER.START_POLL,
+        { gameId, poll: command.poll },
+        answer,
+      )
+    } else if (command.type === "closePoll") {
+      send.emit(EVENTS.MANAGER.CLOSE_POLL, { gameId }, answer)
+    } else {
+      send.emit(EVENTS.MANAGER.DISMISS_POLL, { gameId }, answer)
+    }
+  }
+
   const runRound = (command: RoundCommand) => {
     const plan = planRoundCommand(command, {
       attached,
       lecture,
       screen: status?.name ?? null,
+      pollShowing,
     })
 
     if (plan.kind === "queue") {
@@ -411,7 +497,11 @@ export const useDeckBridge = () => {
       useSoundStore
         .getState()
         .setSuppressed(
-          !command.visible || useManagerStore.getState().review !== null,
+          isSilent(
+            command.visible,
+            useManagerStore.getState().review,
+            usePollStore.getState().snapshot !== null,
+          ),
         )
 
       return
@@ -429,7 +519,13 @@ export const useDeckBridge = () => {
       store.setReview(question)
       useSoundStore
         .getState()
-        .setSuppressed(!visibleNow.current || question !== null)
+        .setSuppressed(
+          isSilent(
+            visibleNow.current,
+            question,
+            usePollStore.getState().snapshot !== null,
+          ),
+        )
 
       return
     }
@@ -442,6 +538,12 @@ export const useDeckBridge = () => {
 
     if (command.type === "backdrop") {
       applyBackdrop(command.mode)
+
+      return
+    }
+
+    if (isPollCommand(command)) {
+      runPoll(command)
 
       return
     }
@@ -470,6 +572,12 @@ export const useDeckBridge = () => {
 
       if (command) {
         handlerRef.current(command, event.origin)
+      } else if (isPollStart(event.data)) {
+        // Answered to the origin the message came from: the deck's.
+        post(
+          { type: "error", code: "pollInvalid", command: "startPoll" },
+          event.origin,
+        )
       }
     }
 
@@ -478,7 +586,8 @@ export const useDeckBridge = () => {
     return () => {
       window.removeEventListener("message", onMessage)
     }
-  }, [])
+    // `post` never changes, so the listener is added once.
+  }, [post])
 
   // Hidden behind the deck, the page stays quiet until the deck shows it.
   useEffect(() => {
@@ -492,8 +601,10 @@ export const useDeckBridge = () => {
   // The handlers above mute at once; this also catches a review that the
   // game's next screen ended, which no deck message reports.
   useEffect(() => {
-    useSoundStore.getState().setSuppressed(!visible || review !== null)
-  }, [visible, review])
+    useSoundStore
+      .getState()
+      .setSuppressed(isSilent(visible, review, pollShowing))
+  }, [visible, review, pollShowing])
 
   useEffect(() => {
     if (isConnected) {

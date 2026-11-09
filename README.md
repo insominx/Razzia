@@ -237,6 +237,10 @@ A poll is **sealed** unless you turn on **Show results while people vote** when 
 
 Whether a poll is named is part of the poll, not chosen at launch.
 
+### From a lecture deck
+
+A course deck can run a poll from its slides: the question and options are the slide's own text, sent when the instructor presses the clicker, and nothing is stored on the server first. The result is saved like any other. The shared screen shows the question and "n of m voted", never a name, and the slide shows through behind it. See [ADR 0005](docs/adr/0005-polls-from-a-deck.md).
+
 ### Where things are kept
 
 - `config/polls/<id>.json`: the polls you wrote, such as `{ "question": "What first?", "options": ["Review", "New topic"], "anonymous": true }`. Add `"live": true` to show results while people vote; a poll without it is sealed. A question is up to 500 characters; there are 2 to 6 options of up to 200 characters, no two alike. Edit them in the Polls tab or by hand.

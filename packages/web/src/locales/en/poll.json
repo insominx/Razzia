@@ -2,7 +2,8 @@
   "label": "Poll",
   "privacy": {
     "anonymous": "Votes are anonymous",
-    "named": "The host can see who votes for what"
+    "named": "The host sees who votes for what. Names are saved; classmates do not see them.",
+    "namedStage": "Names are saved with the votes and are not shown here"
   },
   "changeHint": "You can change your vote until the host closes the poll.",
   "yourVote": "Your vote",
@@ -38,6 +39,7 @@
     "notFound": "That poll could not be found. It may have been deleted.",
     "notLecture": "Polls need a lecture room.",
     "notManager": "Only the host can run polls.",
+    "invalid": "The poll could not be started: it is not valid.",
     "noAck": "The server did not answer. Try again.",
     "none": "Nothing to do: the poll was already closed."
   },

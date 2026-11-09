@@ -1,6 +1,7 @@
 import { EVENTS } from "@razzia/common/constants"
 import type { Server, Socket } from "@razzia/common/types/game/socket"
 import type {
+  PollDone,
   PollOutcome,
   PollResultRecord,
   PollSnapshot,
@@ -176,6 +177,19 @@ export class PollManager {
   /** The room is gone: drop who voted for what. */
   stop(): void {
     this.reset()
+  }
+
+  /** The poll that has just closed, as a deck is told of it: never a name. */
+  closedSummary(): PollDone | null {
+    if (this.phase !== "closed" || !this.poll || !this.closedCounts) {
+      return null
+    }
+
+    return {
+      id: this.poll.id,
+      counts: [...this.closedCounts],
+      total: sum(this.closedCounts),
+    }
   }
 
   snapshotForHost(): PollSnapshot | null {

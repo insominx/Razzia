@@ -2,7 +2,8 @@
   "label": "Umfrage",
   "privacy": {
     "anonymous": "Die Stimmen sind anonym",
-    "named": "Der Host sieht, wer wofür stimmt"
+    "named": "Der Host sieht, wer wofür stimmt. Namen werden gespeichert, die anderen sehen sie nicht.",
+    "namedStage": "Namen werden mit den Stimmen gespeichert und hier nicht angezeigt"
   },
   "changeHint": "Du kannst deine Stimme ändern, bis der Host die Umfrage schließt.",
   "yourVote": "Deine Stimme",
@@ -38,6 +39,7 @@
     "notFound": "Diese Umfrage wurde nicht gefunden. Vielleicht wurde sie gelöscht.",
     "notLecture": "Umfragen brauchen einen Vorlesungsraum.",
     "notManager": "Nur der Host kann Umfragen starten.",
+    "invalid": "Die Umfrage konnte nicht gestartet werden: Sie ist ungültig.",
     "noAck": "Der Server hat nicht geantwortet. Versuche es noch einmal.",
     "none": "Nichts zu tun: Die Umfrage war schon beendet."
   },
