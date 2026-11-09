@@ -15,6 +15,10 @@ Task dossiers (plans, deep dives, progress, evidence) go in **`razzia-workflow/t
 - Leave `.workflow/` as it is. It holds only the tracked `README.md`, which both repos share.
 - Commit and push dossier changes from inside `razzia-workflow/`, not from this repo.
 
+## Workflow artifacts live in `razzia-workflow/`
+
+Every artifact that is not product code or product docs goes in `razzia-workflow/`, never in this repo's tree: task dossiers in `tasks/`, distillations in `distillations/`, retrospectives in `retrospectives/` (`daily/`, `proposals/`). If a tool or skill defaults to a folder in this repo (for example `retrospectives/` at the root), point it at `razzia-workflow/` instead, and commit from inside `razzia-workflow/`.
+
 ## Source of truth
 
 - Decisions: `docs/adr/`.

@@ -50,7 +50,7 @@
     "removeOption": "Quitar opción {{letter}}",
     "optionsHint": "De dos a seis opciones. Todos en la sala votan por una de ellas.",
     "anonymousLabel": "Votos anónimos",
-    "anonymousOn": "Nadie puede ver quién votó qué, ni siquiera tú.",
+    "anonymousOn": "No se muestran ni se guardan nombres. En un grupo pequeño, los recuentos en vivo aún pueden delatar quién votó qué.",
     "anonymousOff": "Ves el nombre de cada jugador junto a su voto, y se les avisa.",
     "fitWarning": "Puede que no quepa en el proyector. Acorta la pregunta o las opciones.",
     "saved": "Encuesta guardada",

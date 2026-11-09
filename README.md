@@ -230,7 +230,7 @@ While a poll is open you see live counts. Phones see counts only after it closes
 
 ### Anonymity
 
-- **Anonymous** (the default): nobody, you included, can see who voted for what, and no name is ever sent or saved.
+- **Anonymous** (the default): no name is ever shown, sent or saved. It hides names, not timing: in a small group, watching the live counts as students vote one at a time (or kicking a student, whose vote then disappears) can still reveal who voted what.
 - **Named**: you see each student's name beside their vote, and students are told so. They never see each other's names, and the names are saved in the result.
 
 Whether a poll is named is part of the poll, not chosen at launch.

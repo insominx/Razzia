@@ -50,7 +50,7 @@
     "removeOption": "Rimuovi opzione {{letter}}",
     "optionsHint": "Da due a sei opzioni. Tutti nella sala votano per una di esse.",
     "anonymousLabel": "Voti anonimi",
-    "anonymousOn": "Nessuno può vedere chi ha votato cosa, nemmeno tu.",
+    "anonymousOn": "Nessun nome viene mostrato o salvato. In un gruppo piccolo, i conteggi in tempo reale possono comunque far capire chi ha votato cosa.",
     "anonymousOff": "Vedi il nome di ogni giocatore accanto al suo voto, e i giocatori ne sono informati.",
     "fitWarning": "Potrebbe non entrare nel proiettore. Accorcia la domanda o le opzioni.",
     "saved": "Sondaggio salvato",

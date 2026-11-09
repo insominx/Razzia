@@ -50,7 +50,7 @@
     "removeOption": "Option {{letter}} entfernen",
     "optionsHint": "Zwei bis sechs Optionen. Alle im Raum stimmen für eine davon ab.",
     "anonymousLabel": "Anonyme Stimmen",
-    "anonymousOn": "Niemand sieht, wer wofür gestimmt hat, auch du nicht.",
+    "anonymousOn": "Es werden keine Namen angezeigt oder gespeichert. In einer kleinen Gruppe können die Live-Zahlen dennoch verraten, wer wofür gestimmt hat.",
     "anonymousOff": "Du siehst den Namen jedes Spielers neben seiner Stimme, und die Spielenden werden darüber informiert.",
     "fitWarning": "Passt möglicherweise nicht auf den Projektor. Kürze die Frage oder die Optionen.",
     "saved": "Umfrage gespeichert",

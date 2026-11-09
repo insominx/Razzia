@@ -50,7 +50,7 @@
     "removeOption": "Supprimer l'option {{letter}}",
     "optionsHint": "De deux à six options. Toute la salle vote pour l'une d'elles.",
     "anonymousLabel": "Votes anonymes",
-    "anonymousOn": "Personne ne voit qui a voté pour quoi, pas même vous.",
+    "anonymousOn": "Aucun nom n’est affiché ni enregistré. Dans un petit groupe, les décomptes en direct peuvent tout de même révéler qui a voté pour quoi.",
     "anonymousOff": "Vous voyez le nom de chaque joueur à côté de son vote, et les joueurs en sont informés.",
     "fitWarning": "Peut ne pas tenir sur le projecteur. Raccourcissez la question ou les options.",
     "saved": "Sondage enregistré",
