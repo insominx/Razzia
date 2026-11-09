@@ -82,7 +82,9 @@ describe("HostPollOverlay in a deck's frame", () => {
     expect(dialog.querySelector("[data-poll-names]")).toBeNull()
     expect(dialog.textContent).not.toContain("Alice")
     expect(dialog.textContent).not.toContain("Bobby")
-    expect(dialog.textContent).toContain("poll:privacy.named")
+    // It says where the names are, not that the host sees them here.
+    expect(dialog.textContent).toContain("poll:privacy.namedStage")
+    expect(dialog.textContent).not.toMatch(/poll:privacy\.named(?!Stage)/u)
   })
 
   it("draws no voter name while a named poll is open and live", () => {
@@ -133,6 +135,7 @@ describe("HostPollOverlay in a deck's frame", () => {
     const dialog = screen.getByRole("dialog")
 
     expect(dialog.querySelectorAll("[data-poll-names]")).toHaveLength(2)
+    expect(dialog.textContent).toMatch(/poll:privacy\.named(?!Stage)/u)
     expect(dialog).not.toHaveAttribute("data-deck-keys")
     expect(
       screen.getByRole("button", { name: "poll:host.done" }),

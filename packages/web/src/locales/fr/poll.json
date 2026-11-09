@@ -2,7 +2,8 @@
   "label": "Sondage",
   "privacy": {
     "anonymous": "Les votes sont anonymes",
-    "named": "L’animateur voit qui vote pour quoi. Les noms sont enregistrés, les autres ne les voient pas."
+    "named": "L’animateur voit qui vote pour quoi. Les noms sont enregistrés, les autres ne les voient pas.",
+    "namedStage": "Les noms sont enregistrés avec les votes et ne sont pas affichés ici"
   },
   "changeHint": "Vous pouvez changer votre vote tant que l'animateur n'a pas fermé le sondage.",
   "yourVote": "Votre vote",

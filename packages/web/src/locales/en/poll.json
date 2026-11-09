@@ -2,7 +2,8 @@
   "label": "Poll",
   "privacy": {
     "anonymous": "Votes are anonymous",
-    "named": "The host sees who votes for what. Names are saved; classmates do not see them."
+    "named": "The host sees who votes for what. Names are saved; classmates do not see them.",
+    "namedStage": "Names are saved with the votes and are not shown here"
   },
   "changeHint": "You can change your vote until the host closes the poll.",
   "yourVote": "Your vote",

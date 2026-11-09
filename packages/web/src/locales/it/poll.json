@@ -2,7 +2,8 @@
   "label": "Sondaggio",
   "privacy": {
     "anonymous": "I voti sono anonimi",
-    "named": "Il conduttore vede chi vota cosa. I nomi vengono salvati e gli altri non li vedono."
+    "named": "Il conduttore vede chi vota cosa. I nomi vengono salvati e gli altri non li vedono.",
+    "namedStage": "I nomi vengono salvati con i voti e non sono mostrati qui"
   },
   "changeHint": "Puoi cambiare il tuo voto finché il conduttore non chiude il sondaggio.",
   "yourVote": "Il tuo voto",

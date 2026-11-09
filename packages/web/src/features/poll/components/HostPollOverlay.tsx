@@ -19,6 +19,18 @@ import { useTranslation } from "react-i18next"
 
 const QUESTION_ID = "poll-question"
 
+// What the line above the question says about who can see the votes. On the
+// manager's own screen the host sees names beside the votes of a named poll.
+// In a deck's frame this screen is the projector and draws no name, so it says
+// where the names are instead of claiming the host sees them here.
+const privacyKey = (anonymous: boolean) => {
+  if (anonymous) {
+    return "poll:privacy.anonymous"
+  }
+
+  return IS_DECK_EMBED ? "poll:privacy.namedStage" : "poll:privacy.named"
+}
+
 /**
  * The room's poll, on the host's screen: the question and how many have voted
  * while it is open (and, when the poll is live, the votes as they come in),
@@ -113,11 +125,7 @@ const HostPollOverlay = () => {
           <p className="text-brand stage:text-[1.5rem] text-xs font-bold tracking-[0.12em] uppercase">
             {closed ? t("poll:host.closedNote") : t("poll:label")}
             {" · "}
-            <span className="text-text-muted">
-              {anonymous
-                ? t("poll:privacy.anonymous")
-                : t("poll:privacy.named")}
-            </span>
+            <span className="text-text-muted">{t(privacyKey(anonymous))}</span>
           </p>
           <h2
             id={QUESTION_ID}

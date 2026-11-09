@@ -2,7 +2,8 @@
   "label": "Umfrage",
   "privacy": {
     "anonymous": "Die Stimmen sind anonym",
-    "named": "Der Host sieht, wer wofür stimmt. Namen werden gespeichert, die anderen sehen sie nicht."
+    "named": "Der Host sieht, wer wofür stimmt. Namen werden gespeichert, die anderen sehen sie nicht.",
+    "namedStage": "Namen werden mit den Stimmen gespeichert und hier nicht angezeigt"
   },
   "changeHint": "Du kannst deine Stimme ändern, bis der Host die Umfrage schließt.",
   "yourVote": "Deine Stimme",

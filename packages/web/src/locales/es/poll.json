@@ -2,7 +2,8 @@
   "label": "Encuesta",
   "privacy": {
     "anonymous": "Los votos son anónimos",
-    "named": "El anfitrión ve quién vota qué. Los nombres se guardan y el resto no los ve."
+    "named": "El anfitrión ve quién vota qué. Los nombres se guardan y el resto no los ve.",
+    "namedStage": "Los nombres se guardan con los votos y no se muestran aquí"
   },
   "changeHint": "Puedes cambiar tu voto hasta que el anfitrión cierre la encuesta.",
   "yourVote": "Tu voto",
