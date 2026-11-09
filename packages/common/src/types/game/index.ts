@@ -1,4 +1,5 @@
 import type { MEDIA_TYPES } from "@razzia/common/constants"
+import type { PollDone } from "@razzia/common/types/poll"
 import type { VisualsConfig } from "@razzia/common/types/visuals"
 
 export interface Player {
@@ -108,6 +109,9 @@ export interface LectureState {
   // The question started most recently, or null before the first.
   current: number | null
   finished: boolean
+  // Polls that closed in this room, oldest first, at most 50. Absent until the
+  // first one closes, so a room without polls sends what it always did.
+  pollsDone?: PollDone[]
 }
 
 export type LectureOutcome =

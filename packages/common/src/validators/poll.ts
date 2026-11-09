@@ -1,5 +1,9 @@
 import { z } from "zod"
 
+// A deck's label for a poll it sends inline, which the saved result keeps: a
+// slug of 1 to 64 characters.
+export const POLL_SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/u
+
 export const POLL_LIMITS = {
   QUESTION: 500,
   OPTION: 200,

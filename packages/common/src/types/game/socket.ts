@@ -13,6 +13,7 @@ import type {
   ManagerMutationResponse,
 } from "@razzia/common/types/manager"
 import type {
+  InlinePoll,
   PollOutcome,
   PollResultRecord,
   PollSnapshot,
@@ -162,8 +163,9 @@ export interface ClientToServerEvents {
     _message: MessageGameId,
     _ack: (_outcome: LectureOutcome) => void,
   ) => void
+  // A stored poll by id, or a definition sent inline (a deck's slide text).
   [EVENTS.MANAGER.START_POLL]: (
-    _message: MessageGameId & { pollId: string },
+    _message: MessageGameId & ({ pollId: string } | { poll: InlinePoll }),
     _ack: (_outcome: PollOutcome) => void,
   ) => void
   [EVENTS.MANAGER.CLOSE_POLL]: (

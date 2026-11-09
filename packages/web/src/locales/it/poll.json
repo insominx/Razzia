@@ -2,7 +2,7 @@
   "label": "Sondaggio",
   "privacy": {
     "anonymous": "I voti sono anonimi",
-    "named": "Il conduttore vede chi vota cosa"
+    "named": "Il conduttore vede chi vota cosa. I nomi vengono salvati e gli altri non li vedono."
   },
   "changeHint": "Puoi cambiare il tuo voto finché il conduttore non chiude il sondaggio.",
   "yourVote": "Il tuo voto",
@@ -38,6 +38,7 @@
     "notFound": "Sondaggio non trovato. Forse è stato eliminato.",
     "notLecture": "I sondaggi richiedono un'aula di lezione.",
     "notManager": "Solo il conduttore può avviare sondaggi.",
+    "invalid": "Impossibile avviare il sondaggio: non è valido.",
     "noAck": "Il server non ha risposto. Riprova.",
     "none": "Niente da fare: il sondaggio era già chiuso."
   },

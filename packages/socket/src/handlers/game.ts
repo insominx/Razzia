@@ -1,4 +1,6 @@
 import { EVENTS } from "@razzia/common/constants"
+import type { Socket } from "@razzia/common/types/game/socket"
+import type { PollOutcome } from "@razzia/common/types/poll"
 import { inviteCodeValidator } from "@razzia/common/validators/auth"
 import {
   ackOf,
@@ -16,6 +18,22 @@ import Registry from "@razzia/socket/services/registry"
 import { resolveVisuals } from "@razzia/socket/services/visuals"
 import { withGame } from "@razzia/socket/utils/game"
 import { logSafe } from "@razzia/socket/utils/safe"
+
+// A definition sent with the command (a deck's slide text) wins over an id.
+// The game checks it, and answers `invalid` when it does not pass.
+const startPollFrom = (
+  game: Game,
+  socket: Socket,
+  fields: ReturnType<typeof fieldsOf>,
+): PollOutcome => {
+  if (fields.poll !== undefined) {
+    return game.startInlinePoll(socket, fields.poll)
+  }
+
+  const pollId = textOf(fields.pollId)
+
+  return pollId === undefined ? "notFound" : game.startPoll(socket, pollId)
+}
 
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   const registry = Registry.getInstance()
@@ -326,9 +344,9 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
   // and the ack only reports it, so a call with the ack left out still does its work.
   socket.on(EVENTS.MANAGER.START_POLL, (message, ack) =>
     withGame(gameIdOf(message), socket, (game) => {
-      const pollId = textOf(fieldsOf(message).pollId)
-      const outcome =
-        pollId === undefined ? "notFound" : game.startPoll(socket, pollId)
+      // The command runs first and the ack only reports it: a call with the
+      // ack left out still does its work.
+      const outcome = startPollFrom(game, socket, fieldsOf(message))
 
       ackOf(ack)?.(outcome)
     }),

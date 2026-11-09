@@ -13,6 +13,7 @@ import {
   type StatusDataMap,
 } from "@razzia/common/types/game/status"
 import type {
+  PollDone,
   PollOutcome,
   PollResultRecord,
   PollVoteOutcome,
@@ -25,6 +26,7 @@ import {
   PlayerManager,
   toPublicPlayer,
 } from "@razzia/socket/services/game/player-manager"
+import { inlinePollOf } from "@razzia/socket/services/game/inline-poll"
 import { PollManager } from "@razzia/socket/services/game/poll-manager"
 import { RoundManager } from "@razzia/socket/services/game/round-manager"
 import { getPollById, savePollResult } from "@razzia/socket/services/poll-store"
@@ -34,6 +36,10 @@ import { logSafe } from "@razzia/socket/utils/safe"
 import { v7 as uuid } from "uuid"
 
 const registry = Registry.getInstance()
+
+// How many closed polls a lecture room reports to its host. A lecture runs a
+// handful, so this only bounds a runaway client.
+const MAX_POLLS_DONE = 50
 
 interface GameOptions {
   io: Server
@@ -117,6 +123,8 @@ class Game {
     { name: Status; data: StatusDataMap[Status] }
   >()
   private resultSaved = false
+  // The polls that closed in this room, for a deck that asks what already ran.
+  private pollsDone: PollDone[] = []
 
   constructor({
     io,
@@ -231,7 +239,11 @@ class Game {
   // ── Lecture state ────────────────────────────────────────────────────────
 
   private lectureState(): LectureState {
-    return { inviteCode: this.inviteCode, ...this.round.getLectureProgress() }
+    return {
+      inviteCode: this.inviteCode,
+      ...this.round.getLectureProgress(),
+      ...(this.pollsDone.length ? { pollsDone: [...this.pollsDone] } : {}),
+    }
   }
 
   // Only a lecture game tells its host which questions have run.
@@ -595,22 +607,34 @@ class Game {
 
   // ── Polls ────────────────────────────────────────────────────────────────
 
-  // A poll may take a lecture room in its lobby or between questions, and
-  // only when no other poll is showing. Any trouble reading it answers
-  // `notFound`, so the host's reply always arrives.
-  startPoll(socket: Socket, pollId: string): PollOutcome {
+  // Only a lecture room runs polls, and only for its host.
+  private pollRefusal(socket: Socket): PollOutcome | null {
     if (!this.lecture) {
       return "notLecture"
     }
 
-    if (!this.isManager(socket)) {
-      return "notManager"
-    }
+    return this.isManager(socket) ? null : "notManager"
+  }
 
-    if (
+  // A poll may take the room in its lobby or between questions, and only when
+  // no other poll is showing.
+  private laneIsBusy(): boolean {
+    return (
       this.poll.isActive() ||
       !(this.round.isLobby() || this.round.isBetweenQuestions())
-    ) {
+    )
+  }
+
+  // Starts a stored poll. Any trouble reading it answers `notFound`, so the
+  // host's reply always arrives.
+  startPoll(socket: Socket, pollId: string): PollOutcome {
+    const refusal = this.pollRefusal(socket)
+
+    if (refusal) {
+      return refusal
+    }
+
+    if (this.laneIsBusy()) {
       return "busy"
     }
 
@@ -623,8 +647,43 @@ class Game {
     }
   }
 
+  // Starts a poll sent with the command, as a deck's slide text is. It passes
+  // the same rules as a stored one, plus a slug for its id, and nothing is
+  // written to the stored polls: the open poll holds the copy, and the result
+  // it leaves keeps the text that was asked. Anything that does not pass
+  // answers `invalid`, to the host only: a stranger is told nothing of it.
+  startInlinePoll(socket: Socket, definition: unknown): PollOutcome {
+    const refusal = this.pollRefusal(socket)
+
+    if (refusal) {
+      return refusal
+    }
+
+    const poll = inlinePollOf(definition)
+
+    if (!poll) {
+      return "invalid"
+    }
+
+    if (this.laneIsBusy()) {
+      return "busy"
+    }
+
+    return this.poll.start(socket, poll)
+  }
+
   closePoll(socket: Socket): PollOutcome {
-    return this.poll.close(socket)
+    const outcome = this.poll.close(socket)
+    const done = outcome === "accepted" ? this.poll.closedSummary() : null
+
+    // A deck learns what ran from the lecture state, so a reloaded frame knows
+    // too. The oldest are dropped: a lecture runs a handful, never fifty.
+    if (done) {
+      this.pollsDone = [...this.pollsDone, done].slice(-MAX_POLLS_DONE)
+      this.emitLectureState()
+    }
+
+    return outcome
   }
 
   dismissPoll(socket: Socket): PollOutcome {

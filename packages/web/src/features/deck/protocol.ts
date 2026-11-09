@@ -63,6 +63,25 @@ const deckCommandSchema = z.discriminatedUnion("type", [
     type: z.literal("backdrop"),
     mode: z.enum(["own", "slide"]),
   }),
+  // A poll typed on the slide, started in the lobby or between questions. The
+  // server holds the rules (limits, a slug for the id) and answers `invalid`
+  // to a definition that fails them; this is only the shape a message needs
+  // to be read at all. Poll commands are never queued.
+  z.object({
+    ...envelope,
+    type: z.literal("startPoll"),
+    poll: z.object({
+      id: z.string(),
+      question: z.string(),
+      options: z.array(z.string()).max(20),
+      anonymous: z.boolean().optional(),
+      live: z.boolean().optional(),
+    }),
+  }),
+  // Ends voting and shows the result.
+  z.object({ ...envelope, type: z.literal("closePoll") }),
+  // Takes the result away and gives the room back to the quiz.
+  z.object({ ...envelope, type: z.literal("dismissPoll") }),
 ])
 
 export type DeckCommand = z.infer<typeof deckCommandSchema>
@@ -70,6 +89,11 @@ export type DeckCommand = z.infer<typeof deckCommandSchema>
 export type RoundCommand = Extract<
   DeckCommand,
   { type: "play" | "leaderboard" | "finish" }
+>
+
+export type PollCommand = Extract<
+  DeckCommand,
+  { type: "startPoll" | "closePoll" | "dismissPoll" }
 >
 
 export const parseDeckCommand = (data: unknown): DeckCommand | null => {
@@ -82,6 +106,50 @@ export const isRoundCommand = (command: DeckCommand): command is RoundCommand =>
   command.type === "play" ||
   command.type === "leaderboard" ||
   command.type === "finish"
+
+// A start that is not even shaped like one (a field of the wrong type, a list
+// that is far too long) is dropped by `parseDeckCommand`. The deck still gets an
+// answer, so it can say why nothing opened; other malformed messages stay
+// unanswered, as before.
+export const isPollStart = (data: unknown): boolean => {
+  const fields =
+    typeof data === "object" ? (data as Record<string, unknown> | null) : null
+
+  return (
+    fields?.source === DECK_SOURCE &&
+    fields.v === PROTOCOL_VERSION &&
+    fields.type === "startPoll"
+  )
+}
+
+export const isPollCommand = (command: DeckCommand): command is PollCommand =>
+  command.type === "startPoll" ||
+  command.type === "closePoll" ||
+  command.type === "dismissPoll"
+
+// What this build can do, so a deck can tell an older Razzia by its absence.
+// A name is listed only once it is built.
+export const FEATURES: readonly string[] = ["poll", "pollInline"]
+
+// The poll showing on the stage. Never a name, whatever the poll.
+export interface BridgePoll {
+  id: string
+  phase: "open" | "closed"
+  anonymous: boolean
+  live: boolean
+  // Votes cast. Players are already in `BridgeState.players`.
+  voted: number
+  // Present once the poll has closed, or while it is open if it is live.
+  counts?: number[]
+}
+
+// A poll that closed in this room.
+export interface BridgePollDone {
+  id: string
+  counts: number[]
+  total: number
+  partial?: boolean
+}
 
 export interface BridgeState {
   connected: boolean
@@ -103,6 +171,13 @@ export interface BridgeState {
   // whose results this page has seen and can show again.
   reviewing: number | null
   reviewable: number[]
+  // Always sent by this build; an older one sends none of the three, which is
+  // how a deck tells them apart.
+  features: string[]
+  // Null when polls are supported and none is showing.
+  poll: BridgePoll | null
+  // Polls that closed in this room, oldest first, at most 50.
+  pollsDone: BridgePollDone[]
 }
 
 export type BridgeErrorCode =
@@ -112,6 +187,7 @@ export type BridgeErrorCode =
   | "noPlayers"
   | "gameExpired"
   | "reattachFailed"
+  | "pollInvalid"
   | "noAck"
 
 export type BridgeMessageBody =
@@ -165,10 +241,18 @@ const isTextEntry = (target: EventTarget | null): boolean =>
   (target.isContentEditable || TEXT_ENTRY_TAGS.has(target.tagName))
 
 // A dialog (the kick confirmation) owns the keys while it is open: Escape
-// closes it and Space presses its buttons.
-const isInDialog = (target: EventTarget | null): boolean =>
-  target instanceof Element &&
-  target.closest('[role="dialog"],[role="alertdialog"]') !== null
+// closes it and Space presses its buttons. The poll frame is a dialog too, but
+// it has no keys of its own and the deck drives it, so it hands them back
+// (`data-deck-keys`); otherwise Q and the forward keys would stop reaching the
+// deck after a click in the frame.
+const isInDialog = (target: EventTarget | null): boolean => {
+  const dialog =
+    target instanceof Element
+      ? target.closest('[role="dialog"],[role="alertdialog"]')
+      : null
+
+  return dialog !== null && !dialog.hasAttribute("data-deck-keys")
+}
 
 export const toForwardedKey = (
   event: KeyLike,

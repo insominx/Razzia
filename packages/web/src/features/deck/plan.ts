@@ -1,8 +1,11 @@
 import type { LectureState } from "@razzia/common/types/game"
 import { STATUS, type Status } from "@razzia/common/types/game/status"
-import type {
-  BridgeState,
-  RoundCommand,
+import type { PollSnapshot } from "@razzia/common/types/poll"
+import {
+  type BridgePoll,
+  type BridgeState,
+  FEATURES,
+  type RoundCommand,
 } from "@razzia/web/features/deck/protocol"
 
 // While a question runs, the deck's commands wait for its results.
@@ -21,6 +24,7 @@ export type IgnoreReason =
   | "finished"
   | "nothingPlayed"
   | "notAttached"
+  | "busy"
 
 export type RoundPlan =
   | { kind: "emit" }
@@ -33,6 +37,8 @@ export interface RoundView {
   attached: boolean
   lecture: LectureState | null
   screen: Status | null
+  // A poll is open or showing its result.
+  pollShowing?: boolean
 }
 
 const ignore = (reason: IgnoreReason): RoundPlan => ({ kind: "ignore", reason })
@@ -42,7 +48,7 @@ const ignore = (reason: IgnoreReason): RoundPlan => ({ kind: "ignore", reason })
 // which only makes sense on the screen in front of the room.
 export const planRoundCommand = (
   command: RoundCommand,
-  { attached, lecture, screen }: RoundView,
+  { attached, lecture, screen, pollShowing = false }: RoundView,
 ): RoundPlan => {
   if (!attached || !screen) {
     return command.type === "leaderboard"
@@ -60,6 +66,13 @@ export const planRoundCommand = (
 
   if (LIVE_SCREENS.has(screen)) {
     return ignore("questionLive")
+  }
+
+  // A poll owns the room until it is dismissed, and the server ignores every
+  // quiz step meanwhile (`play` and `finish` answer `busy`, the leaderboard
+  // does nothing). Say so, rather than report a step done that did not happen.
+  if (pollShowing) {
+    return ignore("busy")
   }
 
   if (command.type === "play") {
@@ -96,6 +109,25 @@ export interface StateInputs {
   visible: boolean
   review: number | null
   reviewable: number[]
+  // The poll on the stage, as the poll store holds it.
+  poll?: PollSnapshot | null
+}
+
+// What a deck may be told of the poll on the stage: never a name, and counts
+// only when the host's own screen has them (after the close, or live).
+const bridgePollOf = (snapshot: PollSnapshot): BridgePoll => {
+  const live = snapshot.live === true
+
+  return {
+    id: snapshot.pollId,
+    phase: snapshot.phase,
+    anonymous: snapshot.anonymous,
+    live,
+    voted: snapshot.total ?? 0,
+    ...(snapshot.counts && (snapshot.phase === "closed" || live)
+      ? { counts: [...snapshot.counts] }
+      : {}),
+  }
 }
 
 interface ScreenData {
@@ -118,6 +150,7 @@ export const buildBridgeState = ({
   visible,
   review,
   reviewable,
+  poll = null,
 }: StateInputs): BridgeState => {
   const screen = attached ? (status?.name ?? null) : null
   const data = (attached ? (status?.data ?? {}) : {}) as ScreenData
@@ -147,5 +180,17 @@ export const buildBridgeState = ({
     visible,
     reviewing: attached ? review : null,
     reviewable: attached ? reviewable : [],
+    features: [...FEATURES],
+    // Like the game, the poll and what already ran belong to the game this
+    // page is attached to.
+    poll: attached && poll ? bridgePollOf(poll) : null,
+    pollsDone: attached
+      ? (lecture?.pollsDone ?? []).map(({ id, counts, total, partial }) => ({
+          id,
+          counts: [...counts],
+          total,
+          ...(partial ? { partial: true } : {}),
+        }))
+      : [],
   }
 }
