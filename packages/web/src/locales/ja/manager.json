@@ -67,6 +67,8 @@
     "pleaseCreate": "先にクイズを作成してください",
     "pleaseSelect": "クイズを選択してください",
     "startGame": "ゲーム開始",
+    "startLecture": "講義ルームを開始",
+    "lectureHint": "講義ルームは問題の合間も開いたままです。後から参加でき、アンケートも実施できます。",
     "invalidJson": "無効なJSONファイルです",
     "questionCount_one": "{{count}}問",
     "questionCount_other": "{{count}}問",
@@ -104,6 +106,21 @@
     "play": "プレイ",
     "quizz": "クイズ",
     "results": "結果",
-    "visuals": "表示"
+    "visuals": "表示",
+    "polls": "投票"
+  },
+  "polls": {
+    "create": "アンケートを作成",
+    "none": "アンケートはまだありません",
+    "delete": "アンケートを削除",
+    "deleted": "アンケートを削除しました",
+    "deleteConfirm": "「{{name}}」を削除してもよろしいですか？この操作は元に戻せません。",
+    "resultsTitle": "結果",
+    "resultVotes_one": "{{count}}票",
+    "resultVotes_other": "{{count}}票",
+    "resultPartial": "途中で終了",
+    "resultDelete": "結果を削除",
+    "resultDeleteConfirm": "「{{name}}」の結果を削除してもよろしいですか？この操作は元に戻せません。",
+    "resultDeleted": "結果を削除しました"
   }
 }

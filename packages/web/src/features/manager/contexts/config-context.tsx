@@ -3,6 +3,8 @@ import { createContext, useContext, type ReactNode } from "react"
 
 const ConfigContext = createContext<ManagerConfig>({
   quizz: [],
+  polls: [],
+  pollResults: [],
   results: [],
   game: {
     resolvedVisuals: {},

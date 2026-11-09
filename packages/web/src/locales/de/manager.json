@@ -67,6 +67,8 @@
     "pleaseCreate": "Bitte erstelle zuerst ein Quiz",
     "pleaseSelect": "Bitte wähle ein Quiz aus",
     "startGame": "Spiel starten",
+    "startLecture": "Vorlesungsraum starten",
+    "lectureHint": "Ein Vorlesungsraum bleibt zwischen den Fragen offen: Spielende können später beitreten, und du kannst Umfragen durchführen.",
     "invalidJson": "Ungültige JSON-Datei",
     "questionCount_one": "{{count}} Frage",
     "questionCount_other": "{{count}} Fragen",
@@ -104,6 +106,21 @@
     "play": "Spielen",
     "quizz": "Quiz",
     "results": "Ergebnisse",
-    "visuals": "Darstellung"
+    "visuals": "Darstellung",
+    "polls": "Umfragen"
+  },
+  "polls": {
+    "create": "Umfrage erstellen",
+    "none": "Noch keine Umfragen",
+    "delete": "Umfrage löschen",
+    "deleted": "Umfrage gelöscht",
+    "deleteConfirm": "Möchtest du \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "resultsTitle": "Ergebnisse",
+    "resultVotes_one": "{{count}} Stimme",
+    "resultVotes_other": "{{count}} Stimmen",
+    "resultPartial": "Vorzeitig beendet",
+    "resultDelete": "Ergebnis löschen",
+    "resultDeleteConfirm": "Möchtest du das Ergebnis von \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "resultDeleted": "Ergebnis gelöscht"
   }
 }

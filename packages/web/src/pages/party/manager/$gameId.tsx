@@ -17,6 +17,8 @@ import {
   getManagerSkipEvent,
   isKeyOf,
 } from "@razzia/web/features/game/utils/constants"
+import PollShell from "@razzia/web/features/poll/components/PollShell"
+import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import {
   createFileRoute,
   useBlocker,
@@ -122,6 +124,7 @@ const ManagerGamePage = () => {
       currentQuestion,
       visuals: reconnectVisuals,
       lecture,
+      poll,
     }) => {
       setGameId(reconnectGameId)
       setVisuals(reconnectVisuals)
@@ -129,6 +132,8 @@ const ManagerGamePage = () => {
       setPlayers(players)
       setQuestionStates(currentQuestion)
       setLecture(lecture ?? null)
+      // A poll showing when the host came back, or none.
+      usePollStore.getState().apply(poll ?? null)
     },
   )
 
@@ -144,6 +149,7 @@ const ManagerGamePage = () => {
 
     navigate({ to: "/manager/config", replace: true, ignoreBlocker: true })
     reset()
+    usePollStore.getState().reset()
     setQuestionStates(null)
     toast.error(t(message), { id: message })
   })
@@ -153,6 +159,7 @@ const ManagerGamePage = () => {
   const leave = () => {
     navigate({ to: "/manager/config", replace: true, ignoreBlocker: true })
     reset()
+    usePollStore.getState().reset()
     setQuestionStates(null)
   }
 
@@ -215,34 +222,36 @@ const ManagerGamePage = () => {
 
   return (
     <>
-      <GameWrapper
-        statusName={reviewed ? STATUS.SHOW_RESPONSES : status?.name}
-        backgroundUrl={visuals.backgroundUrl}
-        onNext={status && !reviewed ? handleSkip : undefined}
-        nextActionKey={nextAction}
-        onBack={
-          status?.name === STATUS.SHOW_ROOM && !reviewed
-            ? handleBack
-            : undefined
-        }
-        manager
-      >
-        {CurrentComponent && status && (
-          // Hidden, not unmounted, under a review: its timer and answer count
-          // keep running, and nothing replays when the review ends.
-          <div data-live-screen className={reviewed ? "hidden" : "contents"}>
-            <GameScreenBoundary
-              resetKey={status}
-              onRecover={() =>
-                socket.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
-              }
-            >
-              <CurrentComponent data={status.data as never} />
-            </GameScreenBoundary>
-          </div>
-        )}
-        {reviewed && <Responses key={`review-${review}`} data={reviewed} />}
-      </GameWrapper>
+      <PollShell role="host">
+        <GameWrapper
+          statusName={reviewed ? STATUS.SHOW_RESPONSES : status?.name}
+          backgroundUrl={visuals.backgroundUrl}
+          onNext={status && !reviewed ? handleSkip : undefined}
+          nextActionKey={nextAction}
+          onBack={
+            status?.name === STATUS.SHOW_ROOM && !reviewed
+              ? handleBack
+              : undefined
+          }
+          manager
+        >
+          {CurrentComponent && status && (
+            // Hidden, not unmounted, under a review: its timer and answer count
+            // keep running, and nothing replays when the review ends.
+            <div data-live-screen className={reviewed ? "hidden" : "contents"}>
+              <GameScreenBoundary
+                resetKey={status}
+                onRecover={() =>
+                  socket.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
+                }
+              >
+                <CurrentComponent data={status.data as never} />
+              </GameScreenBoundary>
+            </div>
+          )}
+          {reviewed && <Responses key={`review-${review}`} data={reviewed} />}
+        </GameWrapper>
+      </PollShell>
       <ConfirmDialog
         open={exitAsked || blocker.status === "blocked"}
         onOpenChange={handleLeaveDialogChange}
@@ -260,5 +269,6 @@ export const Route = createFileRoute("/party/manager/$gameId")({
   onLeave: ({ params: { gameId } }) => {
     socketClient.emit(EVENTS.MANAGER.LEAVE, { gameId })
     useManagerStore.getState().resetStatus()
+    usePollStore.getState().reset()
   },
 })

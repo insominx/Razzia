@@ -34,6 +34,8 @@ const config: ManagerConfig = {
     { id: "quiz-1", subject: "Quiz One", questionCount: 6 },
     { id: "quiz-2", subject: "Quiz Two" },
   ],
+  polls: [],
+  pollResults: [],
   results: [],
   game: { resolvedVisuals: {} },
 }

@@ -1,0 +1,69 @@
+{
+  "label": "アンケート",
+  "privacy": {
+    "anonymous": "投票は匿名です",
+    "named": "ホストは誰が何に投票したか確認できます"
+  },
+  "changeHint": "ホストが締め切るまで、投票は変更できます。",
+  "yourVote": "あなたの投票",
+  "closedTitle": "アンケートは終了しました",
+  "waitingForHost": "ホストが進めるのを待っています",
+  "voted": "{{total}}人中{{voted}}人が投票",
+  "votes_one": "{{count}}票",
+  "votes_other": "{{count}}票",
+  "more": "ほか{{count}}人",
+  "noOneVoted": "投票はありませんでした",
+  "vote": {
+    "failed": "投票が送信できませんでした。もう一度お試しください。",
+    "tooManyChanges": "投票の変更回数が上限に達しました。"
+  },
+  "host": {
+    "close": "アンケートを締め切る",
+    "done": "完了",
+    "closedNote": "アンケートは終了しました"
+  },
+  "launcher": {
+    "button": "アンケート",
+    "title": "アンケートを実施",
+    "empty": "アンケートがまだありません。「アンケート」タブで作成してください。",
+    "options_one": "{{count}}件の選択肢",
+    "options_other": "{{count}}件の選択肢",
+    "anonymous": "匿名",
+    "named": "記名"
+  },
+  "outcome": {
+    "busy": "問題または別のアンケートが表示中です。終わってからもう一度お試しください。",
+    "notFound": "このアンケートが見つかりません。削除された可能性があります。",
+    "notLecture": "アンケートには講義ルームが必要です。",
+    "notManager": "アンケートを実施できるのはホストだけです。",
+    "noAck": "サーバーから応答がありません。もう一度お試しください。",
+    "none": "操作は不要です。アンケートはすでに終了しています。"
+  },
+  "editor": {
+    "newTitle": "新しいアンケート",
+    "editTitle": "アンケートを編集",
+    "questionLabel": "質問",
+    "questionPlaceholder": "ルームに何を尋ねますか？",
+    "optionsLabel": "選択肢",
+    "optionPlaceholder": "選択肢{{letter}}",
+    "addOption": "選択肢を追加",
+    "removeOption": "選択肢{{letter}}を削除",
+    "optionsHint": "選択肢は2〜6個。ルームの全員がどれか1つに投票します。",
+    "anonymousLabel": "匿名投票",
+    "anonymousOn": "名前は表示も保存もされません。少人数の場合、リアルタイムの集計から誰が何に投票したか推測できることがあります。",
+    "anonymousOff": "各プレイヤーの名前が投票の横に表示され、プレイヤーにもそのことが伝えられます。",
+    "fitWarning": "プロジェクターに収まらない可能性があります。質問または選択肢を短くしてください。",
+    "saved": "アンケートを保存しました",
+    "updated": "アンケートを更新しました",
+    "unsaved": {
+      "title": "未保存の変更を破棄しますか？",
+      "description": "このアンケートへの変更は保存されていません。",
+      "discard": "破棄"
+    }
+  },
+  "result": {
+    "close": "閉じる",
+    "partialNote": "アンケートの受付中にルームが閉じられたため、その時点までの投票です。",
+    "subject": "{{subject}}での結果"
+  }
+}

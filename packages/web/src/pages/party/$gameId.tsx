@@ -12,6 +12,8 @@ import {
   GAME_STATE_COMPONENTS,
   isKeyOf,
 } from "@razzia/web/features/game/utils/constants"
+import PollShell from "@razzia/web/features/poll/components/PollShell"
+import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router"
 import { useEffect } from "react"
 import toast from "react-hot-toast"
@@ -60,12 +62,15 @@ const PlayerGamePage = () => {
       player,
       currentQuestion,
       visuals: reconnectVisuals,
+      poll,
     }) => {
       setGameId(reconnectGameId)
       setVisuals(reconnectVisuals)
       setStatus(reconnectStatus.name, reconnectStatus.data)
       setPlayer(player)
       setQuestionStates(currentQuestion)
+      // A poll showing when this phone came back, or none.
+      usePollStore.getState().apply(poll ?? null)
     },
   )
 
@@ -79,6 +84,7 @@ const PlayerGamePage = () => {
   useEvent(EVENTS.GAME.RESET, (message) => {
     navigate({ to: "/", replace: true })
     reset()
+    usePollStore.getState().reset()
     setQuestionStates(null)
     toast.error(t(message), { id: message })
   })
@@ -93,21 +99,23 @@ const PlayerGamePage = () => {
       : null
 
   return (
-    <GameWrapper
-      statusName={status?.name}
-      backgroundUrl={visuals.backgroundUrl}
-    >
-      {CurrentComponent && status && (
-        <GameScreenBoundary
-          resetKey={status}
-          onRecover={() =>
-            socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
-          }
-        >
-          <CurrentComponent data={status.data as never} />
-        </GameScreenBoundary>
-      )}
-    </GameWrapper>
+    <PollShell role="player">
+      <GameWrapper
+        statusName={status?.name}
+        backgroundUrl={visuals.backgroundUrl}
+      >
+        {CurrentComponent && status && (
+          <GameScreenBoundary
+            resetKey={status}
+            onRecover={() =>
+              socket.emit(EVENTS.PLAYER.RECONNECT, { gameId: gameIdParam })
+            }
+          >
+            <CurrentComponent data={status.data as never} />
+          </GameScreenBoundary>
+        )}
+      </GameWrapper>
+    </PollShell>
   )
 }
 
@@ -118,6 +126,7 @@ export const Route = createFileRoute("/party/$gameId")({
     // The player is out of the game, so nothing of it may linger: a kept
     // player would send the join page to the name form for a game they left.
     usePlayerStore.getState().reset()
+    usePollStore.getState().reset()
     useQuestionStore.getState().setQuestionStates(null)
   },
 })

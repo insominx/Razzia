@@ -13,6 +13,14 @@ import type {
   ManagerMutationResponse,
 } from "@razzia/common/types/manager"
 import type {
+  PollOutcome,
+  PollResultRecord,
+  PollSnapshot,
+  PollTally,
+  PollVoteOutcome,
+  PollWithId,
+} from "@razzia/common/types/poll"
+import type {
   BackgroundRef,
   Dialect,
   ResolvedVisuals,
@@ -71,6 +79,8 @@ export interface ServerToClientEvents {
     player: { username: string; points: number }
     currentQuestion: GameUpdateQuestion
     visuals: ResolvedVisuals
+    // Present only while a poll is open or showing its result.
+    poll?: PollSnapshot
   }) => void
   [EVENTS.PLAYER.UPDATE_LEADERBOARD]: (_data: {
     leaderboard: PublicPlayer[]
@@ -84,6 +94,7 @@ export interface ServerToClientEvents {
     currentQuestion: GameUpdateQuestion
     visuals: ResolvedVisuals
     lecture?: LectureState
+    poll?: PollSnapshot
   }) => void
   [EVENTS.MANAGER.CONFIG]: (_config: ManagerConfig) => void
   [EVENTS.QUIZZ.DATA]: (_data: {
@@ -97,6 +108,10 @@ export interface ServerToClientEvents {
     lecture?: LectureState
   }) => void
   [EVENTS.MANAGER.LECTURE_STATE]: (_state: LectureState) => void
+
+  // Poll events: null means no poll is showing.
+  [EVENTS.POLL.STATE]: (_snapshot: PollSnapshot | null) => void
+  [EVENTS.POLL.TALLY]: (_tally: PollTally) => void
   [EVENTS.MANAGER.STATUS_UPDATE]: (_data: {
     status: Status
     data: StatusDataMap[Status]
@@ -111,6 +126,13 @@ export interface ServerToClientEvents {
   [EVENTS.QUIZZ.SAVE_SUCCESS]: (_data: { id: string }) => void
   [EVENTS.QUIZZ.UPDATE_SUCCESS]: (_data: { id: string }) => void
   [EVENTS.QUIZZ.ERROR]: (_message: string) => void
+
+  // Poll definitions
+  [EVENTS.POLLS.DATA]: (_data: { poll: PollWithId }) => void
+  [EVENTS.POLLS.SAVE_SUCCESS]: (_data: { id: string }) => void
+  [EVENTS.POLLS.UPDATE_SUCCESS]: (_data: { id: string }) => void
+  [EVENTS.POLLS.ERROR]: (_message: string) => void
+  [EVENTS.POLLS.RESULT_DATA]: (_result: PollResultRecord) => void
 
   // Results events
   [EVENTS.RESULTS.DATA]: (_result: GameResult) => void
@@ -139,6 +161,18 @@ export interface ClientToServerEvents {
   [EVENTS.MANAGER.FINISH_GAME]: (
     _message: MessageGameId,
     _ack: (_outcome: LectureOutcome) => void,
+  ) => void
+  [EVENTS.MANAGER.START_POLL]: (
+    _message: MessageGameId & { pollId: string },
+    _ack: (_outcome: PollOutcome) => void,
+  ) => void
+  [EVENTS.MANAGER.CLOSE_POLL]: (
+    _message: MessageGameId,
+    _ack: (_outcome: PollOutcome) => void,
+  ) => void
+  [EVENTS.MANAGER.DISMISS_POLL]: (
+    _message: MessageGameId,
+    _ack: (_outcome: PollOutcome) => void,
   ) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void
   [EVENTS.MANAGER.GLOBAL_BACKGROUND_SET]: (
@@ -177,6 +211,20 @@ export interface ClientToServerEvents {
     _callback?: (_response: ManagerMutationResponse) => void,
   ) => void
 
+  // Poll definition actions
+  [EVENTS.POLLS.GET]: (_id: string) => void
+  [EVENTS.POLLS.SAVE]: (_poll: unknown) => void
+  [EVENTS.POLLS.UPDATE]: (_poll: PollWithId) => void
+  [EVENTS.POLLS.DELETE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
+  [EVENTS.POLLS.RESULT_GET]: (_id: string) => void
+  [EVENTS.POLLS.RESULT_DELETE]: (
+    _id: string,
+    _callback?: (_response: ManagerMutationResponse) => void,
+  ) => void
+
   // Player actions
   [EVENTS.PLAYER.JOIN]: (_inviteCode: string) => void
   [EVENTS.PLAYER.LOGIN]: (
@@ -187,6 +235,11 @@ export interface ClientToServerEvents {
   [EVENTS.PLAYER.SELECTED_ANSWER]: (
     _message: MessageWithoutStatus<{ answerKey: number }>,
   ) => void
+  [EVENTS.POLL.VOTE]: (
+    _message: MessageGameId & { pollId: string; option: number },
+    _ack: (_outcome: PollVoteOutcome) => void,
+  ) => void
+  [EVENTS.POLL.SYNC]: (_message: MessageGameId) => void
 
   // Results actions
   [EVENTS.RESULTS.GET]: (_id: string) => void

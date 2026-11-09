@@ -1,0 +1,69 @@
+{
+  "label": "Sondaggio",
+  "privacy": {
+    "anonymous": "I voti sono anonimi",
+    "named": "Il conduttore vede chi vota cosa"
+  },
+  "changeHint": "Puoi cambiare il tuo voto finché il conduttore non chiude il sondaggio.",
+  "yourVote": "Il tuo voto",
+  "closedTitle": "Sondaggio chiuso",
+  "waitingForHost": "In attesa che il conduttore continui",
+  "voted": "{{voted}} su {{total}} hanno votato",
+  "votes_one": "{{count}} voto",
+  "votes_other": "{{count}} voti",
+  "more": "+{{count}} altri",
+  "noOneVoted": "Nessuno ha votato",
+  "vote": {
+    "failed": "Il tuo voto non è arrivato. Riprova.",
+    "tooManyChanges": "Hai cambiato voto troppe volte."
+  },
+  "host": {
+    "close": "Chiudi sondaggio",
+    "done": "Fatto",
+    "closedNote": "Sondaggio chiuso"
+  },
+  "launcher": {
+    "button": "Sondaggio",
+    "title": "Avvia un sondaggio",
+    "empty": "Nessun sondaggio per ora. Creane uno nella scheda Sondaggi.",
+    "options_one": "{{count}} opzione",
+    "options_other": "{{count}} opzioni",
+    "anonymous": "Anonimo",
+    "named": "Con nomi"
+  },
+  "outcome": {
+    "busy": "È in corso una domanda o un altro sondaggio. Riprova quando ha finito.",
+    "notFound": "Sondaggio non trovato. Forse è stato eliminato.",
+    "notLecture": "I sondaggi richiedono un'aula di lezione.",
+    "notManager": "Solo il conduttore può avviare sondaggi.",
+    "noAck": "Il server non ha risposto. Riprova.",
+    "none": "Niente da fare: il sondaggio era già chiuso."
+  },
+  "editor": {
+    "newTitle": "Nuovo sondaggio",
+    "editTitle": "Modifica sondaggio",
+    "questionLabel": "Domanda",
+    "questionPlaceholder": "Cosa vuoi chiedere alla sala?",
+    "optionsLabel": "Opzioni",
+    "optionPlaceholder": "Opzione {{letter}}",
+    "addOption": "Aggiungi opzione",
+    "removeOption": "Rimuovi opzione {{letter}}",
+    "optionsHint": "Da due a sei opzioni. Tutti nella sala votano per una di esse.",
+    "anonymousLabel": "Voti anonimi",
+    "anonymousOn": "Nessun nome viene mostrato o salvato. In un gruppo piccolo, i conteggi in tempo reale possono comunque far capire chi ha votato cosa.",
+    "anonymousOff": "Vedi il nome di ogni giocatore accanto al suo voto, e i giocatori ne sono informati.",
+    "fitWarning": "Potrebbe non entrare nel proiettore. Accorcia la domanda o le opzioni.",
+    "saved": "Sondaggio salvato",
+    "updated": "Sondaggio aggiornato",
+    "unsaved": {
+      "title": "Scartare le modifiche non salvate?",
+      "description": "Le tue modifiche a questo sondaggio non sono state salvate.",
+      "discard": "Scarta"
+    }
+  },
+  "result": {
+    "close": "Chiudi",
+    "partialNote": "La sala è stata chiusa mentre il sondaggio era ancora aperto: questi sono i voti fino a quel momento.",
+    "subject": "In {{subject}}"
+  }
+}

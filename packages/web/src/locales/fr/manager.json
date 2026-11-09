@@ -67,6 +67,8 @@
     "pleaseCreate": "Veuillez d'abord créer un quizz",
     "pleaseSelect": "Veuillez sélectionner un quizz",
     "startGame": "Démarrer la partie",
+    "startLecture": "Démarrer une salle de cours",
+    "lectureHint": "Une salle de cours reste ouverte entre les questions : les joueurs peuvent la rejoindre en retard et vous pouvez lancer des sondages.",
     "invalidJson": "Fichier JSON invalide",
     "questionCount_one": "{{count}} question",
     "questionCount_other": "{{count}} questions",
@@ -104,6 +106,21 @@
     "play": "Jouer",
     "quizz": "Quizz",
     "results": "Résultats",
-    "visuals": "Apparence"
+    "visuals": "Apparence",
+    "polls": "Sondages"
+  },
+  "polls": {
+    "create": "Créer un sondage",
+    "none": "Aucun sondage",
+    "delete": "Supprimer le sondage",
+    "deleted": "Sondage supprimé",
+    "deleteConfirm": "Supprimer \"{{name}}\" ? Cette action est irréversible.",
+    "resultsTitle": "Résultats",
+    "resultVotes_one": "{{count}} vote",
+    "resultVotes_other": "{{count}} votes",
+    "resultPartial": "Terminé prématurément",
+    "resultDelete": "Supprimer le résultat",
+    "resultDeleteConfirm": "Voulez-vous vraiment supprimer le résultat de \"{{name}}\" ? Cette action est irréversible.",
+    "resultDeleted": "Résultat supprimé"
   }
 }

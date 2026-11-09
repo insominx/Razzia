@@ -75,5 +75,19 @@
   },
   "result": {
     "failedToDelete": "Failed to delete result"
+  },
+  "poll": {
+    "questionEmpty": "Write a question",
+    "optionEmpty": "Fill in every option, or remove the empty one",
+    "tooFewOptions": "A poll needs at least two options",
+    "tooManyOptions": "A poll can have at most six options",
+    "duplicateOption": "Two options are the same",
+    "textTooLong": "That text is too long",
+    "notFound": "Poll not found",
+    "failedToSave": "Could not save the poll",
+    "failedToUpdate": "Could not update the poll",
+    "failedToDelete": "Could not delete the poll",
+    "resultNotFound": "Result not found",
+    "failedToDeleteResult": "Could not delete the result"
   }
 }

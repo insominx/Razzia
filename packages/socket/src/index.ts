@@ -2,6 +2,7 @@ import type { Server } from "@razzia/common/types/game/socket"
 import { gameSocketHandlers } from "@razzia/socket/handlers/game"
 import { guardHandlers } from "@razzia/socket/handlers/guard"
 import { managerSocketHandlers } from "@razzia/socket/handlers/manager"
+import { pollsSocketHandlers } from "@razzia/socket/handlers/polls"
 import { quizzSocketHandlers } from "@razzia/socket/handlers/quizz"
 import { resultsSocketHandlers } from "@razzia/socket/handlers/results"
 import type { SocketHandler } from "@razzia/socket/handlers/types"
@@ -90,6 +91,7 @@ httpServer.listen(WS_PORT)
 const socketHandlers: SocketHandler[] = [
   managerSocketHandlers,
   quizzSocketHandlers,
+  pollsSocketHandlers,
   gameSocketHandlers,
   resultsSocketHandlers,
 ]
@@ -103,12 +105,14 @@ io.on("connection", (socket) => {
   })
 })
 
-// A redeploy mid-lecture still keeps the questions a lecture game played.
+// A redeploy mid-lecture still keeps the questions a lecture game played, and
+// a poll that was open.
 const shutdown = () => {
   const registry = Registry.getInstance()
 
   registry.getAllGames().forEach((game) => {
     game.saveUnfinishedLecture()
+    game.settlePoll()
   })
   registry.cleanup()
   process.exit(0)

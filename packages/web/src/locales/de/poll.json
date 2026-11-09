@@ -1,0 +1,69 @@
+{
+  "label": "Umfrage",
+  "privacy": {
+    "anonymous": "Die Stimmen sind anonym",
+    "named": "Der Host sieht, wer wofür stimmt"
+  },
+  "changeHint": "Du kannst deine Stimme ändern, bis der Host die Umfrage schließt.",
+  "yourVote": "Deine Stimme",
+  "closedTitle": "Umfrage beendet",
+  "waitingForHost": "Warten, bis der Host weitermacht",
+  "voted": "{{voted}} von {{total}} haben abgestimmt",
+  "votes_one": "{{count}} Stimme",
+  "votes_other": "{{count}} Stimmen",
+  "more": "+{{count}} weitere",
+  "noOneVoted": "Niemand hat abgestimmt",
+  "vote": {
+    "failed": "Deine Stimme ist nicht angekommen. Versuche es noch einmal.",
+    "tooManyChanges": "Du hast deine Stimme zu oft geändert."
+  },
+  "host": {
+    "close": "Umfrage schließen",
+    "done": "Fertig",
+    "closedNote": "Umfrage beendet"
+  },
+  "launcher": {
+    "button": "Umfrage",
+    "title": "Umfrage starten",
+    "empty": "Noch keine Umfragen. Lege eine im Tab „Umfragen“ an.",
+    "options_one": "{{count}} Option",
+    "options_other": "{{count}} Optionen",
+    "anonymous": "Anonym",
+    "named": "Mit Namen"
+  },
+  "outcome": {
+    "busy": "Gerade läuft eine Frage oder eine andere Umfrage. Versuche es danach noch einmal.",
+    "notFound": "Diese Umfrage wurde nicht gefunden. Vielleicht wurde sie gelöscht.",
+    "notLecture": "Umfragen brauchen einen Vorlesungsraum.",
+    "notManager": "Nur der Host kann Umfragen starten.",
+    "noAck": "Der Server hat nicht geantwortet. Versuche es noch einmal.",
+    "none": "Nichts zu tun: Die Umfrage war schon beendet."
+  },
+  "editor": {
+    "newTitle": "Neue Umfrage",
+    "editTitle": "Umfrage bearbeiten",
+    "questionLabel": "Frage",
+    "questionPlaceholder": "Was möchtest du den Raum fragen?",
+    "optionsLabel": "Optionen",
+    "optionPlaceholder": "Option {{letter}}",
+    "addOption": "Option hinzufügen",
+    "removeOption": "Option {{letter}} entfernen",
+    "optionsHint": "Zwei bis sechs Optionen. Alle im Raum stimmen für eine davon ab.",
+    "anonymousLabel": "Anonyme Stimmen",
+    "anonymousOn": "Es werden keine Namen angezeigt oder gespeichert. In einer kleinen Gruppe können die Live-Zahlen dennoch verraten, wer wofür gestimmt hat.",
+    "anonymousOff": "Du siehst den Namen jedes Spielers neben seiner Stimme, und die Spielenden werden darüber informiert.",
+    "fitWarning": "Passt möglicherweise nicht auf den Projektor. Kürze die Frage oder die Optionen.",
+    "saved": "Umfrage gespeichert",
+    "updated": "Umfrage aktualisiert",
+    "unsaved": {
+      "title": "Nicht gespeicherte Änderungen verwerfen?",
+      "description": "Deine Änderungen an dieser Umfrage wurden nicht gespeichert.",
+      "discard": "Verwerfen"
+    }
+  },
+  "result": {
+    "close": "Schließen",
+    "partialNote": "Der Raum wurde geschlossen, während die Umfrage noch lief. Das sind die Stimmen bis dahin.",
+    "subject": "In {{subject}}"
+  }
+}

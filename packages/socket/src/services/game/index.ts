@@ -12,6 +12,11 @@ import {
   type Status,
   type StatusDataMap,
 } from "@razzia/common/types/game/status"
+import type {
+  PollOutcome,
+  PollResultRecord,
+  PollVoteOutcome,
+} from "@razzia/common/types/poll"
 import type { ResolvedVisuals } from "@razzia/common/types/visuals"
 import { saveResult } from "@razzia/socket/services/config"
 import { CooldownTimer } from "@razzia/socket/services/game/cooldown-timer"
@@ -20,9 +25,12 @@ import {
   PlayerManager,
   toPublicPlayer,
 } from "@razzia/socket/services/game/player-manager"
+import { PollManager } from "@razzia/socket/services/game/poll-manager"
 import { RoundManager } from "@razzia/socket/services/game/round-manager"
+import { getPollById, savePollResult } from "@razzia/socket/services/poll-store"
 import Registry from "@razzia/socket/services/registry"
 import { createInviteCode } from "@razzia/socket/utils/game"
+import { logSafe } from "@razzia/socket/utils/safe"
 import { v7 as uuid } from "uuid"
 
 const registry = Registry.getInstance()
@@ -35,6 +43,9 @@ interface GameOptions {
   // Played from a lecture deck: one question at a time, with the room
   // holding between them.
   lecture?: boolean
+  // Keeps what a poll leaves behind; `false` says it could not be kept. By
+  // default it goes to `config/poll-results/`; tests hand in their own.
+  onPollSettled?: (_record: PollResultRecord) => boolean
 }
 
 interface StatusSnapshot {
@@ -71,6 +82,11 @@ export const selectReconnectStatus = (
     data: { text: "game:waitingForPlayers" },
   }
 
+// A poll rides on the reconnect payload only while one is showing, so a room
+// without a poll sends exactly what it always did.
+const pollPayload = <T extends object>(snapshot: T | null): { poll?: T } =>
+  snapshot ? { poll: snapshot } : {}
+
 class Game {
   readonly gameId: string
   readonly inviteCode: string
@@ -85,6 +101,7 @@ class Game {
   }
   private readonly playerManager: PlayerManager
   private readonly round: RoundManager
+  private readonly poll: PollManager
   private readonly cooldown: CooldownTimer
 
   private lastBroadcastStatus: {
@@ -101,7 +118,14 @@ class Game {
   >()
   private resultSaved = false
 
-  constructor({ io, socket, quizz, visuals, lecture = false }: GameOptions) {
+  constructor({
+    io,
+    socket,
+    quizz,
+    visuals,
+    lecture = false,
+    onPollSettled = savePollResult,
+  }: GameOptions) {
     const clientId = socket.handshake.auth.clientId as string
 
     this.io = io
@@ -145,6 +169,15 @@ class Game {
         this.emitLectureState()
       },
       lecture,
+    })
+
+    this.poll = new PollManager({
+      io,
+      players: this.playerManager,
+      gameSubject: quizz.subject,
+      getManagerId: () => this._manager.id,
+      isManager: this.isManager.bind(this),
+      onSettled: onPollSettled,
     })
 
     // What a resyncing manager gets back while the game is still a lobby.
@@ -320,6 +353,7 @@ class Game {
     if (player && this.playerManager.kick(socket, playerId)) {
       this.playerStatus.delete(playerId)
       this.round.forgetPlayer(player.clientId)
+      this.poll.forgetPlayer(player.clientId)
 
       // The host's "N answered" counter would still count a kicked answer.
       const answered = this.round.getAnswerCount()
@@ -363,6 +397,7 @@ class Game {
       players: this.playerManager.getAll().map(toPublicPlayer),
       visuals: this.visuals,
       ...this.lecturePayload(),
+      ...pollPayload(this.poll.snapshotForHost()),
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
@@ -422,6 +457,7 @@ class Game {
       status,
       player: { username: player.username, points: player.points },
       visuals: this.visuals,
+      ...pollPayload(this.poll.snapshotForPlayer(clientId)),
     })
     socket.emit(EVENTS.GAME.TOTAL_PLAYERS, this.playerManager.count())
 
@@ -450,6 +486,7 @@ class Game {
     const player = this.playerManager.remove(socketId)
 
     if (player) {
+      this.poll.forgetPlayer(player.clientId)
       this.io.in(socketId).socketsLeave(this.gameId)
 
       if (this._manager.connected) {
@@ -487,12 +524,20 @@ class Game {
   close(message: string) {
     // Before stop(): a stopped round no longer reports what was played.
     this.saveUnfinishedLecture()
+    this.settlePoll()
+    this.poll.stop()
     this.round.stop()
     this.io.to(this.gameId).emit(EVENTS.GAME.RESET, message)
     this.io.in(this.gameId).socketsLeave(this.gameId)
   }
 
+  // A poll that is open or showing its result owns the room: no quiz step
+  // starts or advances until the host has dismissed it.
   async start(socket: Socket) {
+    if (this.poll.isActive()) {
+      return
+    }
+
     await this.round.start(socket)
   }
 
@@ -501,6 +546,10 @@ class Game {
   }
 
   nextRound(socket: Socket) {
+    if (this.poll.isActive()) {
+      return
+    }
+
     this.round.nextQuestion(socket)
   }
 
@@ -513,10 +562,18 @@ class Game {
   }
 
   showLeaderboard(socket: Socket) {
+    if (this.poll.isActive()) {
+      return
+    }
+
     this.round.showLeaderboard(socket)
   }
 
   playQuestion(socket: Socket, index: number): LectureOutcome {
+    if (this.poll.isActive()) {
+      return "busy"
+    }
+
     const outcome = this.round.playQuestion(socket, index)
 
     // From the lobby the countdown runs first; the host learns the question
@@ -529,7 +586,70 @@ class Game {
   }
 
   finish(socket: Socket): LectureOutcome {
+    if (this.poll.isActive()) {
+      return "busy"
+    }
+
     return this.round.finish(socket)
+  }
+
+  // ── Polls ────────────────────────────────────────────────────────────────
+
+  // A poll may take a lecture room in its lobby or between questions, and
+  // only when no other poll is showing. Any trouble reading it answers
+  // `notFound`, so the host's reply always arrives.
+  startPoll(socket: Socket, pollId: string): PollOutcome {
+    if (!this.lecture) {
+      return "notLecture"
+    }
+
+    if (!this.isManager(socket)) {
+      return "notManager"
+    }
+
+    if (
+      this.poll.isActive() ||
+      !(this.round.isLobby() || this.round.isBetweenQuestions())
+    ) {
+      return "busy"
+    }
+
+    try {
+      return this.poll.start(socket, getPollById(pollId))
+    } catch (error) {
+      console.error(`Failed to start poll ${logSafe(pollId)}:`, error)
+
+      return "notFound"
+    }
+  }
+
+  closePoll(socket: Socket): PollOutcome {
+    return this.poll.close(socket)
+  }
+
+  dismissPoll(socket: Socket): PollOutcome {
+    return this.poll.dismiss(socket)
+  }
+
+  votePoll(socket: Socket, pollId: string, option: number): PollVoteOutcome {
+    return this.poll.vote(socket, pollId, option)
+  }
+
+  // A screen that has just opened (a phone arriving after it joined, a host
+  // page) has no other way to learn of a poll that began before it listened.
+  // Nothing showing answers `null`, so a stale overlay clears as well.
+  syncPoll(socket: Socket) {
+    const snapshot = this.poll.snapshotForSocket(socket)
+
+    if (snapshot !== undefined) {
+      socket.emit(EVENTS.POLL.STATE, snapshot)
+    }
+  }
+
+  // Keeps an open poll as a partial result when the room closes on it, and
+  // offers a result that could not be saved once more.
+  settlePoll() {
+    this.poll.settlePending()
   }
 }
 

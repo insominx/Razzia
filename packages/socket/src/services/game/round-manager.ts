@@ -131,6 +131,12 @@ export class RoundManager {
     return this.phase === "idle"
   }
 
+  // The results are up and nothing runs until the host moves on: the only
+  // moment, besides the lobby, when another activity may take the room.
+  isBetweenQuestions(): boolean {
+    return this.phase === "results"
+  }
+
   // Where the game is, for every screen. A lecture deck plays questions in any
   // order, so it also says which have been played: a phone has no other way to
   // draw its pips or know the final question.

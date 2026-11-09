@@ -75,5 +75,19 @@
   },
   "result": {
     "failedToDelete": "結果を削除できませんでした"
+  },
+  "poll": {
+    "questionEmpty": "質問を入力してください",
+    "optionEmpty": "すべての選択肢を入力するか、空の選択肢を削除してください",
+    "tooFewOptions": "アンケートには2つ以上の選択肢が必要です",
+    "tooManyOptions": "選択肢は最大6つまでです",
+    "duplicateOption": "同じ選択肢が2つあります",
+    "textTooLong": "テキストが長すぎます",
+    "notFound": "アンケートが見つかりません",
+    "failedToSave": "アンケートを保存できませんでした",
+    "failedToUpdate": "アンケートを更新できませんでした",
+    "failedToDelete": "アンケートを削除できませんでした",
+    "resultNotFound": "結果が見つかりません",
+    "failedToDeleteResult": "結果を削除できませんでした"
   }
 }

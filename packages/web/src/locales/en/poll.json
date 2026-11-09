@@ -1,0 +1,69 @@
+{
+  "label": "Poll",
+  "privacy": {
+    "anonymous": "Votes are anonymous",
+    "named": "The host can see who votes for what"
+  },
+  "changeHint": "You can change your vote until the host closes the poll.",
+  "yourVote": "Your vote",
+  "closedTitle": "Poll closed",
+  "waitingForHost": "Waiting for the host to continue",
+  "voted": "{{voted}} of {{total}} voted",
+  "votes_one": "{{count}} vote",
+  "votes_other": "{{count}} votes",
+  "more": "+{{count}} more",
+  "noOneVoted": "Nobody voted",
+  "vote": {
+    "failed": "Your vote did not go through. Try again.",
+    "tooManyChanges": "You have changed your vote too many times."
+  },
+  "host": {
+    "close": "Close poll",
+    "done": "Done",
+    "closedNote": "Poll closed"
+  },
+  "launcher": {
+    "button": "Poll",
+    "title": "Run a poll",
+    "empty": "No polls yet. Create one in the Polls tab.",
+    "options_one": "{{count}} option",
+    "options_other": "{{count}} options",
+    "anonymous": "Anonymous",
+    "named": "Named"
+  },
+  "outcome": {
+    "busy": "A question or another poll is showing. Try again when it is done.",
+    "notFound": "That poll could not be found. It may have been deleted.",
+    "notLecture": "Polls need a lecture room.",
+    "notManager": "Only the host can run polls.",
+    "noAck": "The server did not answer. Try again.",
+    "none": "Nothing to do: the poll was already closed."
+  },
+  "editor": {
+    "newTitle": "New poll",
+    "editTitle": "Edit poll",
+    "questionLabel": "Question",
+    "questionPlaceholder": "What do you want to ask the room?",
+    "optionsLabel": "Options",
+    "optionPlaceholder": "Option {{letter}}",
+    "addOption": "Add option",
+    "removeOption": "Remove option {{letter}}",
+    "optionsHint": "Two to six options. Everyone in the room votes on one of them.",
+    "anonymousLabel": "Anonymous votes",
+    "anonymousOn": "No names are shown or saved. In a small group, watching the live counts can still hint at who voted what.",
+    "anonymousOff": "You see each player's name next to their vote, and players are told.",
+    "fitWarning": "May not fit the projector. Shorten the question or the options.",
+    "saved": "Poll saved",
+    "updated": "Poll updated",
+    "unsaved": {
+      "title": "Discard unsaved changes?",
+      "description": "Your edits to this poll have not been saved.",
+      "discard": "Discard"
+    }
+  },
+  "result": {
+    "close": "Close",
+    "partialNote": "The room closed while this poll was still open, so these are the votes up to that moment.",
+    "subject": "In {{subject}}"
+  }
+}

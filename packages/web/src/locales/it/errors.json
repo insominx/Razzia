@@ -75,5 +75,19 @@
   },
   "result": {
     "failedToDelete": "Impossibile eliminare il risultato"
+  },
+  "poll": {
+    "questionEmpty": "Scrivi una domanda",
+    "optionEmpty": "Compila ogni opzione o rimuovi quella vuota",
+    "tooFewOptions": "Un sondaggio richiede almeno due opzioni",
+    "tooManyOptions": "Un sondaggio può avere al massimo sei opzioni",
+    "duplicateOption": "Due opzioni sono uguali",
+    "textTooLong": "Il testo è troppo lungo",
+    "notFound": "Sondaggio non trovato",
+    "failedToSave": "Impossibile salvare il sondaggio",
+    "failedToUpdate": "Impossibile aggiornare il sondaggio",
+    "failedToDelete": "Impossibile eliminare il sondaggio",
+    "resultNotFound": "Risultato non trovato",
+    "failedToDeleteResult": "Impossibile eliminare il risultato"
   }
 }

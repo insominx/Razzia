@@ -319,6 +319,61 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
     }),
   )
 
+  // A poll runs beside the quiz. Once the room is found, its commands answer
+  // through the ack with an outcome. An unknown room gets `game:errorMessage` and
+  // no ack, as for every game command, so the pages time out and unlock. A client
+  // may also leave the ack out, whatever the types say: the command runs first
+  // and the ack only reports it, so a call with the ack left out still does its work.
+  socket.on(EVENTS.MANAGER.START_POLL, (message, ack) =>
+    withGame(gameIdOf(message), socket, (game) => {
+      const pollId = textOf(fieldsOf(message).pollId)
+      const outcome =
+        pollId === undefined ? "notFound" : game.startPoll(socket, pollId)
+
+      ackOf(ack)?.(outcome)
+    }),
+  )
+
+  socket.on(EVENTS.MANAGER.CLOSE_POLL, (message, ack) =>
+    withGame(gameIdOf(message), socket, (game) => {
+      const outcome = game.closePoll(socket)
+
+      ackOf(ack)?.(outcome)
+    }),
+  )
+
+  socket.on(EVENTS.MANAGER.DISMISS_POLL, (message, ack) =>
+    withGame(gameIdOf(message), socket, (game) => {
+      const outcome = game.dismissPoll(socket)
+
+      ackOf(ack)?.(outcome)
+    }),
+  )
+
+  // A screen opening on a room that is gone has nothing to be told: its own
+  // reconnect says so.
+  socket.on(EVENTS.POLL.SYNC, (message) => {
+    const gameId = gameIdOf(message)
+
+    if (gameId) {
+      registry.getGameById(gameId)?.syncPoll(socket)
+    }
+  })
+
+  socket.on(EVENTS.POLL.VOTE, (message, ack) =>
+    withGame(gameIdOf(message), socket, (game) => {
+      const fields = fieldsOf(message)
+      const pollId = textOf(fields.pollId)
+      const option = numberOf(fields.option)
+      const outcome =
+        pollId === undefined || option === undefined
+          ? "invalid"
+          : game.votePoll(socket, pollId, option)
+
+      ackOf(ack)?.(outcome)
+    }),
+  )
+
   socket.on(EVENTS.MANAGER.LEAVE, (message) => {
     const gameId = gameIdOf(message)
 

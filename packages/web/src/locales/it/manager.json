@@ -67,6 +67,8 @@
     "pleaseCreate": "Per favore crea prima un quiz",
     "pleaseSelect": "Per favore seleziona un quiz",
     "startGame": "Inizia il gioco",
+    "startLecture": "Avvia aula di lezione",
+    "lectureHint": "Un'aula di lezione resta aperta tra le domande: i giocatori possono unirsi in ritardo e puoi avviare dei sondaggi.",
     "invalidJson": "File JSON non valido",
     "questionCount_one": "{{count}} domanda",
     "questionCount_other": "{{count}} domande",
@@ -104,6 +106,21 @@
     "play": "Gioca",
     "quizz": "Quiz",
     "results": "Risultati",
-    "visuals": "Aspetto"
+    "visuals": "Aspetto",
+    "polls": "Sondaggi"
+  },
+  "polls": {
+    "create": "Crea sondaggio",
+    "none": "Nessun sondaggio",
+    "delete": "Elimina sondaggio",
+    "deleted": "Sondaggio eliminato",
+    "deleteConfirm": "Sei sicuro di voler eliminare \"{{name}}\"? Questa azione non può essere annullata.",
+    "resultsTitle": "Risultati",
+    "resultVotes_one": "{{count}} voto",
+    "resultVotes_other": "{{count}} voti",
+    "resultPartial": "Terminato in anticipo",
+    "resultDelete": "Elimina risultato",
+    "resultDeleteConfirm": "Vuoi davvero eliminare il risultato di \"{{name}}\"? Questa azione non può essere annullata.",
+    "resultDeleted": "Risultato eliminato"
   }
 }
