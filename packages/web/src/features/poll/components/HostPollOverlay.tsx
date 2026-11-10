@@ -51,9 +51,12 @@ const HostPollOverlay = () => {
   const gameId = useManagerStore((state) => state.gameId)
   const backgroundUrl = useManagerStore((state) => state.visuals.backgroundUrl)
   const hostControls = useManagerStore((state) => state.hostControls)
-  const lobbyPlayers = useManagerStore((state) => state.players.length)
-  const playerTotal = usePollStore((state) => state.playerTotal)
-  const { socket } = useSocket()
+  const connectedPlayers = useManagerStore((state) =>
+    state.presenceKnown
+      ? state.players.filter((player) => player.connected).length
+      : null,
+  )
+  const { socket, isConnected } = useSocket()
   const { t } = useTranslation()
   // A click is answered once; a second one while it waits would only repeat it.
   const [pending, setPending] = useState(false)
@@ -67,10 +70,6 @@ const HostPollOverlay = () => {
   const sealed = !closed && snapshot.counts === undefined
   const counts = snapshot.counts ?? options.map(() => 0)
   const total = snapshot.total ?? 0
-  // The room's own count when it has sent one; the lobby's list only fills in
-  // the lobby and on a reconnect, so it misses a student who joined since.
-  const players = playerTotal ?? lobbyPlayers
-
   const send = async (
     event:
       | typeof EVENTS.MANAGER.CLOSE_POLL
@@ -140,9 +139,16 @@ const HostPollOverlay = () => {
             data-poll-voted
             className="text-text-muted stage:text-[2.6875rem] text-lg font-semibold"
           >
-            {total === 0 && closed
-              ? t("poll:noOneVoted")
-              : t("poll:voted", { voted: total, total: players })}
+            {total === 0 && closed ? (
+              t("poll:noOneVoted")
+            ) : (
+              <>
+                {t("poll:votes", { count: total })}
+                {!closed && isConnected && connectedPlayers !== null && (
+                  <> · {t("game:connected", { count: connectedPlayers })}</>
+                )}
+              </>
+            )}
           </p>
           {/* A label, like the one above the question: it tells the presenter
               what the screen is doing. The room does not have to read it, so

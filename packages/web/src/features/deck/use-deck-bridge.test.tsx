@@ -222,6 +222,43 @@ describe("useDeckBridge", () => {
     expect(document.documentElement.dataset.backdrop).toBeUndefined()
   })
 
+  it("derives optional presence from the roster and omits it on disconnect and restart", () => {
+    stubStorage()
+    mocks.router.pathname = "/party/manager/g-1"
+    const { rerender } = renderHook(() => useDeckBridge())
+    sendCommand({ type: "hello" })
+    attachTo({ name: STATUS.SHOW_ROOM, data: {} })
+    fire(EVENTS.GAME.TOTAL_PLAYERS, 2)
+    expect(lastState()).not.toHaveProperty("connectedPlayers")
+
+    act(() =>
+      useManagerStore.getState().applyPresence({
+        gameId: "g-1",
+        players: [
+          {
+            id: "a",
+            username: "Alice",
+            connected: false,
+            points: 0,
+            streak: 0,
+          },
+        ],
+      }),
+    )
+    expect(lastState()).toMatchObject({ players: 2, connectedPlayers: 0 })
+    expect(lastState()).not.toHaveProperty("roster")
+    expect(JSON.stringify(lastState())).not.toContain("Alice")
+
+    mocks.connection.isConnected = false
+    rerender()
+    expect(lastState()).toMatchObject({ connected: false, players: 2 })
+    expect(lastState()).not.toHaveProperty("connectedPlayers")
+    mocks.connection.isConnected = true
+    rerender()
+    sendCommand({ type: "ensureGame", quiz: QUIZ, restart: "always" })
+    expect(lastState()).not.toHaveProperty("connectedPlayers")
+  })
+
   it("starts quiet and goes quiet again when the deck hides the page", () => {
     stubStorage()
     const { unmount } = renderHook(() => {

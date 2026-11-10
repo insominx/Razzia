@@ -63,22 +63,25 @@ describe("HostPollOverlay with a sealed poll", () => {
 
     expect(screen.getByText("Pizza")).toBeVisible()
     expect(screen.getByText("Soup")).toBeVisible()
-    expect(screen.getByText('poll:voted:{"voted":2,"total":3}')).toBeVisible()
+    expect(screen.getByText('poll:votes:{"count":2}')).toBeVisible()
     expect(screen.getByText("poll:host.sealedNote")).toBeVisible()
     expect(counts()).toHaveLength(0)
     expect(document.querySelector("[data-poll-names]")).toBeNull()
   })
 
-  it("takes the room total from the room's own count, not the lobby list", () => {
+  it("never substitutes membership totals for connection counts", () => {
     render(<HostPollOverlay />)
     show(sealedOpen({ total: 4 }))
 
-    // A student joined between questions: the lobby list still holds three.
+    // The legacy total is membership, so it cannot supply a connected count.
     act(() => {
       usePollStore.getState().setPlayerTotal(5)
     })
 
-    expect(screen.getByText('poll:voted:{"voted":4,"total":5}')).toBeVisible()
+    expect(screen.getByText('poll:votes:{"count":4}')).toBeVisible()
+    expect(document.querySelector("[data-poll-voted]")).not.toHaveTextContent(
+      "connected",
+    )
   })
 
   it("follows the tally as it grows, still without counts", () => {
@@ -89,7 +92,7 @@ describe("HostPollOverlay with a sealed poll", () => {
       usePollStore.getState().applyTally({ pollId: "lunch", total: 3 })
     })
 
-    expect(screen.getByText('poll:voted:{"voted":3,"total":3}')).toBeVisible()
+    expect(screen.getByText('poll:votes:{"count":3}')).toBeVisible()
     expect(counts()).toHaveLength(0)
   })
 

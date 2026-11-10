@@ -261,6 +261,15 @@ class Game {
       .emit(EVENTS.MANAGER.LECTURE_STATE, this.lectureState())
   }
 
+  private emitPlayerPresence() {
+    if (this._manager.connected) {
+      this.io.to(this._manager.id).emit(EVENTS.MANAGER.PLAYER_PRESENCE, {
+        gameId: this.gameId,
+        players: this.playerManager.getAll().map(toPublicPlayer),
+      })
+    }
+  }
+
   // A game's result is written once, however it ends.
   private recordResult(result: GameResult) {
     if (this.resultSaved) {
@@ -351,6 +360,8 @@ class Game {
         .to(this._manager.id)
         .emit(EVENTS.MANAGER.NEW_PLAYER, toPublicPlayer(player))
     }
+
+    this.emitPlayerPresence()
   }
 
   // A kicked client may not come back in through the lobby or a lecture's
@@ -363,6 +374,7 @@ class Game {
     const player = this.playerManager.findById(playerId)
 
     if (player && this.playerManager.kick(socket, playerId)) {
+      this.emitPlayerPresence()
       this.playerStatus.delete(playerId)
       this.round.forgetPlayer(player.clientId)
       this.poll.forgetPlayer(player.clientId)
@@ -485,6 +497,7 @@ class Game {
     console.log(
       `Player ${player.username} reconnected to game ${this.inviteCode}`,
     )
+    this.emitPlayerPresence()
   }
 
   // Disconnect helpers
@@ -508,6 +521,7 @@ class Game {
       }
 
       this.playerManager.broadcastCount()
+      this.emitPlayerPresence()
     }
 
     return player
@@ -516,13 +530,14 @@ class Game {
   setPlayerDisconnected(socketId: string) {
     // No player holds that id (a stale socket): nothing to mark, announce or
     // wait out.
-    if (!this.playerManager.findById(socketId)) {
+    if (!this.playerManager.findById(socketId)?.connected) {
       return
     }
 
     this.playerManager.setDisconnected(socketId)
     this.io.in(socketId).socketsLeave(this.gameId)
     this.playerManager.broadcastCount()
+    this.emitPlayerPresence()
 
     // Unless they are back by then, stop holding the answers open for them.
     setTimeout(() => {

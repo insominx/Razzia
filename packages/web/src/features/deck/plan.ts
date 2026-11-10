@@ -106,6 +106,7 @@ export interface StateInputs {
   lecture: LectureState | null
   status: { name: Status; data: unknown } | null
   players: number
+  connectedPlayers?: number
   visible: boolean
   review: number | null
   reviewable: number[]
@@ -147,6 +148,7 @@ export const buildBridgeState = ({
   lecture,
   status,
   players,
+  connectedPlayers,
   visible,
   review,
   reviewable,
@@ -177,6 +179,9 @@ export const buildBridgeState = ({
     played: attached ? (lecture?.played ?? []) : [],
     finished: attached && (lecture?.finished ?? screen === STATUS.FINISHED),
     players,
+    ...(connected && attached && connectedPlayers !== undefined
+      ? { connectedPlayers }
+      : {}),
     visible,
     reviewing: attached ? review : null,
     reviewable: attached ? reviewable : [],

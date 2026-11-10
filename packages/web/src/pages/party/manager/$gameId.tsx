@@ -11,6 +11,7 @@ import {
   useSocket,
 } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { useHostPresence } from "@razzia/web/features/game/hooks/use-host-presence"
 import { useQuestionStore } from "@razzia/web/features/game/stores/question"
 import {
   GAME_STATE_COMPONENTS_MANAGER,
@@ -61,12 +62,12 @@ const ManagerGamePage = () => {
     setGameId,
     setStatus,
     setVisuals,
-    setPlayers,
     setLecture,
     reset,
     responses,
     review,
   } = useManagerStore()
+  useHostPresence(gameIdParam)
   const { setQuestionStates } = useQuestionStore()
   const { t } = useTranslation()
   // The lobby Exit button asks through the same dialog as a router leave.
@@ -107,14 +108,6 @@ const ManagerGamePage = () => {
     }
   })
 
-  // Leaving this page detaches the socket from the game and clears the
-  // status, so arriving without one (e.g. browser Forward) re-attaches.
-  useEffect(() => {
-    if (socketClient.connected && !useManagerStore.getState().status) {
-      socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
-    }
-  }, [gameIdParam])
-
   useEvent(
     EVENTS.MANAGER.SUCCESS_RECONNECT,
     ({
@@ -126,10 +119,16 @@ const ManagerGamePage = () => {
       lecture,
       poll,
     }) => {
+      if (reconnectGameId !== gameIdParam) {
+        return
+      }
+
       setGameId(reconnectGameId)
+      useManagerStore
+        .getState()
+        .applyPresence({ gameId: reconnectGameId, players })
       setVisuals(reconnectVisuals)
       setStatus(reconnectStatus.name, reconnectStatus.data)
-      setPlayers(players)
       setQuestionStates(currentQuestion)
       setLecture(lecture ?? null)
       // A poll showing when the host came back, or none.
@@ -138,6 +137,14 @@ const ManagerGamePage = () => {
   )
 
   useEvent(EVENTS.MANAGER.LECTURE_STATE, setLecture)
+
+  // Subscribe before requesting the initial roster. Creation can precede this
+  // route mounting, so even a new lobby needs an authoritative resync.
+  useEffect(() => {
+    if (socketClient.connected) {
+      socketClient.emit(EVENTS.MANAGER.RECONNECT, { gameId: gameIdParam })
+    }
+  }, [gameIdParam])
 
   // Replace, not push: Back must not return to a game that is gone.
   useEvent(EVENTS.GAME.RESET, (message) => {
@@ -269,6 +276,8 @@ export const Route = createFileRoute("/party/manager/$gameId")({
   onLeave: ({ params: { gameId } }) => {
     socketClient.emit(EVENTS.MANAGER.LEAVE, { gameId })
     useManagerStore.getState().resetStatus()
+    useManagerStore.getState().setGameId(null)
+    useManagerStore.getState().clearPresence()
     usePollStore.getState().reset()
   },
 })

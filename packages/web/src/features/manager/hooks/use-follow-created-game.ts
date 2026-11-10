@@ -3,6 +3,7 @@ import { STATUS } from "@razzia/common/types/game/status"
 import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
 import { useEvent } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import { useNavigate } from "@tanstack/react-router"
 
 // Opens the lobby the server created for this host, starting from an empty
@@ -16,6 +17,7 @@ export const useFollowCreatedGame = () => {
     EVENTS.MANAGER.GAME_CREATED,
     ({ gameId, inviteCode, visuals, lecture }) => {
       setGameId(gameId)
+      usePollStore.getState().reset()
       setVisuals(visuals)
       setPlayers([])
       setLecture(lecture ?? null)

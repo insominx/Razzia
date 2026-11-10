@@ -81,8 +81,17 @@ export const useDeckBridge = () => {
   const pathname = useRouterState({
     select: (routerState) => routerState.location.pathname,
   })
-  const { gameId, status, config, lecture, setConfig, responses, review } =
-    useManagerStore()
+  const {
+    gameId,
+    status,
+    config,
+    lecture,
+    setConfig,
+    responses,
+    review,
+    players: roster,
+    presenceKnown,
+  } = useManagerStore()
   const poll = usePollStore((store) => store.snapshot)
   const pollShowing = poll !== null
 
@@ -126,6 +135,9 @@ export const useDeckBridge = () => {
     lecture,
     status,
     players,
+    connectedPlayers: presenceKnown
+      ? roster.filter((player) => player.connected).length
+      : undefined,
     visible,
     review,
     reviewable: Object.keys(responses)

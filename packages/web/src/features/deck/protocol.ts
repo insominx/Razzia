@@ -166,6 +166,8 @@ export interface BridgeState {
   played: number[]
   finished: boolean
   players: number
+  // Current-room presence; absent until the host has an authoritative roster.
+  connectedPlayers?: number
   visible: boolean
   // The question whose results are on screen for a review, and the questions
   // whose results this page has seen and can show again.

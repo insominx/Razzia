@@ -1,4 +1,9 @@
 {
+  "connected_one": "{{count}} connecté",
+  "connected_other": "{{count}} connectés",
+  "joined_one": "{{count}} inscrit",
+  "joined_other": "{{count}} inscrits",
+  "disconnected": "Déconnecté",
   "correct": "Bravo !",
   "gamePinLabel": "PIN de la partie :",
   "hud": {

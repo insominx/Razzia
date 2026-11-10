@@ -51,6 +51,7 @@ export interface MessageGameId {
 
 export interface ServerToClientEvents {
   connect: () => void
+  disconnect: (_reason: string) => void
 
   // Game events
   [EVENTS.GAME.STATUS]: (_data: {
@@ -118,6 +119,10 @@ export interface ServerToClientEvents {
     data: StatusDataMap[Status]
   }) => void
   [EVENTS.MANAGER.NEW_PLAYER]: (_player: PublicPlayer) => void
+  [EVENTS.MANAGER.PLAYER_PRESENCE]: (_snapshot: {
+    gameId: string
+    players: PublicPlayer[]
+  }) => void
   [EVENTS.MANAGER.REMOVE_PLAYER]: (_playerId: string) => void
   [EVENTS.MANAGER.ERROR_MESSAGE]: (_message: string) => void
   [EVENTS.MANAGER.PLAYER_KICKED]: (_playerId: string) => void

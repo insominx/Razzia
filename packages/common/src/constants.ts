@@ -29,6 +29,7 @@ export const EVENTS = {
     GAME_CREATED: "manager:gameCreated",
     STATUS_UPDATE: "manager:statusUpdate",
     NEW_PLAYER: "manager:newPlayer",
+    PLAYER_PRESENCE: "manager:playerPresence",
     REMOVE_PLAYER: "manager:removePlayer",
     ERROR_MESSAGE: "manager:errorMessage",
     PLAYER_KICKED: "manager:playerKicked",

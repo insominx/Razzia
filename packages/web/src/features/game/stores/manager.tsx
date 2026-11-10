@@ -49,6 +49,7 @@ interface ManagerStore<T> {
   gameId: string | null
   status: Status<T> | null
   players: PublicPlayer[]
+  presenceKnown: boolean
   visuals: ResolvedVisuals
   // Set only for a game a lecture deck plays one question at a time.
   lecture: LectureState | null
@@ -69,6 +70,12 @@ interface ManagerStore<T> {
   setStatus: <K extends keyof T>(_name: K, _data: T[K]) => void
   resetStatus: () => void
   setPlayers: (_players: PublicPlayer[]) => void
+  applyPresence: (_snapshot: {
+    gameId: string
+    players: PublicPlayer[]
+  }) => void
+  invalidatePresence: () => void
+  clearPresence: () => void
   setLecture: (_lecture: LectureState | null) => void
   setHostControls: (_shown: boolean) => void
   setReview: (_question: number | null) => void
@@ -82,6 +89,7 @@ const initialState = {
   gameId: null,
   status: null,
   players: [],
+  presenceKnown: false,
   visuals: {},
   lecture: null,
   responses: {},
@@ -100,7 +108,13 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
     set((state) =>
       state.gameId === gameId
         ? { gameId }
-        : { gameId, responses: loadResponses(gameId), review: null },
+        : {
+            gameId,
+            players: [],
+            presenceKnown: false,
+            responses: loadResponses(gameId),
+            review: null,
+          },
     ),
   setVisuals: (visuals) => set({ visuals }),
 
@@ -133,6 +147,12 @@ export const useManagerStore = create<ManagerStore<StatusDataMap>>((set) => ({
   resetStatus: () => set({ status: null }),
 
   setPlayers: (players) => set({ players }),
+  applyPresence: ({ gameId, players }) =>
+    set((state) =>
+      state.gameId === gameId ? { players, presenceKnown: true } : {},
+    ),
+  invalidatePresence: () => set({ presenceKnown: false }),
+  clearPresence: () => set({ players: [], presenceKnown: false }),
   setLecture: (lecture) => set({ lecture }),
   setHostControls: (hostControls) => set({ hostControls }),
   // A review asked for after a command stays up through that command's screen.

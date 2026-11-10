@@ -1,4 +1,9 @@
 {
+  "connected_one": "{{count}} connesso",
+  "connected_other": "{{count}} connessi",
+  "joined_one": "{{count}} partecipante",
+  "joined_other": "{{count}} partecipanti",
+  "disconnected": "Disconnesso",
   "correct": "Bravo!",
   "gamePinLabel": "PIN del gioco:",
   "hud": {

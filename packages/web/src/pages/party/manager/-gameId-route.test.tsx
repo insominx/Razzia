@@ -13,6 +13,7 @@ interface BlockerOpts {
 
 const mocks = vi.hoisted(() => ({
   embed: false,
+  connected: false,
   navigate: vi.fn(),
   emit: vi.fn(),
   proceed: vi.fn(),
@@ -33,7 +34,12 @@ vi.mock("@razzia/web/features/deck/embed", () => ({
 }))
 
 vi.mock("@razzia/web/features/game/contexts/socket-context", () => ({
-  socketClient: { emit: mocks.emit, connected: false },
+  socketClient: {
+    emit: mocks.emit,
+    get connected() {
+      return mocks.connected
+    },
+  },
   useEvent: (event: string, handler: (_payload?: unknown) => void) => {
     mocks.handlers.set(event, handler)
   },
@@ -128,6 +134,8 @@ const mount = async () => {
 describe("manager game route leave guard", () => {
   beforeEach(() => {
     mocks.embed = false
+    mocks.connected = false
+    mocks.emit.mockReset()
     mocks.resolver = { status: "idle" }
     mocks.navigate.mockClear()
     mocks.emit.mockClear()
@@ -140,6 +148,58 @@ describe("manager game route leave guard", () => {
 
   afterEach(() => {
     cleanup()
+  })
+
+  it("subscribes before requesting the roster even when a created lobby already has status", async () => {
+    host(STATUS.SHOW_ROOM)
+    mocks.connected = true
+    mocks.emit.mockImplementation((event) => {
+      if (event === EVENTS.MANAGER.RECONNECT) {
+        expect(mocks.handlers.has(EVENTS.MANAGER.PLAYER_PRESENCE)).toBe(true)
+        expect(mocks.handlers.has(EVENTS.MANAGER.SUCCESS_RECONNECT)).toBe(true)
+      }
+    })
+    await mount()
+    expect(mocks.emit).toHaveBeenCalledWith(EVENTS.MANAGER.RECONNECT, {
+      gameId: "g1",
+    })
+  })
+
+  it("receives presence while a quiz screen replaces the lobby and rejects another room", async () => {
+    host(STATUS.SELECT_ANSWER)
+    await mount()
+    act(() =>
+      mocks.handlers.get(EVENTS.MANAGER.PLAYER_PRESENCE)?.({
+        gameId: "g1",
+        players: [{ ...player, connected: false }],
+      }),
+    )
+    expect(useManagerStore.getState()).toMatchObject({
+      presenceKnown: true,
+      players: [{ username: "Ann", connected: false }],
+    })
+    act(() =>
+      mocks.handlers.get(EVENTS.MANAGER.PLAYER_PRESENCE)?.({
+        gameId: "old",
+        players: [],
+      }),
+    )
+    expect(useManagerStore.getState().players).toHaveLength(1)
+  })
+
+  it("ignores an old reconnect payload without replacing the current room", async () => {
+    host(STATUS.SHOW_ROOM)
+    await mount()
+    act(() =>
+      mocks.handlers.get(EVENTS.MANAGER.SUCCESS_RECONNECT)?.({
+        gameId: "old",
+        players: [],
+      }),
+    )
+    expect(useManagerStore.getState()).toMatchObject({
+      gameId: "g1",
+      presenceKnown: false,
+    })
   })
 
   it("does not block leaving an empty lobby", async () => {

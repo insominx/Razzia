@@ -1,21 +1,18 @@
 import { EVENTS } from "@razzia/common/constants"
+import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { useHostPresence } from "@razzia/web/features/game/hooks/use-host-presence"
 import Room from "@razzia/web/features/game/components/states/Room"
-import { SocketContext } from "@razzia/web/features/game/contexts/socket-context"
+import {
+  useEvent,
+  SocketContext,
+} from "@razzia/web/features/game/contexts/socket-context"
 import { act, cleanup, render } from "@testing-library/react"
-import { StrictMode } from "react"
+import { StrictMode, useEffect, useRef } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   start: vi.fn(),
   cue: vi.fn(),
-  players: [] as unknown[],
-}))
-
-vi.mock("@razzia/web/features/game/stores/manager", () => ({
-  useManagerStore: Object.assign(
-    () => ({ gameId: "game-1", players: mocks.players }),
-    { getState: () => ({ setPlayers: vi.fn() }) },
-  ),
 }))
 
 vi.mock("@razzia/web/features/game/audio/score", () => ({
@@ -23,7 +20,10 @@ vi.mock("@razzia/web/features/game/audio/score", () => ({
 }))
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, opts?: { count: number }) =>
+      opts ? `${key}:${opts.count}` : key,
+  }),
 }))
 
 // These tests keep the real useEvent, because how it holds its handler is the
@@ -60,14 +60,23 @@ const player = (name: string) => ({
   streak: 0,
 })
 
-const arrives = (name: string) => fire(EVENTS.MANAGER.NEW_PLAYER, player(name))
+const arrives = (name: string) =>
+  fire(EVENTS.MANAGER.PLAYER_PRESENCE, {
+    gameId: "game-1",
+    players: [...useManagerStore.getState().players, player(name)],
+  })
+const gone = (id: string) =>
+  fire(EVENTS.MANAGER.PLAYER_PRESENCE, {
+    gameId: "game-1",
+    players: useManagerStore.getState().players.filter((p) => p.id !== id),
+  })
 
 // As in the app: the page puts the reconnect's list in the store, and the
 // lobby gets the same event.
 const reconnects = (names: string[]) => {
   const players = names.map(player)
 
-  mocks.players = players
+  useManagerStore.getState().setPlayers(players)
   fire(EVENTS.MANAGER.SUCCESS_RECONNECT, { gameId: "game-1", players })
 }
 
@@ -83,7 +92,9 @@ const lobby = () => (
         reconnect: vi.fn(),
       }}
     >
-      <Room data={{ text: "game:waitingForPlayers", inviteCode: "123456" }} />
+      <OwnedRoom
+        data={{ text: "game:waitingForPlayers", inviteCode: "123456" }}
+      />
     </SocketContext.Provider>
   </StrictMode>
 )
@@ -98,10 +109,31 @@ const chipsIn = (container: HTMLElement) =>
 const joinCues = () =>
   mocks.cue.mock.calls.map(([cue]) => (cue as { index: number }).index)
 
+const OwnedRoom = (props: Parameters<typeof Room>[0]) => {
+  const seed = useRef(useManagerStore.getState().players)
+  useHostPresence("game-1")
+  useEvent(EVENTS.MANAGER.SUCCESS_RECONNECT, ({ gameId, players }) =>
+    useManagerStore.getState().applyPresence({ gameId, players }),
+  )
+  useEffect(() => {
+    useManagerStore
+      .getState()
+      .applyPresence({ gameId: "game-1", players: seed.current })
+  }, [])
+
+  return <Room {...props} />
+}
+
 describe("Room lobby when many phones join at once", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.players = []
+    useManagerStore.getState().reset()
+    useManagerStore.getState().setGameId("game-1")
+    useManagerStore.getState().applyPresence({ gameId: "game-1", players: [] })
+    useManagerStore.getState().setStatus("SHOW_ROOM", {
+      text: "game:waitingForPlayers",
+      inviteCode: "123456",
+    })
     listeners.clear()
   })
 
@@ -139,7 +171,7 @@ describe("Room lobby when many phones join at once", () => {
   })
 
   it("starts the climb from the players already seated", () => {
-    mocks.players = [player("Early")]
+    useManagerStore.getState().setPlayers([player("Early")])
     const { container } = renderLobby()
 
     act(() => {
@@ -162,6 +194,7 @@ describe("Room lobby when many phones join at once", () => {
       arrives("Bea")
       arrives("Cy")
       fire(event, player("Bea").id)
+      gone(player("Bea").id)
       arrives("Dee")
       arrives("Eve")
     })
@@ -177,12 +210,13 @@ describe("Room lobby when many phones join at once", () => {
   ])(
     "does not lose a join that shares a tick with a player who %s",
     (_, event) => {
-      mocks.players = [player("Early"), player("Stays")]
+      useManagerStore.getState().setPlayers([player("Early"), player("Stays")])
       const { container } = renderLobby()
 
       act(() => {
         arrives("Ada")
         fire(event, player("Early").id)
+        gone(player("Early").id)
       })
 
       expect(chipsIn(container)).toEqual(["Stays", "Ada"])
@@ -194,7 +228,7 @@ describe("Room lobby when many phones join at once", () => {
 
     act(() => {
       arrives("Ada")
-      fire(EVENTS.MANAGER.REMOVE_PLAYER, "socket-nobody")
+      gone("socket-nobody")
       arrives("Bea")
     })
 
@@ -206,7 +240,13 @@ describe("Room lobby when many phones join at once", () => {
 describe("Room lobby after the host reconnects", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.players = []
+    useManagerStore.getState().reset()
+    useManagerStore.getState().setGameId("game-1")
+    useManagerStore.getState().applyPresence({ gameId: "game-1", players: [] })
+    useManagerStore.getState().setStatus("SHOW_ROOM", {
+      text: "game:waitingForPlayers",
+      inviteCode: "123456",
+    })
     listeners.clear()
   })
 
@@ -256,16 +296,16 @@ describe("Room lobby after the host reconnects", () => {
     expect(chipsIn(container)).toEqual(["Ann", "Bo", "Late"])
   })
 
-  it("leaves the list alone when the store's list changes without a reconnect", () => {
+  it("renders the current store roster without a competing local list", () => {
     const { container, rerender } = renderLobby()
 
     act(() => {
       arrives("Ann")
       arrives("Bo")
     })
-    mocks.players = [player("Someone else")]
+    act(() => useManagerStore.getState().setPlayers([player("Someone else")]))
     rerender(lobby())
 
-    expect(chipsIn(container)).toEqual(["Ann", "Bo"])
+    expect(chipsIn(container)).toEqual(["Someone else"])
   })
 })

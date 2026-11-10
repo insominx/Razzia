@@ -85,7 +85,12 @@ describe("HostPollOverlay", () => {
     useManagerStore.getState().reset()
     useManagerStore.setState({
       gameId: "g1",
-      players: [{ id: "a" }, { id: "b" }, { id: "c" }] as never,
+      players: [
+        { id: "a", connected: true },
+        { id: "b", connected: true },
+        { id: "c", connected: true },
+      ] as never,
+      presenceKnown: true,
     })
   })
 
@@ -112,14 +117,45 @@ describe("HostPollOverlay", () => {
         (count) => count.textContent,
       ),
     ).toEqual(["267%", "133%"])
-    expect(screen.getByText('poll:voted:{"voted":3,"total":3}')).toBeVisible()
+    expect(document.querySelector("[data-poll-voted]")).toBeVisible()
   })
 
-  it("counts out of everyone in the room", () => {
+  it("reports votes independently from connection count", () => {
     render(<HostPollOverlay />)
     show(open({ counts: [1, 0], total: 1 }))
 
-    expect(screen.getByText('poll:voted:{"voted":1,"total":3}')).toBeVisible()
+    expect(document.querySelector("[data-poll-voted]")).toBeVisible()
+  })
+
+  it("keeps a disconnected vote, hides unknown presence, and omits presence after closing", () => {
+    render(<HostPollOverlay />)
+    show(open({ total: 1 }))
+    const line = () => document.querySelector("[data-poll-voted]")
+    expect(line()).toHaveTextContent('game:connected:{"count":3}')
+    act(() =>
+      useManagerStore.getState().applyPresence({ gameId: "g1", players: [] }),
+    )
+    expect(line()).toHaveTextContent('poll:votes:{"count":1}')
+    expect(line()).toHaveTextContent('game:connected:{"count":0}')
+    act(() => useManagerStore.getState().invalidatePresence())
+    expect(line()).not.toHaveTextContent("connected")
+    show(open({ phase: "closed", total: 1, counts: [1, 0] }))
+    act(() =>
+      useManagerStore.getState().applyPresence({
+        gameId: "g1",
+        players: [
+          {
+            id: "back",
+            username: "Back",
+            connected: true,
+            points: 0,
+            streak: 0,
+          },
+        ],
+      }),
+    )
+    expect(line()).toHaveTextContent('poll:votes:{"count":1}')
+    expect(line()).not.toHaveTextContent("connected")
   })
 
   it("says whether the poll is anonymous or names its voters", () => {

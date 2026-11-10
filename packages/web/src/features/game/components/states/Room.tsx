@@ -1,14 +1,10 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog"
 import { EVENTS } from "@razzia/common/constants"
-import type { PublicPlayer } from "@razzia/common/types/game"
 import type { ManagerStatusDataMap } from "@razzia/common/types/game/status"
 import ConfirmDialog from "@razzia/web/components/AlertDialog"
 import { score } from "@razzia/web/features/game/audio"
 import FlapPin from "@razzia/web/features/game/components/FlapPin"
-import {
-  useEvent,
-  useSocket,
-} from "@razzia/web/features/game/contexts/socket-context"
+import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import {
   seatsFor,
@@ -32,16 +28,13 @@ interface Props {
  * are drawn; past that the rest are counted.
  */
 const Room = ({ data: { text, inviteCode } }: Props) => {
-  const { gameId } = useManagerStore()
-  const { socket } = useSocket()
+  const { gameId, players: playerList, presenceKnown } = useManagerStore()
+  const { socket, isConnected } = useSocket()
   const webUrl = window.location.origin
-  const { players } = useManagerStore()
-  const [playerList, setPlayerList] = useState<PublicPlayer[]>(players)
-  // Phones can join faster than this screen renders: several events can arrive
-  // before the next render. So the handlers work from this, which every event
-  // keeps current, and never from `playerList`.
-  const seatedRef = useRef(players)
-  const [totalPlayers, setTotalPlayers] = useState(0)
+  const connectedPlayers =
+    presenceKnown && isConnected
+      ? playerList.filter((player) => player.connected).length
+      : null
   const [qrOpen, setQrOpen] = useState(false)
   const qrContentRef = useRef<HTMLDivElement>(null)
   const { t } = useTranslation()
@@ -53,52 +46,6 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
   }, [])
 
   useOnClickOutside({ ref: qrContentRef, handler: () => setQrOpen(false) })
-
-  const updateSeated = (seated: PublicPlayer[]) => {
-    seatedRef.current = seated
-    setPlayerList(seated)
-    // The store holds the lobby too: the page asks it before it lets the host
-    // leave a room that has players in it, and a remount seeds from it.
-    useManagerStore.getState().setPlayers(seated)
-  }
-
-  const handlePlayerGone = (playerId: string) => {
-    updateSeated(seatedRef.current.filter((p) => p.id !== playerId))
-  }
-
-  useEvent(EVENTS.MANAGER.NEW_PLAYER, (player) => {
-    // A phone that came back under a new socket id is the same seat: it takes
-    // the new id (Kick and leave go by it) and is not a new arrival.
-    if (seatedRef.current.some((p) => p.username === player.username)) {
-      updateSeated(
-        seatedRef.current.map((p) =>
-          p.username === player.username ? player : p,
-        ),
-      )
-
-      return
-    }
-
-    score.cue({ cue: "join", index: seatedRef.current.length })
-    updateSeated([...seatedRef.current, player])
-  })
-
-  useEvent(EVENTS.MANAGER.REMOVE_PLAYER, handlePlayerGone)
-
-  useEvent(EVENTS.MANAGER.PLAYER_KICKED, handlePlayerGone)
-
-  // A host that reconnects is handed the server's whole list while this screen
-  // stays mounted (a lecture lobby survives its host dropping). Phones that
-  // joined during the gap are in that list and in no join event. Take the list
-  // from the event itself, not from the store after a render, so it lands in
-  // order with the joins around it and a join right after it is kept.
-  useEvent(EVENTS.MANAGER.SUCCESS_RECONNECT, ({ players: serverList }) => {
-    updateSeated(serverList)
-  })
-
-  useEvent(EVENTS.GAME.TOTAL_PLAYERS, (total) => {
-    setTotalPlayers(total)
-  })
 
   const handleKick = (playerId: string) => () => {
     if (!gameId) {
@@ -199,8 +146,13 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
             data-players-joined
             className="text-text-body stage:text-4xl text-2xl font-bold"
           >
-            {t("game:playersJoined")}
-            {Math.max(totalPlayers, playerList.length)}
+            {connectedPlayers !== null && (
+              <>
+                {t("game:connected", { count: connectedPlayers })}
+                {" · "}
+              </>
+            )}
+            {t("game:joined", { count: playerList.length })}
           </span>
         </div>
 
@@ -215,20 +167,31 @@ const Room = ({ data: { text, inviteCode } }: Props) => {
             // A stray click on a projected lobby used to remove a player on the
             // spot; kicking now always goes through a confirmation.
             <ConfirmDialog
-              key={player.id}
+              key={player.username}
               trigger={
                 <button
                   type="button"
                   data-player-chip
                   aria-label={t("game:kick.action", { name: player.username })}
                   className={clsx(
-                    "bg-brand text-on-accent rounded-rz-lg rz-seat-in group flex min-w-0 items-center gap-2 font-bold",
+                    "rounded-rz-lg rz-seat-in group flex min-w-0 items-center gap-2 font-bold",
+                    player.connected
+                      ? "bg-brand text-on-accent"
+                      : "bg-panel border-border text-text-muted border",
                     tier.pad,
                     tier.text,
                   )}
                 >
-                  <span className="min-w-0 flex-1 truncate text-left">
-                    {player.username}
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate">{player.username}</span>
+                    {!player.connected && (
+                      <span
+                        data-player-disconnected
+                        className="block text-[0.6em]"
+                      >
+                        {t("game:disconnected")}
+                      </span>
+                    )}
                   </span>
                   <X
                     aria-hidden

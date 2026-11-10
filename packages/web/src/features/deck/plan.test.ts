@@ -213,6 +213,21 @@ describe("buildBridgeState", () => {
     })
   })
 
+  it("reports connection counts only with an attached, connected host and known roster", () => {
+    expect(
+      buildBridgeState(inputs({ players: 2, connectedPlayers: 0 })),
+    ).toMatchObject({ players: 2, connectedPlayers: 0 })
+    expect(buildBridgeState(inputs({ players: 2 }))).not.toHaveProperty(
+      "connectedPlayers",
+    )
+    expect(
+      buildBridgeState(inputs({ attached: false, connectedPlayers: 2 })),
+    ).not.toHaveProperty("connectedPlayers")
+    expect(
+      buildBridgeState(inputs({ connected: false, connectedPlayers: 2 })),
+    ).not.toHaveProperty("connectedPlayers")
+  })
+
   it("reports a lecture's progress and its PIN", () => {
     const state = buildBridgeState(
       inputs({

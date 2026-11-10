@@ -1,4 +1,9 @@
 {
+  "connected_one": "接続中 {{count}}人",
+  "connected_other": "接続中 {{count}}人",
+  "joined_one": "参加済み {{count}}人",
+  "joined_other": "参加済み {{count}}人",
+  "disconnected": "切断済み",
   "correct": "正解！",
   "gamePinLabel": "ゲームPIN:",
   "hud": {
