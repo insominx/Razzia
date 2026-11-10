@@ -41,7 +41,10 @@
     "notManager": "Only the host can run polls.",
     "invalid": "The poll could not be started: it is not valid.",
     "noAck": "The server did not answer. Try again.",
-    "none": "Nothing to do: the poll was already closed."
+    "none": "Nothing to do: the poll was already closed.",
+    "alreadyRan": "That poll has already run in this room.",
+    "full": "This room has run as many polls as it can keep.",
+    "notCurrent": "That poll is no longer on the screen."
   },
   "editor": {
     "newTitle": "New poll",

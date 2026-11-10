@@ -41,7 +41,10 @@
     "notManager": "Seul l'animateur peut lancer des sondages.",
     "invalid": "Le sondage n’a pas pu démarrer : il n’est pas valide.",
     "noAck": "Le serveur n'a pas répondu. Réessayez.",
-    "none": "Rien à faire : le sondage était déjà fermé."
+    "none": "Rien à faire : le sondage était déjà fermé.",
+    "alreadyRan": "Ce sondage a déjà eu lieu dans cette salle.",
+    "full": "Cette salle a lancé autant de sondages qu'elle peut en garder.",
+    "notCurrent": "Ce sondage n'est plus à l'écran."
   },
   "editor": {
     "newTitle": "Nouveau sondage",

@@ -76,11 +76,22 @@ export type PollOutcome =
   | "none"
   // An inline definition that failed the poll rules.
   | "invalid"
+  // A deck's poll runs once per room: this one has already closed here.
+  | "alreadyRan"
+  // The room has closed as many polls as it reports (a runaway client).
+  | "full"
+  // A close or dismiss named a poll that is not the one on the stage.
+  | "notCurrent"
 
 // A poll that closed in this room: what a deck needs to know that it ran, and
-// how it came out. Never a name.
+// how it came out, with the wording it was asked in so the host's screen can
+// show the result again. Never a name.
 export interface PollDone {
   id: string
+  question: string
+  options: string[]
+  anonymous: boolean
+  live: boolean
   counts: number[]
   total: number
   // The room closed while it was open. A live room cannot report this; it is

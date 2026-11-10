@@ -112,6 +112,8 @@ export interface StateInputs {
   reviewable: number[]
   // The poll on the stage, as the poll store holds it.
   poll?: PollSnapshot | null
+  // The closed poll shown again, by id.
+  pollReview?: string | null
 }
 
 // What a deck may be told of the poll on the stage: never a name, and counts
@@ -153,6 +155,7 @@ export const buildBridgeState = ({
   review,
   reviewable,
   poll = null,
+  pollReview = null,
 }: StateInputs): BridgeState => {
   const screen = attached ? (status?.name ?? null) : null
   const data = (attached ? (status?.data ?? {}) : {}) as ScreenData
@@ -185,6 +188,7 @@ export const buildBridgeState = ({
     visible,
     reviewing: attached ? review : null,
     reviewable: attached ? reviewable : [],
+    reviewingPoll: attached ? pollReview : null,
     features: [...FEATURES],
     // Like the game, the poll and what already ran belong to the game this
     // page is attached to.

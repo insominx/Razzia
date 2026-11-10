@@ -30,7 +30,10 @@ const PollShell = ({ role, children }: Props) => {
   const playerGameId = usePlayerStore((state) => state.gameId)
   const hostGameId = useManagerStore((state) => state.gameId)
   const lecture = useManagerStore((state) => state.lecture)
-  const showing = usePollStore((state) => state.snapshot !== null)
+  // A result shown again covers the stage too (a deck's frame only).
+  const showing = usePollStore(
+    (state) => state.snapshot !== null || state.review !== null,
+  )
   const hidden = showing && IS_DECK_EMBED
 
   // A poll runs only in a lecture room, so a host page asks only in one.

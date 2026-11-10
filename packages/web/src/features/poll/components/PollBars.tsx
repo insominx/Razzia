@@ -43,6 +43,9 @@ interface Props {
   // A sealed poll that is still open: the options only, with no count, no
   // share and no bar, because the host's screen has not been told any.
   sealed?: boolean
+  // A result shown again (a deck going back to a poll that has closed): the
+  // final bars and numbers as they were left, with no reveal.
+  settled?: boolean
 }
 
 /**
@@ -57,6 +60,7 @@ const PollBars = ({
   voters,
   namesLimit = NAMES_SHOWN,
   sealed = false,
+  settled = false,
 }: Props) => {
   const { t } = useTranslation()
   const tier = optionTier(options)
@@ -112,15 +116,24 @@ const PollBars = ({
                   >
                     {/* The count ticks up from 0 as its bar grows (a CSS
                         counter, so the real number stays in the text). */}
-                    <span
-                      aria-hidden="true"
-                      className="rz-count-up"
-                      style={reveal(index, { "--rz-to": count })}
-                    />
+                    {settled ? (
+                      <span aria-hidden="true">{count}</span>
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="rz-count-up"
+                        style={reveal(index, { "--rz-to": count })}
+                      />
+                    )}
                     <span className="sr-only">{count}</span>
                     <span
-                      className="text-text-muted stage:text-[1.75rem] animate-rz-fade-in ml-2 text-sm font-medium"
-                      style={reveal(index, {}, REVEAL_MS * 0.6)}
+                      className={clsx(
+                        "text-text-muted stage:text-[1.75rem] ml-2 text-sm font-medium",
+                        !settled && "animate-rz-fade-in",
+                      )}
+                      style={
+                        settled ? undefined : reveal(index, {}, REVEAL_MS * 0.6)
+                      }
                     >
                       {percent}%
                     </span>
@@ -134,8 +147,15 @@ const PollBars = ({
                   className="bg-panel stage:mt-3 stage:h-4 mt-2 h-2 overflow-hidden rounded-full"
                 >
                   <div
-                    className="bg-brand ease-calm animate-rz-bar-grow h-full origin-left rounded-full transition-[width] duration-[var(--rz-dur-base)] motion-reduce:transition-none"
-                    style={reveal(index, { width: `${percent}%` })}
+                    className={clsx(
+                      "bg-brand ease-calm h-full origin-left rounded-full transition-[width] duration-[var(--rz-dur-base)] motion-reduce:transition-none",
+                      !settled && "animate-rz-bar-grow",
+                    )}
+                    style={
+                      settled
+                        ? { width: `${percent}%` }
+                        : reveal(index, { width: `${percent}%` })
+                    }
                   />
                 </div>
               )}

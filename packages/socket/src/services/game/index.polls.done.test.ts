@@ -72,6 +72,19 @@ const poll = (id: string, extra: object = {}) => ({
   ...extra,
 })
 
+// What the room keeps of a closed poll: the wording it was asked in and the
+// final counts, never a name.
+const doneOf = (id: string, counts: number[], extra: object = {}) => ({
+  id,
+  question: `Question ${id}?`,
+  options: ["Yes", "No"],
+  anonymous: true,
+  live: false,
+  counts,
+  total: counts.reduce((sum, count) => sum + count, 0),
+  ...extra,
+})
+
 const createGame = (lecture = true) => {
   const { io, emitted } = createIo()
   const manager = createClient("manager", "manager-client")
@@ -144,7 +157,7 @@ describe("Game telling a deck which polls closed", () => {
 
     expect(lectureEvents(setup)).toEqual([
       expect.objectContaining({
-        pollsDone: [{ id: "one", counts: [1, 1], total: 2 }],
+        pollsDone: [doneOf("one", [1, 1])],
       }),
     ])
   })
@@ -156,7 +169,7 @@ describe("Game telling a deck which polls closed", () => {
     setup.game.startInlinePoll(setup.manager.socket, poll("two"))
 
     expect(lectureEvents(setup).map((state) => state.pollsDone)).toEqual([
-      [{ id: "one", counts: [1, 1], total: 2 }],
+      [doneOf("one", [1, 1])],
     ])
 
     setup.game.closePoll(setup.manager.socket)
@@ -173,7 +186,7 @@ describe("Game telling a deck which polls closed", () => {
     runPoll(setup, "one")
 
     expect(reconnected(setup).lecture?.pollsDone).toEqual([
-      { id: "one", counts: [1, 1], total: 2 },
+      doneOf("one", [1, 1]),
     ])
   })
 
@@ -184,23 +197,28 @@ describe("Game telling a deck which polls closed", () => {
 
     const done = reconnected(setup).lecture?.pollsDone
 
-    expect(done).toEqual([{ id: "named", counts: [1, 1], total: 2 }])
+    expect(done).toEqual([doneOf("named", [1, 1], { anonymous: false })])
+    expect(JSON.stringify(done)).not.toContain("voters")
     expect(JSON.stringify(done)).not.toContain("Alice")
     expect(JSON.stringify(done)).not.toContain("Bobby")
   })
 
-  it("never lists more than 50, dropping the oldest", () => {
+  it("refuses a poll past 50 rather than forget one that ran", () => {
     const setup = createGame()
 
-    for (let index = 0; index < 53; index += 1) {
+    for (let index = 0; index < 50; index += 1) {
       runPoll(setup, `p${index}`)
     }
+
+    expect(setup.game.startInlinePoll(setup.manager.socket, poll("p50"))).toBe(
+      "full",
+    )
 
     const done = reconnected(setup).lecture?.pollsDone ?? []
 
     expect(done).toHaveLength(50)
-    expect(done[0].id).toBe("p3")
-    expect(done.at(-1)?.id).toBe("p52")
+    expect(done[0].id).toBe("p0")
+    expect(done.at(-1)?.id).toBe("p49")
   })
 
   it("sends a lecture room without polls exactly the state it always did", () => {

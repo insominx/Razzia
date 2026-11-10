@@ -1,4 +1,8 @@
-import type { PollSnapshot, PollTally } from "@razzia/common/types/poll"
+import type {
+  PollDone,
+  PollSnapshot,
+  PollTally,
+} from "@razzia/common/types/poll"
 import { create } from "zustand"
 
 interface PollStore {
@@ -11,6 +15,10 @@ interface PollStore {
   // by the lobby and by a reconnect only, so between questions it misses a
   // late joiner; this does not. `null` until the first count arrives.
   playerTotal: number | null
+  // A closed poll's result shown again on the host's screen in a deck's frame
+  // (the deck has gone back to its face). Local to this page: the room, its
+  // stage and the phones know nothing of it. `null` when none is shown.
+  review: PollDone | null
 
   apply: (_snapshot: PollSnapshot | null) => void
   // The host's running count between two snapshots.
@@ -18,12 +26,14 @@ interface PollStore {
   // A player's own pick, set on the tap itself before the server answers.
   setMine: (_option: number | null) => void
   setPlayerTotal: (_count: number) => void
+  setReview: (_review: PollDone | null) => void
   reset: () => void
 }
 
 export const usePollStore = create<PollStore>((set) => ({
   snapshot: null,
   playerTotal: null,
+  review: null,
 
   apply: (snapshot) => set({ snapshot }),
 
@@ -61,5 +71,7 @@ export const usePollStore = create<PollStore>((set) => ({
 
   setPlayerTotal: (playerTotal) => set({ playerTotal }),
 
-  reset: () => set({ snapshot: null, playerTotal: null }),
+  setReview: (review) => set({ review }),
+
+  reset: () => set({ snapshot: null, playerTotal: null, review: null }),
 }))

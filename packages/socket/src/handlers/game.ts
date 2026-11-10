@@ -2,6 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import type { Socket } from "@razzia/common/types/game/socket"
 import type { PollOutcome } from "@razzia/common/types/poll"
 import { inviteCodeValidator } from "@razzia/common/validators/auth"
+import { POLL_SLUG } from "@razzia/common/validators/poll"
 import {
   ackOf,
   fieldsOf,
@@ -33,6 +34,21 @@ const startPollFrom = (
   const pollId = textOf(fields.pollId)
 
   return pollId === undefined ? "notFound" : game.startPoll(socket, pollId)
+}
+
+// A close or dismiss may name the poll it means. Left out, it acts on the poll
+// on the stage, as the host's own buttons do. Sent but not a deck poll's slug,
+// it is refused rather than run unscoped: `null` says so.
+const pollTargetOf = (
+  fields: ReturnType<typeof fieldsOf>,
+): string | undefined | null => {
+  if (fields.pollId === undefined) {
+    return undefined
+  }
+
+  const pollId = textOf(fields.pollId)
+
+  return pollId !== undefined && POLL_SLUG.test(pollId) ? pollId : null
 }
 
 export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
@@ -354,7 +370,9 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   socket.on(EVENTS.MANAGER.CLOSE_POLL, (message, ack) =>
     withGame(gameIdOf(message), socket, (game) => {
-      const outcome = game.closePoll(socket)
+      const target = pollTargetOf(fieldsOf(message))
+      const outcome =
+        target === null ? "notCurrent" : game.closePoll(socket, target)
 
       ackOf(ack)?.(outcome)
     }),
@@ -362,7 +380,9 @@ export const gameSocketHandlers = ({ io, socket }: SocketContext) => {
 
   socket.on(EVENTS.MANAGER.DISMISS_POLL, (message, ack) =>
     withGame(gameIdOf(message), socket, (game) => {
-      const outcome = game.dismissPoll(socket)
+      const target = pollTargetOf(fieldsOf(message))
+      const outcome =
+        target === null ? "notCurrent" : game.dismissPoll(socket, target)
 
       ackOf(ack)?.(outcome)
     }),

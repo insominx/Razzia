@@ -15,6 +15,11 @@ const envelope = {
   v: z.literal(PROTOCOL_VERSION),
 }
 
+const pollTarget = {
+  pollId: z.string().max(64).optional(),
+  gameId: z.string().max(200).optional(),
+}
+
 const deckCommandSchema = z.discriminatedUnion("type", [
   z.object({ ...envelope, type: z.literal("hello") }),
   z.object({
@@ -78,10 +83,21 @@ const deckCommandSchema = z.discriminatedUnion("type", [
       live: z.boolean().optional(),
     }),
   }),
-  // Ends voting and shows the result.
-  z.object({ ...envelope, type: z.literal("closePoll") }),
+  // Ends voting and shows the result. A deck names the poll it means
+  // (`pollId`) and the game it saw (`gameId`), so a late one cannot touch the
+  // next poll or the next room; either one that does not match answers
+  // `notCurrent` and changes nothing.
+  z.object({ ...envelope, type: z.literal("closePoll"), ...pollTarget }),
   // Takes the result away and gives the room back to the quiz.
-  z.object({ ...envelope, type: z.literal("dismissPoll") }),
+  z.object({ ...envelope, type: z.literal("dismissPoll"), ...pollTarget }),
+  // Shows a poll that closed in this room again, as it was left, in place of
+  // the stage, or (null) stops. Only this page changes: the room, its stage and
+  // the phones do not.
+  z.object({
+    ...envelope,
+    type: z.literal("reviewPoll"),
+    id: z.string().max(64).nullable(),
+  }),
 ])
 
 export type DeckCommand = z.infer<typeof deckCommandSchema>
@@ -129,7 +145,9 @@ export const isPollCommand = (command: DeckCommand): command is PollCommand =>
 
 // What this build can do, so a deck can tell an older Razzia by its absence.
 // A name is listed only once it is built.
-export const FEATURES: readonly string[] = ["poll", "pollInline"]
+// `pollReview`: reviewPoll, named close and dismiss, a deck poll that runs
+// once per room and takes the stage straight from a closed result.
+export const FEATURES: readonly string[] = ["poll", "pollInline", "pollReview"]
 
 // The poll showing on the stage. Never a name, whatever the poll.
 export interface BridgePoll {
@@ -173,6 +191,8 @@ export interface BridgeState {
   // whose results this page has seen and can show again.
   reviewing: number | null
   reviewable: number[]
+  // The closed poll whose result is shown again (`reviewPoll`), or null.
+  reviewingPoll: string | null
   // Always sent by this build; an older one sends none of the three, which is
   // how a deck tells them apart.
   features: string[]

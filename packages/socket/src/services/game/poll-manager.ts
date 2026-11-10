@@ -57,12 +57,27 @@ export class PollManager {
     return this.phase !== "idle"
   }
 
-  start(socket: Socket, poll: PollWithId): PollOutcome {
+  isOpen(): boolean {
+    return this.phase === "open"
+  }
+
+  // The poll on the stage, open or showing its result.
+  currentId(): string | null {
+    return this.phase === "idle" || !this.poll ? null : this.poll.id
+  }
+
+  // `replaceClosed`: a closed result on the stage gives way to the new poll in
+  // one step, so the screens go from the result straight to the next question.
+  start(
+    socket: Socket,
+    poll: PollWithId,
+    { replaceClosed = false }: { replaceClosed?: boolean } = {},
+  ): PollOutcome {
     if (!this.opts.isManager(socket)) {
       return "notManager"
     }
 
-    if (this.phase !== "idle") {
+    if (this.phase === "open" || (this.phase === "closed" && !replaceClosed)) {
       return "busy"
     }
 
@@ -179,7 +194,11 @@ export class PollManager {
     this.reset()
   }
 
-  /** The poll that has just closed, as a deck is told of it: never a name. */
+  /**
+   * The poll that has just closed, as its room remembers it: the wording it
+   * was asked in and the final counts. Built field by field, so a name can
+   * never ride along.
+   */
   closedSummary(): PollDone | null {
     if (this.phase !== "closed" || !this.poll || !this.closedCounts) {
       return null
@@ -187,6 +206,10 @@ export class PollManager {
 
     return {
       id: this.poll.id,
+      question: this.poll.question,
+      options: [...this.poll.options],
+      anonymous: this.poll.anonymous,
+      live: this.poll.live === true,
       counts: [...this.closedCounts],
       total: sum(this.closedCounts),
     }

@@ -1,6 +1,7 @@
 import Atmosphere from "@razzia/web/components/Atmosphere"
 import { useSocket } from "@razzia/web/features/game/contexts/socket-context"
 import { useCalmVisuals } from "@razzia/web/features/game/hooks/use-show-intensity"
+import clsx from "clsx"
 import { type ReactNode, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -11,6 +12,8 @@ interface Props {
   // In a deck's frame the deck drives the room, so keys pressed inside this
   // dialog still go to the deck (see `toForwardedKey`).
   deckKeys?: boolean
+  // A result shown again: it is simply there, with no fade in.
+  settled?: boolean
   children: ReactNode
 }
 
@@ -23,6 +26,7 @@ const PollFrame = ({
   backgroundUrl,
   labelledBy,
   deckKeys = false,
+  settled = false,
   children,
 }: Props) => {
   const calm = useCalmVisuals()
@@ -44,7 +48,10 @@ const PollFrame = ({
       data-poll-frame
       data-deck-keys={deckKeys ? "" : undefined}
       tabIndex={-1}
-      className="animate-rz-fade-in bg-canvas fixed inset-0 z-40 flex flex-col outline-none"
+      className={clsx(
+        "bg-canvas fixed inset-0 z-40 flex flex-col outline-none",
+        !settled && "animate-rz-fade-in",
+      )}
     >
       <Atmosphere
         recipe="photo"

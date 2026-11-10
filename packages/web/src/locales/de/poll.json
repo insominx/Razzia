@@ -41,7 +41,10 @@
     "notManager": "Nur der Host kann Umfragen starten.",
     "invalid": "Die Umfrage konnte nicht gestartet werden: Sie ist ungültig.",
     "noAck": "Der Server hat nicht geantwortet. Versuche es noch einmal.",
-    "none": "Nichts zu tun: Die Umfrage war schon beendet."
+    "none": "Nichts zu tun: Die Umfrage war schon beendet.",
+    "alreadyRan": "Diese Umfrage lief in diesem Raum schon.",
+    "full": "Dieser Raum hat so viele Umfragen durchgeführt, wie er behalten kann.",
+    "notCurrent": "Diese Umfrage ist nicht mehr auf dem Bildschirm."
   },
   "editor": {
     "newTitle": "Neue Umfrage",

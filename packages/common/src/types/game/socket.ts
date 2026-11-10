@@ -173,12 +173,14 @@ export interface ClientToServerEvents {
     _message: MessageGameId & ({ pollId: string } | { poll: InlinePoll }),
     _ack: (_outcome: PollOutcome) => void,
   ) => void
+  // A deck names the poll it means; the host's own buttons do not.
   [EVENTS.MANAGER.CLOSE_POLL]: (
-    _message: MessageGameId,
+    _message: MessageGameId & { pollId?: string },
     _ack: (_outcome: PollOutcome) => void,
   ) => void
+  // A deck names the poll it means; the host's own buttons do not.
   [EVENTS.MANAGER.DISMISS_POLL]: (
-    _message: MessageGameId,
+    _message: MessageGameId & { pollId?: string },
     _ack: (_outcome: PollOutcome) => void,
   ) => void
   [EVENTS.MANAGER.GET_CONFIG]: () => void

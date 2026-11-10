@@ -106,10 +106,48 @@ describe("poll socket handlers", () => {
     send(EVENTS.MANAGER.CLOSE_POLL, { gameId: "g" }, closeAck)
     send(EVENTS.MANAGER.DISMISS_POLL, { gameId: "g" }, dismissAck)
 
-    expect(mocks.game.closePoll).toHaveBeenCalledWith(socket)
+    expect(mocks.game.closePoll).toHaveBeenCalledWith(socket, undefined)
     expect(closeAck).toHaveBeenCalledWith("accepted")
-    expect(mocks.game.dismissPoll).toHaveBeenCalledWith(socket)
+    expect(mocks.game.dismissPoll).toHaveBeenCalledWith(socket, undefined)
     expect(dismissAck).toHaveBeenCalledWith("none")
+  })
+
+  it("passes the poll a close or dismiss names", async () => {
+    const { handlers, socket } = await register()
+    const send = sender(handlers)
+
+    send(
+      EVENTS.MANAGER.CLOSE_POLL,
+      { gameId: "g", pollId: "role-clarity" },
+      vi.fn(),
+    )
+    send(
+      EVENTS.MANAGER.DISMISS_POLL,
+      { gameId: "g", pollId: "role-clarity" },
+      vi.fn(),
+    )
+
+    expect(mocks.game.closePoll).toHaveBeenCalledWith(socket, "role-clarity")
+    expect(mocks.game.dismissPoll).toHaveBeenCalledWith(socket, "role-clarity")
+  })
+
+  it("refuses a malformed poll name rather than act on whatever is showing", async () => {
+    const { handlers } = await register()
+    const send = sender(handlers)
+
+    for (const pollId of [42, "", "Not A Slug", null, "x".repeat(65)]) {
+      const closeAck = vi.fn()
+      const dismissAck = vi.fn()
+
+      send(EVENTS.MANAGER.CLOSE_POLL, { gameId: "g", pollId }, closeAck)
+      send(EVENTS.MANAGER.DISMISS_POLL, { gameId: "g", pollId }, dismissAck)
+
+      expect(closeAck).toHaveBeenCalledWith("notCurrent")
+      expect(dismissAck).toHaveBeenCalledWith("notCurrent")
+    }
+
+    expect(mocks.game.closePoll).not.toHaveBeenCalled()
+    expect(mocks.game.dismissPoll).not.toHaveBeenCalled()
   })
 
   it("takes a vote and answers with the outcome", async () => {

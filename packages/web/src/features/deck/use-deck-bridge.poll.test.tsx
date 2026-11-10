@@ -10,6 +10,13 @@ import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import { act, cleanup, renderHook } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+const words = {
+  question: "Which one?",
+  options: ["A", "B"],
+  anonymous: true,
+  live: false,
+}
+
 const DECK = "http://localhost:8776"
 
 type Handler = (..._args: never[]) => void
@@ -188,7 +195,7 @@ describe("useDeckBridge and polls", () => {
     sendCommand({ type: "hello" })
 
     expect(lastState()).toMatchObject({
-      features: ["poll", "pollInline"],
+      features: ["poll", "pollInline", "pollReview"],
       poll: null,
       pollsDone: [],
     })
@@ -200,7 +207,9 @@ describe("useDeckBridge and polls", () => {
     })
     sendCommand({ type: "hello" })
     attach(
-      lectureState({ pollsDone: [{ id: "one", counts: [2, 1], total: 3 }] }),
+      lectureState({
+        pollsDone: [{ ...words, id: "one", counts: [2, 1], total: 3 }],
+      }),
     )
 
     act(() => {
@@ -590,7 +599,9 @@ describe("useDeckBridge and polls", () => {
     })
     sendCommand({ type: "hello" })
     attach(
-      lectureState({ pollsDone: [{ id: "one", counts: [1, 1], total: 2 }] }),
+      lectureState({
+        pollsDone: [{ ...words, id: "one", counts: [1, 1], total: 2 }],
+      }),
     )
     act(() => {
       usePollStore.getState().apply(

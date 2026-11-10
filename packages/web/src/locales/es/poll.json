@@ -41,7 +41,10 @@
     "notManager": "Solo el anfitrión puede lanzar encuestas.",
     "invalid": "No se pudo iniciar la encuesta: no es válida.",
     "noAck": "El servidor no respondió. Inténtalo de nuevo.",
-    "none": "Nada que hacer: la encuesta ya estaba cerrada."
+    "none": "Nada que hacer: la encuesta ya estaba cerrada.",
+    "alreadyRan": "Esa encuesta ya se hizo en esta sala.",
+    "full": "Esta sala ya hizo todas las encuestas que puede guardar.",
+    "notCurrent": "Esa encuesta ya no está en pantalla."
   },
   "editor": {
     "newTitle": "Nueva encuesta",

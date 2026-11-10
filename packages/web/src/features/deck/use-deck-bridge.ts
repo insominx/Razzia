@@ -93,7 +93,10 @@ export const useDeckBridge = () => {
     presenceKnown,
   } = useManagerStore()
   const poll = usePollStore((store) => store.snapshot)
+  const pollReview = usePollStore((store) => store.review)
   const pollShowing = poll !== null
+  // What the frame shows, for its sound: a poll on the stage or one shown again.
+  const pollOnScreen = pollShowing || pollReview !== null
 
   const [deckOrigin, setDeckOrigin] = useState<string | null>(null)
   // The same origin, written the moment a message arrives: a reply sent from
@@ -144,6 +147,7 @@ export const useDeckBridge = () => {
       .map(Number)
       .sort((a, b) => a - b),
     poll,
+    pollReview: pollReview?.id ?? null,
   })
   const stateRef = useRef(state)
 
@@ -341,11 +345,52 @@ export const useDeckBridge = () => {
         { gameId, poll: command.poll },
         answer,
       )
-    } else if (command.type === "closePoll") {
-      send.emit(EVENTS.MANAGER.CLOSE_POLL, { gameId }, answer)
-    } else {
-      send.emit(EVENTS.MANAGER.DISMISS_POLL, { gameId }, answer)
+
+      return
     }
+
+    // A deck's close or dismiss for a game this page no longer hosts (a
+    // Restart since) changes nothing.
+    if (command.gameId !== undefined && command.gameId !== gameId) {
+      post({
+        type: "result",
+        command: command.type,
+        outcome: "ignored",
+        reason: "notCurrent",
+      })
+
+      return
+    }
+
+    const target = {
+      gameId,
+      ...(command.pollId === undefined ? {} : { pollId: command.pollId }),
+    }
+
+    if (command.type === "closePoll") {
+      send.emit(EVENTS.MANAGER.CLOSE_POLL, target, answer)
+    } else {
+      send.emit(EVENTS.MANAGER.DISMISS_POLL, target, answer)
+    }
+  }
+
+  // Only a poll that closed in the game this page hosts can be shown again.
+  const showPollAgain = (id: string | null) => {
+    const done =
+      id === null || !attached
+        ? undefined
+        : (lecture?.pollsDone ?? []).find((entry) => entry.id === id)
+
+    usePollStore.getState().setReview(done ?? null)
+    useSoundStore
+      .getState()
+      .setSuppressed(
+        isSilent(
+          visibleNow.current,
+          useManagerStore.getState().review,
+          usePollStore.getState().snapshot !== null || done !== undefined,
+        ),
+      )
   }
 
   const runRound = (command: RoundCommand) => {
@@ -554,6 +599,12 @@ export const useDeckBridge = () => {
       return
     }
 
+    if (command.type === "reviewPoll") {
+      showPollAgain(command.id)
+
+      return
+    }
+
     if (isPollCommand(command)) {
       runPoll(command)
 
@@ -615,8 +666,24 @@ export const useDeckBridge = () => {
   useEffect(() => {
     useSoundStore
       .getState()
-      .setSuppressed(isSilent(visible, review, pollShowing))
-  }, [visible, review, pollShowing])
+      .setSuppressed(isSilent(visible, review, pollOnScreen))
+  }, [visible, review, pollOnScreen])
+
+  // A result shown again belongs to its room: a new game, or a page no longer
+  // attached, takes it away.
+  useEffect(() => {
+    if (!pollReview) {
+      return
+    }
+
+    const stillDone =
+      attached &&
+      (lecture?.pollsDone ?? []).some((entry) => entry.id === pollReview.id)
+
+    if (!stillDone) {
+      usePollStore.getState().setReview(null)
+    }
+  }, [attached, gameId, lecture, pollReview])
 
   useEffect(() => {
     if (isConnected) {

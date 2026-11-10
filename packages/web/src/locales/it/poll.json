@@ -41,7 +41,10 @@
     "notManager": "Solo il conduttore può avviare sondaggi.",
     "invalid": "Impossibile avviare il sondaggio: non è valido.",
     "noAck": "Il server non ha risposto. Riprova.",
-    "none": "Niente da fare: il sondaggio era già chiuso."
+    "none": "Niente da fare: il sondaggio era già chiuso.",
+    "alreadyRan": "Questo sondaggio si è già svolto in quest'aula.",
+    "full": "Quest'aula ha svolto tutti i sondaggi che può conservare.",
+    "notCurrent": "Questo sondaggio non è più sullo schermo."
   },
   "editor": {
     "newTitle": "Nuovo sondaggio",

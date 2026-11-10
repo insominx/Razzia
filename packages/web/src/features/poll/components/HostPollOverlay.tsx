@@ -47,7 +47,21 @@ const privacyKey = (anonymous: boolean) => {
  * the poll from the clicker.
  */
 const HostPollOverlay = () => {
-  const snapshot = usePollStore((state) => state.snapshot)
+  const live = usePollStore((state) => state.snapshot)
+  // A closed poll's result shown again (a deck's frame only) covers the stage:
+  // the same screen as at its close, settled, with no button.
+  const review = usePollStore((state) => (IS_DECK_EMBED ? state.review : null))
+  const snapshot = review
+    ? {
+        question: review.question,
+        options: review.options,
+        anonymous: review.anonymous,
+        phase: "closed" as const,
+        counts: review.counts,
+        total: review.total,
+        voters: undefined,
+      }
+    : live
   const gameId = useManagerStore((state) => state.gameId)
   const backgroundUrl = useManagerStore((state) => state.visuals.backgroundUrl)
   const hostControls = useManagerStore((state) => state.hostControls)
@@ -100,8 +114,9 @@ const HostPollOverlay = () => {
       backgroundUrl={backgroundUrl}
       labelledBy={QUESTION_ID}
       deckKeys={IS_DECK_EMBED}
+      settled={review !== null}
     >
-      {hostControls && (
+      {hostControls && !review && (
         <div className="absolute top-4 left-4 z-10">
           <Button
             className="bg-surface border-border text-text-primary hover:bg-panel border px-4"
@@ -169,6 +184,7 @@ const HostPollOverlay = () => {
           total={total}
           voters={IS_DECK_EMBED ? undefined : snapshot.voters}
           sealed={sealed}
+          settled={review !== null}
         />
       </main>
     </PollFrame>

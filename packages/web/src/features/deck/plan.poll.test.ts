@@ -9,6 +9,13 @@ import {
 import type { RoundCommand } from "@razzia/web/features/deck/protocol"
 import { describe, expect, it } from "vitest"
 
+const words = {
+  question: "Which one?",
+  options: ["A", "B"],
+  anonymous: true,
+  live: false,
+}
+
 const lecture = (overrides: Partial<LectureState> = {}): LectureState => ({
   inviteCode: "123456",
   total: 6,
@@ -46,10 +53,15 @@ const open = (extra: Partial<PollSnapshot> = {}): PollSnapshot => ({
 
 describe("buildBridgeState and polls", () => {
   it("says what this build can do, attached or not", () => {
-    expect(buildBridgeState(inputs()).features).toEqual(["poll", "pollInline"])
+    expect(buildBridgeState(inputs()).features).toEqual([
+      "poll",
+      "pollInline",
+      "pollReview",
+    ])
     expect(buildBridgeState(inputs({ attached: false })).features).toEqual([
       "poll",
       "pollInline",
+      "pollReview",
     ])
   })
 
@@ -101,7 +113,7 @@ describe("buildBridgeState and polls", () => {
     const state = buildBridgeState(
       inputs({
         lecture: lecture({
-          pollsDone: [{ id: "one", counts: [1, 1], total: 2 }],
+          pollsDone: [{ ...words, id: "one", counts: [1, 1], total: 2 }],
         }),
         poll: open({
           anonymous: false,
@@ -123,14 +135,18 @@ describe("buildBridgeState and polls", () => {
 
   it("lists the polls that closed in this room, as copies", () => {
     const done = [
-      { id: "one", counts: [1, 1], total: 2 },
-      { id: "two", counts: [3, 0], total: 3, partial: true },
+      { ...words, id: "one", counts: [1, 1], total: 2 },
+      { ...words, id: "two", counts: [3, 0], total: 3, partial: true },
     ]
     const state = buildBridgeState(
       inputs({ lecture: lecture({ pollsDone: done }) }),
     )
 
-    expect(state.pollsDone).toEqual(done)
+    // The deck is told what ran and how it came out, not the wording.
+    expect(state.pollsDone).toEqual([
+      { id: "one", counts: [1, 1], total: 2 },
+      { id: "two", counts: [3, 0], total: 3, partial: true },
+    ])
     expect(state.pollsDone[0].counts).not.toBe(done[0].counts)
   })
 
@@ -141,7 +157,7 @@ describe("buildBridgeState and polls", () => {
           attached: false,
           poll: open(),
           lecture: lecture({
-            pollsDone: [{ id: "one", counts: [1, 1], total: 2 }],
+            pollsDone: [{ ...words, id: "one", counts: [1, 1], total: 2 }],
           }),
         }),
       ),

@@ -38,7 +38,9 @@ import { v7 as uuid } from "uuid"
 const registry = Registry.getInstance()
 
 // How many closed polls a lecture room reports to its host. A lecture runs a
-// handful, so this only bounds a runaway client.
+// handful, so this only bounds a runaway client. None is ever dropped: a
+// deck's poll that ran must stay known, or it could run again. A room that has
+// closed this many refuses another poll (`full`).
 const MAX_POLLS_DONE = 50
 
 interface GameOptions {
@@ -125,6 +127,10 @@ class Game {
   private resultSaved = false
   // The polls that closed in this room, for a deck that asks what already ran.
   private pollsDone: PollDone[] = []
+  // The deck polls (sent inline) that closed here: each runs once per room.
+  private readonly inlineDone = new Set<string>()
+  // Whether the poll on the stage was sent inline.
+  private activeInline = false
 
   constructor({
     io,
@@ -653,8 +659,15 @@ class Game {
       return "busy"
     }
 
+    if (this.pollsDone.length >= MAX_POLLS_DONE) {
+      return "full"
+    }
+
     try {
-      return this.poll.start(socket, getPollById(pollId))
+      return this.markStarted(
+        this.poll.start(socket, getPollById(pollId)),
+        false,
+      )
     } catch (error) {
       console.error(`Failed to start poll ${logSafe(pollId)}:`, error)
 
@@ -667,6 +680,11 @@ class Game {
   // written to the stored polls: the open poll holds the copy, and the result
   // it leaves keeps the text that was asked. Anything that does not pass
   // answers `invalid`, to the host only: a stranger is told nothing of it.
+  //
+  // A deck's poll runs once per room (`alreadyRan`), and it may take the stage
+  // from a closed result in one step, so a deck going from one poll's result
+  // to the next poll never shows the lobby in between. An open poll still
+  // answers `busy`.
   startInlinePoll(socket: Socket, definition: unknown): PollOutcome {
     const refusal = this.pollRefusal(socket)
 
@@ -680,29 +698,83 @@ class Game {
       return "invalid"
     }
 
-    if (this.laneIsBusy()) {
+    if (
+      this.poll.isOpen() ||
+      !(this.round.isLobby() || this.round.isBetweenQuestions())
+    ) {
       return "busy"
     }
 
-    return this.poll.start(socket, poll)
+    if (this.inlineDone.has(poll.id)) {
+      return "alreadyRan"
+    }
+
+    if (this.pollsDone.length >= MAX_POLLS_DONE) {
+      return "full"
+    }
+
+    return this.markStarted(
+      this.poll.start(socket, poll, { replaceClosed: true }),
+      true,
+    )
   }
 
-  closePoll(socket: Socket): PollOutcome {
+  private markStarted(outcome: PollOutcome, inline: boolean): PollOutcome {
+    if (outcome === "accepted") {
+      this.activeInline = inline
+    }
+
+    return outcome
+  }
+
+  // A close or dismiss may name the poll it means (`pollId`). A deck does, so
+  // a late command for a poll it has left cannot touch the one after it: a
+  // name that is not the poll on the stage changes nothing (`notCurrent`).
+  private targetRefusal(socket: Socket, pollId?: string): PollOutcome | null {
+    if (pollId === undefined) {
+      return null
+    }
+
+    if (!this.isManager(socket)) {
+      return "notManager"
+    }
+
+    const current = this.poll.currentId()
+
+    if (current === null) {
+      return "none"
+    }
+
+    return current === pollId ? null : "notCurrent"
+  }
+
+  closePoll(socket: Socket, pollId?: string): PollOutcome {
+    const refusal = this.targetRefusal(socket, pollId)
+
+    if (refusal) {
+      return refusal
+    }
+
     const outcome = this.poll.close(socket)
     const done = outcome === "accepted" ? this.poll.closedSummary() : null
 
     // A deck learns what ran from the lecture state, so a reloaded frame knows
-    // too. The oldest are dropped: a lecture runs a handful, never fifty.
+    // too, and the host's frame can show the result again.
     if (done) {
-      this.pollsDone = [...this.pollsDone, done].slice(-MAX_POLLS_DONE)
+      this.pollsDone = [...this.pollsDone, done]
+
+      if (this.activeInline) {
+        this.inlineDone.add(done.id)
+      }
+
       this.emitLectureState()
     }
 
     return outcome
   }
 
-  dismissPoll(socket: Socket): PollOutcome {
-    return this.poll.dismiss(socket)
+  dismissPoll(socket: Socket, pollId?: string): PollOutcome {
+    return this.targetRefusal(socket, pollId) ?? this.poll.dismiss(socket)
   }
 
   votePoll(socket: Socket, pollId: string, option: number): PollVoteOutcome {

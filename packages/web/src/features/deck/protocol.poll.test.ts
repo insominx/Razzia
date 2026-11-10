@@ -91,7 +91,7 @@ describe("the poll commands", () => {
   })
 
   it("names only what is built", () => {
-    expect(FEATURES).toEqual(["poll", "pollInline"])
+    expect(FEATURES).toEqual(["poll", "pollInline", "pollReview"])
   })
 })
 
