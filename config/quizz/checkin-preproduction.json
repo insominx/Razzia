@@ -1,0 +1,12 @@
+{
+  "subject": "Tuesday Check-in",
+  "questions": [
+    {
+      "question": "This room is for polls. This question is never played.",
+      "answers": ["OK", "Got it"],
+      "solutions": [0],
+      "cooldown": 5,
+      "time": 20
+    }
+  ]
+}
