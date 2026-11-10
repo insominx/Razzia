@@ -273,12 +273,40 @@ button:not(:disabled),
   }
 }
 
+/* A count that ticks up from 0 to --rz-to (an integer), drawn by a CSS counter
+   so the real number can stay in the markup for screen readers and tests. */
+@property --rz-count {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.rz-count-up {
+  --rz-count: var(--rz-to);
+  counter-reset: rz-count var(--rz-count);
+  animation: rz-count-up var(--rz-dur-base) var(--rz-ease-calm) both;
+}
+
+.rz-count-up::after {
+  content: counter(rz-count);
+}
+
+@keyframes rz-count-up {
+  from {
+    --rz-count: 0;
+  }
+  to {
+    --rz-count: var(--rz-to);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --rz-dur-fast: 0.01ms;
     --rz-dur-base: 0.01ms;
   }
 
+  .rz-count-up,
   .animate-rz-enter,
   .animate-rz-bar-grow,
   .animate-rz-fade-in,

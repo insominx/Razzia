@@ -6,10 +6,28 @@ import {
   TWO_COLUMNS_FROM,
 } from "@razzia/web/features/poll/utils/type-tier"
 import clsx from "clsx"
+import type { CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 
 // A projector row has little room for names; the rest are counted.
 const NAMES_SHOWN = 8
+
+// The result reveal: each bar grows from its left edge and its count ticks up
+// from 0, one option after another, when the bars first appear (the close of a
+// sealed poll). Later changes to a live poll only slide the width.
+const REVEAL_MS = 1100
+const STAGGER_MS = 160
+
+const reveal = (
+  index: number,
+  style: Record<string, string | number>,
+  extraDelay = 0,
+): CSSProperties =>
+  ({
+    ...style,
+    animationDuration: `${REVEAL_MS}ms`,
+    animationDelay: `${index * STAGGER_MS + extraDelay}ms`,
+  }) as CSSProperties
 
 interface Props {
   options: string[]
@@ -92,8 +110,18 @@ const PollBars = ({
                     data-poll-count
                     className="text-text-primary stage:text-[2.6875rem] shrink-0 font-mono text-lg font-bold tabular-nums"
                   >
-                    {count}
-                    <span className="text-text-muted stage:text-[1.75rem] ml-2 text-sm font-medium">
+                    {/* The count ticks up from 0 as its bar grows (a CSS
+                        counter, so the real number stays in the text). */}
+                    <span
+                      aria-hidden="true"
+                      className="rz-count-up"
+                      style={reveal(index, { "--rz-to": count })}
+                    />
+                    <span className="sr-only">{count}</span>
+                    <span
+                      className="text-text-muted stage:text-[1.75rem] animate-rz-fade-in ml-2 text-sm font-medium"
+                      style={reveal(index, {}, REVEAL_MS * 0.6)}
+                    >
                       {percent}%
                     </span>
                   </span>
@@ -106,8 +134,8 @@ const PollBars = ({
                   className="bg-panel stage:mt-3 stage:h-4 mt-2 h-2 overflow-hidden rounded-full"
                 >
                   <div
-                    className="bg-brand ease-calm h-full rounded-full transition-[width] duration-[var(--rz-dur-base)] motion-reduce:transition-none"
-                    style={{ width: `${percent}%` }}
+                    className="bg-brand ease-calm animate-rz-bar-grow h-full origin-left rounded-full transition-[width] duration-[var(--rz-dur-base)] motion-reduce:transition-none"
+                    style={reveal(index, { width: `${percent}%` })}
                   />
                 </div>
               )}
