@@ -129,6 +129,27 @@ describe("PlayerPollOverlay", () => {
     expect(screen.getByText("poll:privacy.named")).toBeInTheDocument()
   })
 
+  it("says the student's name shows as they vote, but only in a sealed poll that is open", () => {
+    render(<PlayerPollOverlay />)
+    show(open())
+    expect(screen.getByText("poll:arrival.playerNote")).toBeInTheDocument()
+
+    show(open({ live: true }))
+    expect(screen.queryByText("poll:arrival.playerNote")).toBeNull()
+    expect(screen.queryByText("poll:arrival.playerNoteLive")).toBeNull()
+
+    show(open({ phase: "closed", counts: [1, 0, 0], total: 1, mine: 0 }))
+    expect(screen.queryByText("poll:arrival.playerNote")).toBeNull()
+  })
+
+  it("warns a named live poll's voters that the room may see their pick", () => {
+    render(<PlayerPollOverlay />)
+    show(open({ live: true, anonymous: false }))
+
+    expect(screen.getByText("poll:arrival.playerNoteLive")).toBeInTheDocument()
+    expect(screen.queryByText("poll:arrival.playerNote")).toBeNull()
+  })
+
   it("sends the vote on the tap and shows it at once, before the server answers", () => {
     render(<PlayerPollOverlay />)
     show(open())

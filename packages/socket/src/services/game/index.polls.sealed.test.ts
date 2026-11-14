@@ -140,7 +140,7 @@ describe("Game polls, sealed by default", () => {
       total: 0,
     })
     expect(toManager(setup.emitted, EVENTS.POLL.TALLY)).toEqual([
-      { pollId: "lunch", total: 1 },
+      { pollId: "lunch", total: 1, arrived: "Alice" },
     ])
   })
 
@@ -213,7 +213,7 @@ describe("Game polls, sealed by default", () => {
     ])
   })
 
-  it("never lets a named sealed poll put a name on the host's wire before the close", () => {
+  it("never lets a named sealed poll put who voted for what on the host's wire before the close", () => {
     mocks.getPollById.mockImplementation(() => lunch(false))
     const setup = createGame()
 
@@ -227,8 +227,13 @@ describe("Game polls, sealed by default", () => {
     )
     const sync = JSON.stringify(setup.manager.emitted)
 
-    expect(wire).not.toContain("Alice")
-    expect(wire).not.toContain("Bobby")
+    // Each name rides only its own first vote's tally, beside the total.
+    expect(toManager(setup.emitted, EVENTS.POLL.TALLY)).toEqual([
+      { pollId: "lunch", total: 1, arrived: "Alice" },
+      { pollId: "lunch", total: 2, arrived: "Bobby" },
+    ])
+    expect(wire).not.toContain('"voters"')
+    expect(wire).not.toContain('"counts"')
     expect(sync).not.toContain("Alice")
     expect(sync).not.toContain("Bobby")
 

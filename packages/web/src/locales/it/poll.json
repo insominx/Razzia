@@ -2,8 +2,8 @@
   "label": "Sondaggio",
   "privacy": {
     "anonymous": "I voti sono anonimi",
-    "named": "Il conduttore vede chi vota cosa. I nomi vengono salvati e gli altri non li vedono.",
-    "namedStage": "I nomi vengono salvati con i voti e non sono mostrati qui"
+    "named": "Il conduttore vede chi vota cosa, e i nomi vengono salvati.",
+    "namedStage": "Chi ha votato cosa viene salvato, ma non mostrato qui"
   },
   "changeHint": "Puoi cambiare il tuo voto finché il conduttore non chiude il sondaggio.",
   "yourVote": "Il tuo voto",
@@ -14,6 +14,13 @@
   "votes_other": "{{count}} voti",
   "more": "+{{count}} altri",
   "noOneVoted": "Nessuno ha votato",
+  "arrival": {
+    "someone": "Nuovo voto",
+    "more": "+{{count}}",
+    "everyone": "Hanno votato tutti",
+    "playerNote": "Il tuo nome compare sullo schermo quando voti. La tua scelta no.",
+    "playerNoteLive": "Il tuo nome compare sullo schermo quando voti e i risultati si aggiornano in diretta, quindi la sala può vedere cosa hai scelto."
+  },
   "vote": {
     "failed": "Il tuo voto non è arrivato. Riprova.",
     "tooManyChanges": "Hai cambiato voto troppe volte."
@@ -57,11 +64,11 @@
     "removeOption": "Rimuovi opzione {{letter}}",
     "optionsHint": "Da due a sei opzioni. Tutti nella sala votano per una di esse.",
     "anonymousLabel": "Voti anonimi",
-    "anonymousOn": "Nessun nome viene mostrato o salvato.",
-    "anonymousOff": "Vedi il nome di ogni giocatore accanto al suo voto, e i giocatori ne sono informati.",
+    "anonymousOn": "Nessuno vede chi ha votato cosa, e nessun nome viene salvato.",
+    "anonymousOff": "Vedi il nome di ogni giocatore accanto al suo voto, i nomi compaiono sullo schermo man mano che votano, e i giocatori ne sono informati.",
     "liveLabel": "Mostra i risultati mentre si vota",
-    "liveOff": "Lo schermo mostra quante persone hanno votato. I risultati compaiono quando chiudi il sondaggio.",
-    "liveOn": "Lo schermo mostra i risultati man mano che arrivano i voti. In un gruppo piccolo, i conteggi possono comunque far capire chi ha votato cosa.",
+    "liveOff": "Lo schermo mostra ogni nome man mano che le persone votano, e quante hanno votato. I risultati compaiono quando chiudi il sondaggio.",
+    "liveOn": "Lo schermo mostra i risultati man mano che arrivano i voti, con i nomi solo in un sondaggio nominativo. In un gruppo piccolo, i conteggi possono comunque far capire chi ha votato cosa.",
     "fitWarning": "Potrebbe non entrare nel proiettore. Accorcia la domanda o le opzioni.",
     "saved": "Sondaggio salvato",
     "updated": "Sondaggio aggiornato",

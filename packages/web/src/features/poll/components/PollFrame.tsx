@@ -14,6 +14,10 @@ interface Props {
   deckKeys?: boolean
   // A result shown again: it is simply there, with no fade in.
   settled?: boolean
+  // The room's light under an open poll (the host's screen): how much of the
+  // room has voted, 0 to 1, and a count of heartbeats to breathe on.
+  lift?: number
+  breath?: number
   children: ReactNode
 }
 
@@ -27,6 +31,8 @@ const PollFrame = ({
   labelledBy,
   deckKeys = false,
   settled = false,
+  lift,
+  breath,
   children,
 }: Props) => {
   const calm = useCalmVisuals()
@@ -58,6 +64,8 @@ const PollFrame = ({
         backgroundUrl={backgroundUrl}
         mood="cool"
         calm={calm}
+        lift={lift}
+        breath={breath}
       />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">

@@ -85,12 +85,16 @@ interface SoundStore {
   // Silences everything while a lecture deck hides this page, without
   // touching the saved preference.
   suppressed: boolean
+  // A poll covers the host's stage: the score holds the quiz's music and cues
+  // under it and plays only the poll's own. Not a mute, so Howler is untouched.
+  pollStage: boolean
 
   bindSurface: (_surface: SoundSurface) => void
   setVolume: (_volume: number) => void
   toggleMute: () => void
   setMuted: (_muted: boolean) => void
   setSuppressed: (_suppressed: boolean) => void
+  setPollStage: (_pollStage: boolean) => void
   unlock: () => void
 }
 
@@ -111,6 +115,7 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
   muted: false,
   surface: null,
   suppressed: false,
+  pollStage: false,
 
   bindSurface: (surface) => {
     const state = get()
@@ -161,6 +166,12 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
 
     applyToHowler(volume, muted || suppressed)
     set({ suppressed })
+  },
+
+  setPollStage: (pollStage) => {
+    if (get().pollStage !== pollStage) {
+      set({ pollStage })
+    }
   },
 
   // `@types/howler` declares `ctx` as always present, but howler only assigns

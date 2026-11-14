@@ -269,6 +269,41 @@ A phone's own game, in three screens beside the verdict (and the tap itself).
   bursts and stops, a plain place for everyone else, and points and place among
   all who played.
 
+## Poll arrivals
+
+While a poll is open the host's screen shows each vote arrive, so the room
+sees and hears itself filling in (task 0011 chose this pairing from ten
+prototypes).
+
+- **The spotlight** (`ArrivalSpotlight`). The newest voter's name lands large
+  (5 rem) in the room left under the options, behind a brand check whose ring
+  spreads once, and slides up out of the way for the next. Earlier names run
+  along a trail beneath (2.6875 rem, `text-muted`, masked at both ends). A name
+  holds 700 ms, or 280 ms with another waiting; three or more waiting fold into
+  one name and "+N", their names going straight onto the trail. When the vote
+  count reaches the connected count it says "Everyone's in" in brand, and
+  nothing more: no flood, no burst. An anonymous live poll's arrivals carry no
+  name (its counts move with them), so they show as "New vote" and leave no
+  trail; a named live poll's carry names, and its phones say the room may see
+  their pick. The
+  region is measured by height: a poll that fills the frame drops the trail,
+  then the name.
+- **The count.** Each arrival flashes "n votes" (brand, scaling down from 1.35)
+  and sends a ring of brand light out from it, behind the text and the option
+  tiles.
+- **The heartbeat.** The room's light (`Atmosphere`'s `lift`) rises from the
+  bottom of the frame with the share that has voted, and breathes on every
+  beat. The beat starts with the first vote at 52 bpm and quickens to 122 as
+  the room fills, and stops when everyone is in or the poll closes.
+- **Sound.** Each name rings a `vote` cue (two plucks a fifth apart, a step up
+  the pentatonic for each share of the room, so the last vote is the top), and
+  each beat a `beat` cue (a soft lub-dub). While a poll covers the stage the
+  quiz's own scenes and cues hold (`pollStage`); the poll's cues still play.
+- **Calm, Silent, reduced motion.** The names, the trail and the light stay;
+  the rings, the breath, the count flash and the slide are dropped, and names
+  swap with a fade. Calm plays the heartbeat at half strength; Silent plays
+  nothing.
+
 ## Board and ceremony
 
 - **Leaderboard**: a bar race. A bar's length is a score, as a share of the

@@ -2,8 +2,8 @@
   "label": "Encuesta",
   "privacy": {
     "anonymous": "Los votos son anónimos",
-    "named": "El anfitrión ve quién vota qué. Los nombres se guardan y el resto no los ve.",
-    "namedStage": "Los nombres se guardan con los votos y no se muestran aquí"
+    "named": "El anfitrión ve quién vota qué, y los nombres se guardan.",
+    "namedStage": "Quién votó qué se guarda, pero no se muestra aquí"
   },
   "changeHint": "Puedes cambiar tu voto hasta que el anfitrión cierre la encuesta.",
   "yourVote": "Tu voto",
@@ -14,6 +14,13 @@
   "votes_other": "{{count}} votos",
   "more": "+{{count}} más",
   "noOneVoted": "Nadie ha votado",
+  "arrival": {
+    "someone": "Nuevo voto",
+    "more": "+{{count}}",
+    "everyone": "Ya votaron todos",
+    "playerNote": "Tu nombre aparece en la pantalla cuando votas. Tu elección no.",
+    "playerNoteLive": "Tu nombre aparece en la pantalla cuando votas y los resultados se actualizan en vivo, así que la sala puede ver qué elegiste."
+  },
   "vote": {
     "failed": "Tu voto no se envió. Inténtalo de nuevo.",
     "tooManyChanges": "Has cambiado tu voto demasiadas veces."
@@ -57,11 +64,11 @@
     "removeOption": "Quitar opción {{letter}}",
     "optionsHint": "De dos a seis opciones. Todos en la sala votan por una de ellas.",
     "anonymousLabel": "Votos anónimos",
-    "anonymousOn": "No se muestran ni se guardan nombres.",
-    "anonymousOff": "Ves el nombre de cada jugador junto a su voto, y se les avisa.",
+    "anonymousOn": "Nadie ve quién votó qué, y no se guardan nombres.",
+    "anonymousOff": "Ves el nombre de cada jugador junto a su voto, los nombres aparecen en la pantalla a medida que votan, y se les avisa.",
     "liveLabel": "Mostrar los resultados mientras se vota",
-    "liveOff": "La pantalla muestra cuántas personas han votado. Los resultados aparecen cuando cierras la encuesta.",
-    "liveOn": "La pantalla muestra los resultados a medida que llegan los votos. En un grupo pequeño, los recuentos aún pueden delatar quién votó qué.",
+    "liveOff": "La pantalla muestra cada nombre a medida que la gente vota, y cuántas personas han votado. Los resultados aparecen cuando cierras la encuesta.",
+    "liveOn": "La pantalla muestra los resultados a medida que llegan los votos, con nombres solo en una encuesta nominal. En un grupo pequeño, los recuentos aún pueden delatar quién votó qué.",
     "fitWarning": "Puede que no quepa en el proyector. Acorta la pregunta o las opciones.",
     "saved": "Encuesta guardada",
     "updated": "Encuesta actualizada",

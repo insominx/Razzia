@@ -228,18 +228,18 @@ A poll asks the room a question that has no right answer ("What should we do fir
 
 ### Sealed or live
 
-A poll is **sealed** unless you turn on **Show results while people vote** when you write it. While a sealed poll is open, the host's screen shows the question, the options and how many have voted ("12 of 25 voted"), but no counts and no bars; they appear when you close the poll. A **live** poll shows the bars growing as people vote. Phones see counts only after the close either way. A shared screen invites following the crowd, which is why sealed is the default.
+A poll is **sealed** unless you turn on **Show results while people vote** when you write it. While a sealed poll is open, the host's screen shows the question, the options and how many have voted ("12 of 25 voted"), but no counts and no bars; they appear when you close the poll. As each person votes, their name lands under the options with a chime, the room's light rises and a heartbeat quickens until everyone is in; their choice is never shown. A **live** poll shows the bars growing as people vote; its arrivals show no name unless the poll is named. Phones see counts only after the close either way. A shared screen invites following the crowd, which is why sealed is the default.
 
 ### Anonymity
 
-- **Anonymous** (the default): no name is ever shown, sent or saved. It hides names, not timing: in a small group, watching the votes arrive one at a time (or kicking a student, whose vote then disappears) can still reveal who voted what. A live poll shows more of this than a sealed one, because the bars move with each vote.
-- **Named**: you see each student's name beside their vote, and students are told so. They never see each other's names, and the names are saved in the result.
+- **Anonymous** (the default): nobody is shown who voted for what, and no name is saved. In a sealed poll the screen shows each voter's name as they vote (never their choice), and phones say so before the tap. It hides choices, not timing: in a small group, watching the votes arrive one at a time (or kicking a student, whose vote then disappears) can still reveal who voted what. A live poll shows more of this than a sealed one, because the bars move with each vote.
+- **Named**: you see each student's name beside their vote, and students are told so. Names also show on the screen as people vote, never beside a choice; in a live named poll the room can match a name to the bar that moves, and phones warn about that. The names are saved in the result.
 
 Whether a poll is named is part of the poll, not chosen at launch.
 
 ### From a lecture deck
 
-A course deck can run a poll from its slides: the question and options are the slide's own text, sent when the instructor presses the clicker, and nothing is stored on the server first. The result is saved like any other. The shared screen shows the question and "n of m voted", never a name, and the slide shows through behind it. See [ADR 0005](docs/adr/0005-polls-from-a-deck.md).
+A course deck can run a poll from its slides: the question and options are the slide's own text, sent when the instructor presses the clicker, and nothing is stored on the server first. The result is saved like any other. The shared screen shows the question and "n of m voted", and in a sealed poll each voter's name as they vote, never beside a choice; the slide shows through behind it. See [ADR 0005](docs/adr/0005-polls-from-a-deck.md).
 
 ### Where things are kept
 

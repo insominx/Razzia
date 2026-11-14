@@ -126,7 +126,9 @@ export class PollManager {
     }
 
     this.votes.set(player.clientId, option)
-    this.emitTally()
+    // A first vote tells a sealed poll's host who has just voted; a change
+    // moves no total and names nobody.
+    this.emitTally(before === undefined ? player.username : undefined)
 
     return "accepted"
   }
@@ -267,6 +269,8 @@ export class PollManager {
 
     return {
       ...baseOf(this.poll, this.phase),
+      // Only so the phone can say whether its name shows as it votes.
+      ...(this.poll.live ? { live: true as const } : {}),
       mine: this.votes.get(clientId) ?? null,
       ...(counts ? { counts, total: sum(counts) } : {}),
     }
@@ -386,14 +390,21 @@ export class PollManager {
       .emit(EVENTS.POLL.STATE, this.snapshotForHost())
   }
 
-  private emitTally(): void {
+  // `arrived` is the name of a first vote. A sealed tally carries it, and so
+  // does a named poll's live one. An anonymous live tally never does: its
+  // counts move in the same message and would show what that person picked.
+  private emitTally(arrived?: string): void {
     if (!this.poll) {
       return
     }
 
-    const tally = this.isSealed()
+    const sealed = this.isSealed()
+    const base: PollTally = sealed
       ? { pollId: this.poll.id, total: this.votes.size }
       : this.fullTally(this.poll.id)
+    const named = sealed || !this.poll.anonymous
+    const tally: PollTally =
+      arrived !== undefined && named ? { ...base, arrived } : base
 
     this.opts.io.to(this.opts.getManagerId()).emit(EVENTS.POLL.TALLY, tally)
   }

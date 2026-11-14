@@ -2,6 +2,7 @@ import { EVENTS } from "@razzia/common/constants"
 import type { PollSnapshot } from "@razzia/common/types/poll"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
+import { useSoundStore } from "@razzia/web/features/game/stores/sound"
 import PollShell from "@razzia/web/features/poll/components/PollShell"
 import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import { act, cleanup, render, screen } from "@testing-library/react"
@@ -112,6 +113,40 @@ describe("PollShell", () => {
     expect(screen.getByText("host overlay")).toBeInTheDocument()
     expect(screen.getByText("host launcher")).toBeInTheDocument()
     expect(screen.queryByText("player overlay")).toBeNull()
+  })
+
+  it("holds the host's quiz sound while a poll covers the stage, and only the host's", () => {
+    const pollStage = () => useSoundStore.getState().pollStage
+    const { unmount } = render(
+      <PollShell role="player">
+        <p>x</p>
+      </PollShell>,
+    )
+
+    act(() => {
+      usePollStore.getState().apply(snapshot)
+    })
+    expect(pollStage()).toBe(false)
+    unmount()
+
+    const host = render(
+      <PollShell role="host">
+        <p>x</p>
+      </PollShell>,
+    )
+
+    expect(pollStage()).toBe(true)
+
+    act(() => {
+      usePollStore.getState().apply(null)
+    })
+    expect(pollStage()).toBe(false)
+
+    act(() => {
+      usePollStore.getState().apply(snapshot)
+    })
+    host.unmount()
+    expect(pollStage()).toBe(false)
   })
 
   it("makes a player's page ask where the poll stands once it knows its game", () => {

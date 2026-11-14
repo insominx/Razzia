@@ -47,14 +47,11 @@ const REATTACH_FOR_MS = 90_000
 // has moved on to since.
 const QUEUE_FOR_MS = 10_000
 
-// The sound is off whenever the deck cannot be seeing this page, while a
-// review is up, and while a poll shows: the lobby stays mounted under a poll,
-// and its music bed and join chimes would otherwise play under the question.
-const isSilent = (
-  visible: boolean,
-  review: number | null,
-  pollShowing: boolean,
-): boolean => !visible || review !== null || pollShowing
+// The sound is off whenever the deck cannot be seeing this page, and while a
+// review is up. A poll is not silent: the poll lane holds the lobby's music bed
+// and join chimes under it (`pollStage`) and plays only its own arrivals.
+const isSilent = (visible: boolean, review: number | null): boolean =>
+  !visible || review !== null
 
 const LOGIN_PATH = "/manager"
 const CONFIG_PATH = "/manager/config"
@@ -95,8 +92,6 @@ export const useDeckBridge = () => {
   const poll = usePollStore((store) => store.snapshot)
   const pollReview = usePollStore((store) => store.review)
   const pollShowing = poll !== null
-  // What the frame shows, for its sound: a poll on the stage or one shown again.
-  const pollOnScreen = pollShowing || pollReview !== null
   const soundMuted = useSoundStore((store) => store.muted)
   const soundVolume = useSoundStore((store) => store.volume)
 
@@ -385,15 +380,6 @@ export const useDeckBridge = () => {
         : (lecture?.pollsDone ?? []).find((entry) => entry.id === id)
 
     usePollStore.getState().setReview(done ?? null)
-    useSoundStore
-      .getState()
-      .setSuppressed(
-        isSilent(
-          visibleNow.current,
-          useManagerStore.getState().review,
-          usePollStore.getState().snapshot !== null || done !== undefined,
-        ),
-      )
   }
 
   const runRound = (command: RoundCommand) => {
@@ -557,11 +543,7 @@ export const useDeckBridge = () => {
       useSoundStore
         .getState()
         .setSuppressed(
-          isSilent(
-            command.visible,
-            useManagerStore.getState().review,
-            usePollStore.getState().snapshot !== null,
-          ),
+          isSilent(command.visible, useManagerStore.getState().review),
         )
 
       return
@@ -579,13 +561,7 @@ export const useDeckBridge = () => {
       store.setReview(question)
       useSoundStore
         .getState()
-        .setSuppressed(
-          isSilent(
-            visibleNow.current,
-            question,
-            usePollStore.getState().snapshot !== null,
-          ),
-        )
+        .setSuppressed(isSilent(visibleNow.current, question))
 
       return
     }
@@ -685,10 +661,8 @@ export const useDeckBridge = () => {
   // The handlers above mute at once; this also catches a review that the
   // game's next screen ended, which no deck message reports.
   useEffect(() => {
-    useSoundStore
-      .getState()
-      .setSuppressed(isSilent(visible, review, pollOnScreen))
-  }, [visible, review, pollOnScreen])
+    useSoundStore.getState().setSuppressed(isSilent(visible, review))
+  }, [visible, review])
 
   // A result shown again belongs to its room: a new game, or a page no longer
   // attached, takes it away.

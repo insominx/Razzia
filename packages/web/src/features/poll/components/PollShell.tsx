@@ -1,13 +1,14 @@
 import { IS_DECK_EMBED } from "@razzia/web/features/deck/embed"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
 import { usePlayerStore } from "@razzia/web/features/game/stores/player"
+import { useSoundStore } from "@razzia/web/features/game/stores/sound"
 import HostPollLauncher from "@razzia/web/features/poll/components/HostPollLauncher"
 import HostPollOverlay from "@razzia/web/features/poll/components/HostPollOverlay"
 import PlayerPollOverlay from "@razzia/web/features/poll/components/PlayerPollOverlay"
 import { usePollLane } from "@razzia/web/features/poll/hooks/use-poll-lane"
 import { usePollStore } from "@razzia/web/features/poll/stores/poll"
 import clsx from "clsx"
-import type { ReactNode } from "react"
+import { type ReactNode, useEffect } from "react"
 
 interface Props {
   role: "player" | "host"
@@ -46,6 +47,23 @@ const PollShell = ({ role, children }: Props) => {
   }
 
   usePollLane(gameId)
+
+  // On the host's screen a poll holds the quiz's sound under it (the lobby's
+  // bed and join chimes keep running underneath) and plays its own arrivals.
+  const holdsQuizSound = role === "host" && showing
+
+  useEffect(() => {
+    useSoundStore.getState().setPollStage(holdsQuizSound)
+  }, [holdsQuizSound])
+
+  useEffect(
+    () => () => {
+      if (role === "host") {
+        useSoundStore.getState().setPollStage(false)
+      }
+    },
+    [role],
+  )
 
   return (
     <>

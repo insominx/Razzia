@@ -281,6 +281,20 @@ describe("useSoundStore", () => {
     )
   })
 
+  it("holds the quiz for a poll without muting Howler", async () => {
+    const useSoundStore = await importStore()
+
+    howler.mute.mockClear()
+    useSoundStore.getState().setPollStage(true)
+
+    expect(useSoundStore.getState().pollStage).toBe(true)
+    expect(howler.mute).not.toHaveBeenCalled()
+
+    useSoundStore.getState().setPollStage(false)
+
+    expect(useSoundStore.getState().pollStage).toBe(false)
+  })
+
   it("unlock resumes the audio context", async () => {
     const useSoundStore = await importStore()
 

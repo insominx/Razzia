@@ -116,6 +116,9 @@ describe("PollManager starting", () => {
       options: ["Pizza", "Soup", "Salad"],
       anonymous: true,
       phase: "open",
+      // A phone is told the poll is live only so it knows its name will not
+      // show as it votes; it still gets no counts.
+      live: true,
       mine: null,
     })
     expect(eventsTo(emitted, "manager", EVENTS.POLL.STATE)[0]).toEqual({

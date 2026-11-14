@@ -54,17 +54,25 @@ export interface PollSnapshot {
   mine?: number | null
   // The host only, and only for a named poll.
   voters?: PollVoter[]
-  // The host only: present and true when counts arrive as the votes do.
+  // Present and true when the host's counts arrive as the votes do. A phone
+  // reads it only to know whether its name shows as it votes (a sealed poll
+  // shows it, a live one does not); a phone never gets counts while it is open.
   live?: true
 }
 
 // The host's running count while a poll is open. A sealed poll sends `total`
-// alone.
+// alone, plus `arrived` when the vote is someone's first.
 export interface PollTally {
   pollId: string
   counts?: number[]
   total: number
   voters?: PollVoter[]
+  // The name of the player whose first vote this tally counts, so the host's
+  // screen can show who has voted. Never their option. A sealed poll sends it,
+  // and so does a named live one (its voters chose names); an anonymous live
+  // poll never does, because the counts move with it and would tell the room
+  // what that person picked.
+  arrived?: string
 }
 
 export type PollOutcome =

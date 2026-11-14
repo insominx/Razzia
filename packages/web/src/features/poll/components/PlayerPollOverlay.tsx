@@ -100,6 +100,17 @@ const PlayerPollOverlay = () => {
           <p className="text-text-muted text-sm">
             {anonymous ? t("poll:privacy.anonymous") : t("poll:privacy.named")}
           </p>
+          {/* The host's screen names each voter as they vote (never beside
+              their pick) in a sealed poll and in a named live one, so the
+              phone says so before the tap. A named live poll's bars move with
+              the name, and the phone says that too. */}
+          {!closed && (!snapshot.live || !anonymous) && (
+            <p data-poll-arrival-note className="text-text-muted text-sm">
+              {snapshot.live
+                ? t("poll:arrival.playerNoteLive")
+                : t("poll:arrival.playerNote")}
+            </p>
+          )}
         </header>
 
         {closed ? (

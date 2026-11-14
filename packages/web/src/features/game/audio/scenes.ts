@@ -36,6 +36,7 @@ import {
 import {
   type Anchor,
   CHORDS,
+  clamp01,
   type Ctx,
   ev,
   fixed,
@@ -207,6 +208,17 @@ export type Cue =
   | { cue: "impact" }
   | { cue: "place"; place: 1 | 2 | 3 }
   | { cue: "roll"; ms: number }
+  // A poll's arrivals on the host's screen. `share` is how much of the room
+  // has voted (0 to 1): each vote rings one step higher, so the room hears how
+  // close it is. `beat` is one heartbeat, its strength 0 to 1.
+  | { cue: "vote"; share: number }
+  | { cue: "beat"; strength: number }
+
+/**
+ * The poll's own sounds. They play while a poll covers the stage, when the
+ * quiz's music and cues under it are held (`pollStage` in the sound store).
+ */
+export const POLL_CUES: ReadonlySet<Cue["cue"]> = new Set(["vote", "beat"])
 
 export interface CompileOptions {
   intensity: Intensity
@@ -230,6 +242,8 @@ export const HOST_ONLY_CUES: ReadonlySet<Cue["cue"]> = new Set([
   "join",
   "place",
   "roll",
+  "vote",
+  "beat",
 ])
 
 /** The stamp a scene is anchored to, with the clock it arrived with. */
@@ -1405,6 +1419,28 @@ const cueEvents = (cue: Cue, c: Ctx) => {
       return [
         ev(0, "roll", { dur, v: c.calm ? 0.5 : 1 }),
         ev(0, "riser", { dur, v: 0.26, lo: 500, hi: 9000 }),
+      ]
+    }
+
+    // Two plucks a fifth apart, a step up the scale for each share of the
+    // room, so the last vote rings the top of it.
+    case "vote": {
+      const step = Math.round(clamp01(cue.share) * (PENT.length - 1))
+      const m = tr(c, PENT[step])
+
+      return [
+        ev(0, "pluck", { m, v: 0.5, rev: 0.4, dly: 0.25, bus: "dry" }),
+        ev(0.07, "pluck", { m: m + 7, v: 0.3, rev: 0.5, dly: 0.3, bus: "dry" }),
+      ]
+    }
+
+    // Lub-dub: two rounded kicks, the second softer. Calm plays it at half.
+    case "beat": {
+      const v = clamp01(cue.strength) * (c.calm ? 0.5 : 1)
+
+      return [
+        ev(0, "kick", { v: 0.6 * v, lp: 320 }),
+        ev(0.17, "kick", { v: 0.42 * v, lp: 280 }),
       ]
     }
 

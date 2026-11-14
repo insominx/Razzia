@@ -228,7 +228,9 @@ describe("useDeckBridge showing a closed poll again, and naming its targets", ()
     expect(lastState()).toMatchObject({ reviewingPoll: null })
   })
 
-  it("is silent while a result is shown again", () => {
+  // The poll lane holds the lobby's sound under a result shown again
+  // (`pollStage`), so the deck's own silence is not needed for it.
+  it("does not silence the page to show a result again", () => {
     renderHook(() => {
       useDeckBridge()
     })
@@ -239,7 +241,8 @@ describe("useDeckBridge showing a closed poll again, and naming its targets", ()
 
     sendCommand({ type: "reviewPoll", id: "one" })
 
-    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
+    expect(usePollStore.getState().review).toMatchObject({ id: "one" })
+    expect(mocks.setSuppressed).not.toHaveBeenCalledWith(true)
   })
 
   it("passes the poll a close or dismiss names on to the room", () => {

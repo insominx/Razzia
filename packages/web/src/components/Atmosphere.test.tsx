@@ -70,6 +70,36 @@ describe("Atmosphere backdrop", () => {
   })
 })
 
+describe("Atmosphere room light", () => {
+  it("has none unless asked, and rises with the share it is given", () => {
+    const { container, rerender } = render(<Atmosphere recipe="photo" />)
+
+    expect(container.querySelector("[data-lift]")).toBeNull()
+
+    rerender(<Atmosphere recipe="photo" lift={0.5} />)
+
+    expect(
+      container
+        .querySelector<HTMLElement>("[data-lift]")
+        ?.style.getPropertyValue("--rz-lift"),
+    ).toBe("0.5")
+  })
+
+  it("breathes once per heartbeat, but not when calm", () => {
+    const { container, rerender } = render(
+      <Atmosphere recipe="photo" lift={0.5} breath={0} />,
+    )
+
+    expect(container.querySelector(".rz-breath")).toBeNull()
+
+    rerender(<Atmosphere recipe="photo" lift={0.5} breath={1} />)
+    expect(container.querySelectorAll(".rz-breath")).toHaveLength(1)
+
+    rerender(<Atmosphere recipe="photo" lift={0.5} breath={2} calm />)
+    expect(container.querySelector(".rz-breath")).toBeNull()
+  })
+})
+
 describe("Atmosphere mood", () => {
   it("rests on the cool mood", () => {
     const { container } = render(<Atmosphere recipe="photo" />)

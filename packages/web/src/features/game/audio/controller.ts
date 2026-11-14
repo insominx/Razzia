@@ -46,6 +46,7 @@ import {
   laneTrimDb,
   originMs,
   anchorOf,
+  POLL_CUES,
   riseFor,
   type SceneSpec,
   type Surface,
@@ -105,6 +106,11 @@ export interface SoundState {
   muted: boolean
   suppressed: boolean
   volume: number
+  /**
+   * A poll covers the host's stage: the quiz's scenes and cues under it hold
+   * (and pick back up when it goes), and only the poll's own cues play.
+   */
+  pollStage?: boolean
 }
 
 export interface ControllerDeps {
@@ -131,6 +137,9 @@ export const RELEASE_AFTER_IDLE_MS = 20_000
 
 /** A cue this late is not worth playing. */
 const CUE_LATE_MS = 150
+
+/** How long the quiz's sound takes to fade when a poll covers the stage. */
+export const POLL_HOLD_FADE_S = 0.4
 
 /** While the context is asleep, ask it to wake this often. */
 const RESUME_EVERY_TICKS = 40
@@ -178,7 +187,8 @@ export const createScore = (deps: ControllerDeps): Score => {
   let wasSounding = false
   const live = new Map<Lane, Live>()
 
-  const soundOn = (): boolean => {
+  // Whether the page may make any sound at all.
+  const audible = (): boolean => {
     const state = sound.getState()
 
     return (
@@ -189,14 +199,18 @@ export const createScore = (deps: ControllerDeps): Score => {
     )
   }
 
+  // The quiz's own sound: held while a poll covers the stage.
+  const soundOn = (): boolean =>
+    audible() && sound.getState().pollStage !== true
+
   const webAudio = (): boolean =>
     // `@types/howler` says these are always set, but Howler leaves them null
     // when it fell back to HTML5 audio.
     // oxlint-disable-next-line typescript/no-unnecessary-condition
     Boolean(howler.ctx && howler.masterGain && howler.ctx.state !== "closed")
 
-  const engineOn = (): boolean =>
-    config.theme === "show" && soundOn() && webAudio()
+  const engineOn = (on: () => boolean = soundOn): boolean =>
+    config.theme === "show" && on() && webAudio()
 
   const cancelRelease = (): void => {
     if (releaseTimer !== undefined) {
@@ -487,6 +501,12 @@ export const createScore = (deps: ControllerDeps): Score => {
     wasSounding = sounding
 
     if (!sounding) {
+      // A mute silences what is already ringing; a poll covering the stage
+      // does not, so the quiz's sound fades out under it instead.
+      if (audible()) {
+        engine?.stop(undefined, POLL_HOLD_FADE_S)
+      }
+
       quiet()
       // Nothing pumps now, and nothing else would let the context sleep.
       release()
@@ -602,7 +622,10 @@ export const createScore = (deps: ControllerDeps): Score => {
 
       subscribe()
 
-      if (!soundOn()) {
+      // A poll's own cue plays over the held quiz; every other cue waits with it.
+      const on = POLL_CUES.has(cue.cue) ? audible : soundOn
+
+      if (!on()) {
         return
       }
 
@@ -617,7 +640,7 @@ export const createScore = (deps: ControllerDeps): Score => {
         return
       }
 
-      const running = engineOn() ? ensureEngine() : null
+      const running = engineOn(on) ? ensureEngine() : null
       const events = compileCue(cue, opts())
 
       if (!running || events.length === 0) {

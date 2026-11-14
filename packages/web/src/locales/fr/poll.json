@@ -2,8 +2,8 @@
   "label": "Sondage",
   "privacy": {
     "anonymous": "Les votes sont anonymes",
-    "named": "L’animateur voit qui vote pour quoi. Les noms sont enregistrés, les autres ne les voient pas.",
-    "namedStage": "Les noms sont enregistrés avec les votes et ne sont pas affichés ici"
+    "named": "L’animateur voit qui vote pour quoi, et les noms sont enregistrés.",
+    "namedStage": "Qui a voté pour quoi est enregistré, mais pas affiché ici"
   },
   "changeHint": "Vous pouvez changer votre vote tant que l'animateur n'a pas fermé le sondage.",
   "yourVote": "Votre vote",
@@ -14,6 +14,13 @@
   "votes_other": "{{count}} votes",
   "more": "+{{count}} de plus",
   "noOneVoted": "Personne n'a voté",
+  "arrival": {
+    "someone": "Nouveau vote",
+    "more": "+{{count}}",
+    "everyone": "Tout le monde a voté",
+    "playerNote": "Votre nom s’affiche à l’écran quand vous votez. Votre choix, non.",
+    "playerNoteLive": "Votre nom s’affiche à l’écran quand vous votez, et les résultats évoluent en direct : la salle peut donc voir ce que vous avez choisi."
+  },
   "vote": {
     "failed": "Votre vote n'est pas passé. Réessayez.",
     "tooManyChanges": "Vous avez changé de vote trop de fois."
@@ -57,11 +64,11 @@
     "removeOption": "Supprimer l'option {{letter}}",
     "optionsHint": "De deux à six options. Toute la salle vote pour l'une d'elles.",
     "anonymousLabel": "Votes anonymes",
-    "anonymousOn": "Aucun nom n’est affiché ni enregistré.",
-    "anonymousOff": "Vous voyez le nom de chaque joueur à côté de son vote, et les joueurs en sont informés.",
+    "anonymousOn": "Personne ne voit qui a voté pour quoi, et aucun nom n’est enregistré.",
+    "anonymousOff": "Vous voyez le nom de chaque joueur à côté de son vote, les noms s’affichent à l’écran au moment du vote, et les joueurs en sont informés.",
     "liveLabel": "Afficher les résultats pendant le vote",
-    "liveOff": "L’écran indique combien de personnes ont voté. Les résultats apparaissent à la fermeture du sondage.",
-    "liveOn": "L’écran affiche les résultats au fil des votes. Dans un petit groupe, les décomptes peuvent tout de même révéler qui a voté pour quoi.",
+    "liveOff": "L’écran affiche chaque nom au moment du vote, et combien de personnes ont voté. Les résultats apparaissent à la fermeture du sondage.",
+    "liveOn": "L’écran affiche les résultats au fil des votes, avec les noms seulement pour un sondage nominatif. Dans un petit groupe, les décomptes peuvent tout de même révéler qui a voté pour quoi.",
     "fitWarning": "Peut ne pas tenir sur le projecteur. Raccourcissez la question ou les options.",
     "saved": "Sondage enregistré",
     "updated": "Sondage mis à jour",

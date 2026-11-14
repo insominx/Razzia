@@ -191,6 +191,8 @@ const CUE_SFX: Partial<Record<Cue["cue"], LegacySfx>> = {
   tick: "tick",
   lamp: "tick",
   roll: "roll",
+  // A poll's vote; the old packs have no heartbeat.
+  vote: "pop",
 }
 
 const PLACE_SFX = { 1: "first", 2: "second", 3: "three" } as const

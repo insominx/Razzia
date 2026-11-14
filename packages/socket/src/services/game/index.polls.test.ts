@@ -368,6 +368,7 @@ describe("Game polls on a screen that joins late or comes back", () => {
       options: ["Pizza", "Soup"],
       anonymous: true,
       phase: "open",
+      live: true,
       mine: 1,
     })
   })
@@ -578,6 +579,7 @@ describe("Game polls when a screen asks where things stand", () => {
       options: ["Pizza", "Soup"],
       anonymous: true,
       phase: "open",
+      live: true,
       mine: null,
     })
   })

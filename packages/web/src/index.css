@@ -1525,3 +1525,219 @@ html[data-stage] .rz-tile-badge svg {
     transform: scale(1.35);
   }
 }
+
+/* A poll's arrivals on the host's screen (STYLE.md, "Poll arrivals"). The
+   newest voter's name lands in the room under the options; the names before it
+   run along a trail beneath. The region is measured by height, so a poll that
+   fills the frame drops the trail first and then the name. */
+.rz-arrivals {
+  container-type: size;
+}
+
+.rz-arrival-name {
+  text-shadow: 0 0 3rem color-mix(in srgb, var(--rz-brand) 55%, transparent);
+  animation: rz-arrival-in 600ms var(--rz-ease-calm) both;
+}
+
+.rz-arrival-name[data-leaving] {
+  animation: rz-arrival-out 400ms var(--rz-ease-calm) forwards;
+}
+
+.rz-arrival-tick {
+  position: relative;
+  text-shadow: none;
+}
+
+.rz-arrival-tick::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 0.3rem solid var(--rz-brand);
+  border-radius: 9999px;
+  animation: rz-arrival-ring 1s var(--rz-ease-calm) both;
+}
+
+/* Calm, Silent and reduced motion: the name fades in and out, nothing more. */
+.rz-arrival-name[data-calm] {
+  animation: rz-fade-in var(--rz-dur-base) var(--rz-ease-calm) both;
+}
+
+.rz-arrival-name[data-calm][data-leaving] {
+  animation: rz-fade-out var(--rz-dur-fast) var(--rz-ease-calm) forwards;
+}
+
+.rz-arrival-name[data-calm] .rz-arrival-tick::after {
+  content: none;
+}
+
+.rz-arrival-trail {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 18%,
+    black 82%,
+    transparent
+  );
+}
+
+.rz-arrival-trail > span {
+  animation: rz-arrival-trail-in 500ms var(--rz-ease-calm) both;
+}
+
+@container (max-height: 9rem) {
+  .rz-arrival-trail {
+    display: none;
+  }
+}
+
+@container (max-height: 5rem) {
+  .rz-arrival-now {
+    display: none;
+  }
+}
+
+@keyframes rz-arrival-in {
+  from {
+    opacity: 0;
+    transform: translateY(2.75rem) scale(0.96);
+    filter: blur(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes rz-arrival-out {
+  to {
+    opacity: 0;
+    transform: translateY(-2.25rem) scale(0.9);
+  }
+}
+
+@keyframes rz-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes rz-arrival-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes rz-arrival-trail-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Each arrival sends a ring of light out from the count, behind the text and
+   the option tiles, and the count itself flashes. */
+.rz-arrival-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: 2rem;
+  height: 2rem;
+  translate: -50% -50%;
+  border: 0.375rem solid var(--rz-brand);
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: rz-arrival-pulse 1400ms var(--rz-ease-calm) both;
+}
+
+@keyframes rz-arrival-pulse {
+  from {
+    width: 2rem;
+    height: 2rem;
+    opacity: 0.45;
+  }
+  to {
+    width: 100rem;
+    height: 100rem;
+    opacity: 0;
+  }
+}
+
+.rz-arrival-count {
+  display: inline-block;
+  animation: rz-arrival-count 650ms var(--rz-ease-calm) both;
+}
+
+@keyframes rz-arrival-count {
+  from {
+    transform: scale(1.35);
+    color: var(--rz-brand);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* The room's light: it rises from the bottom of the frame as the room votes
+   (`--rz-lift`, 0 to 1), and breathes once on every heartbeat. Part of the
+   atmosphere, so it stays over a deck's slide like the mood glow. */
+.rz-lift {
+  position: absolute;
+  inset: 0;
+  opacity: calc(0.12 + 0.88 * var(--rz-lift, 0));
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    70% 60% at 50% 112%,
+    rgb(70 213 192 / 0.5),
+    transparent 72%
+  );
+  transition: opacity 900ms var(--rz-ease-calm);
+}
+
+.rz-breath {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    70% 60% at 50% 112%,
+    rgb(70 213 192 / 0.45),
+    transparent 70%
+  );
+  animation: rz-breath 520ms ease-out both;
+}
+
+@keyframes rz-breath {
+  from {
+    opacity: calc(0.1 + 0.35 * var(--rz-lift, 0));
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rz-arrival-name,
+  .rz-arrival-trail > span,
+  .rz-arrival-pulse,
+  .rz-arrival-count,
+  .rz-breath {
+    animation: none !important;
+  }
+
+  .rz-arrival-tick::after,
+  .rz-arrival-pulse,
+  .rz-breath {
+    display: none;
+  }
+}

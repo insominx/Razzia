@@ -88,30 +88,33 @@ describe("a sealed poll, the default", () => {
   it.each([
     ["no live field", poll()],
     ["live: false", poll({ live: false })],
-  ])("tells the host only how many have voted (%s)", (_name, definition) => {
-    const { manager, emitted } = setup(definition)
+  ])(
+    "tells the host how many have voted and who just did (%s)",
+    (_name, definition) => {
+      const { manager, emitted } = setup(definition)
 
-    expect(toHost(emitted, EVENTS.POLL.STATE)).toEqual([
-      {
-        pollId: "lunch",
-        question: "Lunch?",
-        options: ["Pizza", "Soup", "Salad"],
-        anonymous: true,
-        phase: "open",
-        total: 0,
-      },
-    ])
+      expect(toHost(emitted, EVENTS.POLL.STATE)).toEqual([
+        {
+          pollId: "lunch",
+          question: "Lunch?",
+          options: ["Pizza", "Soup", "Salad"],
+          anonymous: true,
+          phase: "open",
+          total: 0,
+        },
+      ])
 
-    manager.vote(alice, "lunch", 1)
-    manager.vote(bob, "lunch", 1)
+      manager.vote(alice, "lunch", 1)
+      manager.vote(bob, "lunch", 1)
 
-    expect(toHost(emitted, EVENTS.POLL.TALLY)).toEqual([
-      { pollId: "lunch", total: 1 },
-      { pollId: "lunch", total: 2 },
-    ])
-  })
+      expect(toHost(emitted, EVENTS.POLL.TALLY)).toEqual([
+        { pollId: "lunch", total: 1, arrived: "Alice" },
+        { pollId: "lunch", total: 2, arrived: "Bob" },
+      ])
+    },
+  )
 
-  it("keeps counts and names off every payload the host gets while it is open", () => {
+  it("keeps counts and who voted for what off every payload the host gets while it is open", () => {
     const { manager, emitted } = setup(poll({ anonymous: false }))
 
     manager.vote(alice, "lunch", 0)
@@ -128,8 +131,22 @@ describe("a sealed poll, the default", () => {
 
     expect(everything).not.toContain('"counts"')
     expect(everything).not.toContain('"voters"')
-    expect(everything).not.toContain("Alice")
-    expect(everything).not.toContain("Bob")
+    expect(everything).not.toContain('"option"')
+    // A name rides only the tally of its own first vote, beside nothing but
+    // the total; a change and a leaver's tally name nobody.
+    expect(toHost(emitted, EVENTS.POLL.TALLY)).toEqual([
+      { pollId: "lunch", total: 1, arrived: "Alice" },
+      { pollId: "lunch", total: 2, arrived: "Bob" },
+      { pollId: "lunch", total: 2 },
+      { pollId: "lunch", total: 1 },
+    ])
+    // The view a host page asks for again names nobody.
+    expect(
+      JSON.stringify([
+        manager.snapshotForHost(),
+        manager.snapshotForSocket(host),
+      ]),
+    ).not.toMatch(/Alice|Bob/)
     expect(manager.snapshotForHost()).toEqual(
       expect.objectContaining({ phase: "open", total: 1 }),
     )
@@ -144,9 +161,9 @@ describe("a sealed poll, the default", () => {
     manager.forgetPlayer("alice-client")
 
     expect(toHost(emitted, EVENTS.POLL.TALLY)).toEqual([
+      { pollId: "lunch", total: 1, arrived: "Alice" },
       { pollId: "lunch", total: 1 },
-      { pollId: "lunch", total: 1 },
-      { pollId: "lunch", total: 2 },
+      { pollId: "lunch", total: 2, arrived: "Bob" },
       { pollId: "lunch", total: 1 },
     ])
   })
@@ -269,14 +286,42 @@ describe("a live poll", () => {
     ])
   })
 
-  it("still tells a player no counts while it is open", () => {
+  it("still tells a player no counts while it is open, only that it is live", () => {
     const { manager } = setup(poll({ live: true }))
 
     manager.vote(alice, "lunch", 0)
 
-    expect(manager.snapshotForPlayer("alice-client")).not.toHaveProperty(
-      "counts",
-    )
+    const snapshot = manager.snapshotForPlayer("alice-client")
+
+    expect(snapshot).not.toHaveProperty("counts")
+    expect(snapshot).toHaveProperty("live", true)
+  })
+
+  it("names who has just voted in a named poll, beside the counts", () => {
+    const { manager, emitted } = setup(poll({ live: true, anonymous: false }))
+
+    manager.vote(alice, "lunch", 0)
+    manager.vote(alice, "lunch", 1)
+    manager.vote(bob, "lunch", 1)
+
+    expect(
+      toHost(emitted, EVENTS.POLL.TALLY).map(
+        (tally) => (tally as PollTally).arrived,
+      ),
+    ).toEqual(["Alice", undefined, "Bob"])
+  })
+
+  it("never names who has just voted in an anonymous poll, because the counts move with it", () => {
+    const { manager, emitted } = setup(poll({ live: true }))
+
+    manager.vote(alice, "lunch", 0)
+    manager.vote(bob, "lunch", 1)
+
+    const tallies = toHost(emitted, EVENTS.POLL.TALLY)
+
+    expect(tallies).toHaveLength(2)
+    expect(JSON.stringify(tallies)).not.toContain("arrived")
+    expect(JSON.stringify(tallies)).not.toMatch(/Alice|Bob/)
   })
 })
 

@@ -8,7 +8,7 @@ import {
   MOODS,
 } from "@razzia/web/features/game/stores/mood"
 import clsx from "clsx"
-import { useState } from "react"
+import { type CSSProperties, useState } from "react"
 
 type PhotoPlacement = "viewport" | "container"
 
@@ -22,6 +22,13 @@ type Props =
       mood?: Mood
       /** Leaves out beams and embers (Calm, Silent, reduced motion). */
       calm?: boolean
+      /**
+       * The room's light, rising from the bottom of the frame: 0 to 1 (a
+       * poll's share of the room that has voted). Absent means none.
+       */
+      lift?: number
+      /** Counts heartbeats; each new value breathes the room's light once. */
+      breath?: number
     }
 
 const Atmosphere = (props: Props) => {
@@ -45,6 +52,8 @@ const Atmosphere = (props: Props) => {
       placement={props.placement}
       mood={props.mood}
       calm={props.calm}
+      lift={props.lift}
+      breath={props.breath}
     />
   )
 }
@@ -66,11 +75,15 @@ const PhotoAtmosphere = ({
   placement = "viewport",
   mood = "cool",
   calm = false,
+  lift,
+  breath = 0,
 }: {
   backgroundUrl?: string
   placement?: PhotoPlacement
   mood?: Mood
   calm?: boolean
+  lift?: number
+  breath?: number
 }) => {
   const [failed, setFailed] = useState(false)
   const [darkPhoto, setDarkPhoto] = useState(false)
@@ -121,6 +134,20 @@ const PhotoAtmosphere = ({
           data-on={candidate === mood ? "" : undefined}
         />
       ))}
+      {lift !== undefined && (
+        <div
+          className="rz-lift"
+          data-lift=""
+          style={{ "--rz-lift": lift } as CSSProperties}
+        />
+      )}
+      {lift !== undefined && breath > 0 && !calm && (
+        <div
+          key={breath}
+          className="rz-breath"
+          style={{ "--rz-lift": lift } as CSSProperties}
+        />
+      )}
       {BEAMS.map((side) => (
         <div
           key={side}

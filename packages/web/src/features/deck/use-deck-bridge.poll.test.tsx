@@ -511,7 +511,10 @@ describe("useDeckBridge and polls", () => {
   })
 
   // Sound
-  it("stays off while a poll shows, even though the deck can see the page", () => {
+  // A poll no longer silences the page: the poll lane holds the lobby's sound
+  // under it (`pollStage`) and plays its own arrivals, which the room should
+  // hear whenever the deck shows the page.
+  it("stays on while a poll shows, as long as the deck can see the page", () => {
     renderHook(() => {
       useDeckBridge()
     })
@@ -524,7 +527,7 @@ describe("useDeckBridge and polls", () => {
       usePollStore.getState().apply(open())
     })
 
-    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
 
     act(() => {
       usePollStore.getState().apply(null)
@@ -533,7 +536,7 @@ describe("useDeckBridge and polls", () => {
     expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
   })
 
-  it("does not let a visibility message turn it on under a poll", () => {
+  it("lets visibility alone decide under a poll", () => {
     renderHook(() => {
       useDeckBridge()
     })
@@ -543,6 +546,10 @@ describe("useDeckBridge and polls", () => {
     })
 
     sendCommand({ type: "visibility", visible: true })
+
+    expect(mocks.setSuppressed).toHaveBeenLastCalledWith(false)
+
+    sendCommand({ type: "visibility", visible: false })
 
     expect(mocks.setSuppressed).toHaveBeenLastCalledWith(true)
   })

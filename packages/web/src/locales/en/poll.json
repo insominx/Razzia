@@ -2,8 +2,8 @@
   "label": "Poll",
   "privacy": {
     "anonymous": "Votes are anonymous",
-    "named": "The host sees who votes for what. Names are saved; classmates do not see them.",
-    "namedStage": "Names are saved with the votes and are not shown here"
+    "named": "The host sees who votes for what, and names are saved.",
+    "namedStage": "Who voted for what is saved, not shown here"
   },
   "changeHint": "You can change your vote until the host closes the poll.",
   "yourVote": "Your vote",
@@ -14,6 +14,13 @@
   "votes_other": "{{count}} votes",
   "more": "+{{count}} more",
   "noOneVoted": "Nobody voted",
+  "arrival": {
+    "someone": "New vote",
+    "more": "+{{count}}",
+    "everyone": "Everyone's in",
+    "playerNote": "Your name shows on the screen when you vote. Your choice does not.",
+    "playerNoteLive": "Your name shows on the screen when you vote, and the results update live, so the room may see what you picked."
+  },
   "vote": {
     "failed": "Your vote did not go through. Try again.",
     "tooManyChanges": "You have changed your vote too many times."
@@ -57,11 +64,11 @@
     "removeOption": "Remove option {{letter}}",
     "optionsHint": "Two to six options. Everyone in the room votes on one of them.",
     "anonymousLabel": "Anonymous votes",
-    "anonymousOn": "No names are shown or saved.",
-    "anonymousOff": "You see each player's name next to their vote, and players are told.",
+    "anonymousOn": "Nobody sees who voted for what, and no names are saved.",
+    "anonymousOff": "You see each player's name next to their vote, names show on the screen as people vote, and players are told.",
     "liveLabel": "Show results while people vote",
-    "liveOff": "The screen shows how many have voted. The results appear when you close the poll.",
-    "liveOn": "The screen shows the results as votes come in. In a small group, watching the counts can still hint at who voted what.",
+    "liveOff": "The screen shows each name as people vote, and how many have voted. The results appear when you close the poll.",
+    "liveOn": "The screen shows the results as votes come in, with names only in a named poll. In a small group, watching the counts can still hint at who voted what.",
     "fitWarning": "May not fit the projector. Shorten the question or the options.",
     "saved": "Poll saved",
     "updated": "Poll updated",

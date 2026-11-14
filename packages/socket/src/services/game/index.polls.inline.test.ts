@@ -195,7 +195,7 @@ describe("Game starting a poll from a definition", () => {
     live.game.votePoll(live.alice.socket, "path-pick", 0)
 
     expect(toManager(sealed.emitted, EVENTS.POLL.TALLY)).toEqual([
-      { pollId: "path-pick", total: 1 },
+      { pollId: "path-pick", total: 1, arrived: "Alice" },
     ])
     expect(toManager(live.emitted, EVENTS.POLL.TALLY)).toEqual([
       { pollId: "path-pick", counts: [1, 0], total: 1 },

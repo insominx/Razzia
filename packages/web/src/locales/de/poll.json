@@ -2,8 +2,8 @@
   "label": "Umfrage",
   "privacy": {
     "anonymous": "Die Stimmen sind anonym",
-    "named": "Der Host sieht, wer wofür stimmt. Namen werden gespeichert, die anderen sehen sie nicht.",
-    "namedStage": "Namen werden mit den Stimmen gespeichert und hier nicht angezeigt"
+    "named": "Der Host sieht, wer wofür stimmt, und die Namen werden gespeichert.",
+    "namedStage": "Wer wofür gestimmt hat, wird gespeichert und hier nicht angezeigt"
   },
   "changeHint": "Du kannst deine Stimme ändern, bis der Host die Umfrage schließt.",
   "yourVote": "Deine Stimme",
@@ -14,6 +14,13 @@
   "votes_other": "{{count}} Stimmen",
   "more": "+{{count}} weitere",
   "noOneVoted": "Niemand hat abgestimmt",
+  "arrival": {
+    "someone": "Neue Stimme",
+    "more": "+{{count}}",
+    "everyone": "Alle sind dabei",
+    "playerNote": "Dein Name erscheint auf dem Bildschirm, wenn du abstimmst. Deine Wahl nicht.",
+    "playerNoteLive": "Dein Name erscheint auf dem Bildschirm, wenn du abstimmst, und die Ergebnisse laufen live mit, sodass der Raum sehen kann, was du gewählt hast."
+  },
   "vote": {
     "failed": "Deine Stimme ist nicht angekommen. Versuche es noch einmal.",
     "tooManyChanges": "Du hast deine Stimme zu oft geändert."
@@ -57,11 +64,11 @@
     "removeOption": "Option {{letter}} entfernen",
     "optionsHint": "Zwei bis sechs Optionen. Alle im Raum stimmen für eine davon ab.",
     "anonymousLabel": "Anonyme Stimmen",
-    "anonymousOn": "Es werden keine Namen angezeigt oder gespeichert.",
-    "anonymousOff": "Du siehst den Namen jedes Spielers neben seiner Stimme, und die Spielenden werden darüber informiert.",
+    "anonymousOn": "Niemand sieht, wer wofür gestimmt hat, und es werden keine Namen gespeichert.",
+    "anonymousOff": "Du siehst den Namen jedes Spielers neben seiner Stimme, die Namen erscheinen beim Abstimmen auf dem Bildschirm, und die Spielenden werden darüber informiert.",
     "liveLabel": "Ergebnisse während der Abstimmung anzeigen",
-    "liveOff": "Der Bildschirm zeigt, wie viele abgestimmt haben. Die Ergebnisse erscheinen, wenn du die Umfrage schließt.",
-    "liveOn": "Der Bildschirm zeigt die Ergebnisse, während die Stimmen eingehen. In einer kleinen Gruppe können die Zahlen dennoch verraten, wer wofür gestimmt hat.",
+    "liveOff": "Der Bildschirm zeigt jeden Namen, sobald jemand abstimmt, und wie viele abgestimmt haben. Die Ergebnisse erscheinen, wenn du die Umfrage schließt.",
+    "liveOn": "Der Bildschirm zeigt die Ergebnisse, während die Stimmen eingehen, mit Namen nur bei einer namentlichen Umfrage. In einer kleinen Gruppe können die Zahlen dennoch verraten, wer wofür gestimmt hat.",
     "fitWarning": "Passt möglicherweise nicht auf den Projektor. Kürze die Frage oder die Optionen.",
     "saved": "Umfrage gespeichert",
     "updated": "Umfrage aktualisiert",

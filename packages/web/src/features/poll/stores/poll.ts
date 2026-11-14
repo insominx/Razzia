@@ -5,6 +5,18 @@ import type {
 } from "@razzia/common/types/poll"
 import { create } from "zustand"
 
+// One vote that raised the total: who it was (a sealed poll names them; a live
+// poll, whose counts move with it, does not) and the total it made. `seq`
+// only grows, so a screen can tell which arrivals it has already shown.
+export interface PollArrival {
+  seq: number
+  name: string | null
+  total: number
+}
+
+// The host's screen shows arrivals as they come; it never needs a long past.
+export const ARRIVALS_KEPT = 60
+
 interface PollStore {
   // What this screen is told about the poll, in the shape the server made for
   // it. `null` while none is showing. It replaces, never merges: the server's
@@ -19,6 +31,9 @@ interface PollStore {
   // (the deck has gone back to its face). Local to this page: the room, its
   // stage and the phones know nothing of it. `null` when none is shown.
   review: PollDone | null
+  // The open poll's arrivals, oldest first, from the host's tallies only: a
+  // snapshot (a reload, a sync) replays none. Cleared for a new poll.
+  arrivals: PollArrival[]
 
   apply: (_snapshot: PollSnapshot | null) => void
   // The host's running count between two snapshots.
@@ -34,8 +49,14 @@ export const usePollStore = create<PollStore>((set) => ({
   snapshot: null,
   playerTotal: null,
   review: null,
+  arrivals: [],
 
-  apply: (snapshot) => set({ snapshot }),
+  apply: (snapshot) =>
+    set((state) =>
+      snapshot?.pollId === state.snapshot?.pollId && snapshot
+        ? { snapshot }
+        : { snapshot, arrivals: [] },
+    ),
 
   applyTally: (tally) =>
     set((state) => {
@@ -51,6 +72,27 @@ export const usePollStore = create<PollStore>((set) => ({
       }
 
       const { voters: _voters, counts: _counts, ...rest } = snapshot
+      const before = snapshot.total ?? 0
+      let { arrivals } = state
+
+      // Each vote that raised the total is an arrival; a changed vote and a
+      // leaver are not. Only the last of a jump carries the tally's name.
+      if (tally.total > before) {
+        const last = arrivals.at(-1)?.seq ?? 0
+        const added = Array.from(
+          { length: tally.total - before },
+          (_, index): PollArrival => ({
+            seq: last + index + 1,
+            name:
+              index === tally.total - before - 1
+                ? (tally.arrived ?? null)
+                : null,
+            total: before + index + 1,
+          }),
+        )
+
+        arrivals = [...arrivals, ...added].slice(-ARRIVALS_KEPT)
+      }
 
       // A sealed poll's tally carries the total alone, and the snapshot stays
       // without counts.
@@ -61,6 +103,7 @@ export const usePollStore = create<PollStore>((set) => ({
           ...(tally.counts ? { counts: tally.counts } : {}),
           ...(tally.voters ? { voters: tally.voters } : {}),
         },
+        arrivals,
       }
     }),
 
@@ -73,5 +116,6 @@ export const usePollStore = create<PollStore>((set) => ({
 
   setReview: (review) => set({ review }),
 
-  reset: () => set({ snapshot: null, playerTotal: null, review: null }),
+  reset: () =>
+    set({ snapshot: null, playerTotal: null, review: null, arrivals: [] }),
 }))
