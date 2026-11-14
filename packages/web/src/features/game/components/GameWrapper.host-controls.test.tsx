@@ -82,15 +82,27 @@ describe("GameWrapper host controls", () => {
     expect(screen.getAllByRole("button")).toHaveLength(3)
   })
 
-  it("hides them while a deck drives the game, but keeps the volume", () => {
+  // The frame takes no clicks then, so the deck draws the sound button.
+  it("hides them and the volume while a deck drives the game", () => {
     useManagerStore.getState().setHostControls(false)
     renderManager()
 
     expect(screen.queryByText("common:exit")).not.toBeInTheDocument()
     expect(screen.queryByText("join hint")).not.toBeInTheDocument()
-    expect(screen.getAllByRole("button")).toHaveLength(1)
-    expect(screen.getByText("volume")).toBeInTheDocument()
+    expect(screen.queryByText("volume")).not.toBeInTheDocument()
+    expect(screen.queryAllByRole("button")).toHaveLength(0)
     expect(screen.getByText("Results")).toBeInTheDocument()
+  })
+
+  it("keeps the volume for a player in a deck's room", () => {
+    useManagerStore.getState().setHostControls(false)
+    render(
+      <GameWrapper statusName={STATUS.SHOW_RESPONSES}>
+        <div>Results</div>
+      </GameWrapper>,
+    )
+
+    expect(screen.getByText("volume")).toBeInTheDocument()
   })
 
   it("a reset keeps the deck's choice", () => {

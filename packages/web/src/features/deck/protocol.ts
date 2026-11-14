@@ -68,6 +68,15 @@ const deckCommandSchema = z.discriminatedUnion("type", [
     type: z.literal("backdrop"),
     mode: z.enum(["own", "slide"]),
   }),
+  // The deck draws the sound button, since the frame takes no clicks while the
+  // deck drives it. Either field may come alone; a volume also unmutes, as the
+  // slider does.
+  z.object({
+    ...envelope,
+    type: z.literal("sound"),
+    muted: z.boolean().optional(),
+    volume: z.number().min(0).max(1).optional(),
+  }),
   // A poll typed on the slide, started in the lobby or between questions. The
   // server holds the rules (limits, a slug for the id) and answers `invalid`
   // to a definition that fails them; this is only the shape a message needs
@@ -147,7 +156,14 @@ export const isPollCommand = (command: DeckCommand): command is PollCommand =>
 // A name is listed only once it is built.
 // `pollReview`: reviewPoll, named close and dismiss, a deck poll that runs
 // once per room and takes the stage straight from a closed result.
-export const FEATURES: readonly string[] = ["poll", "pollInline", "pollReview"]
+// `sound`: the `sound` command and `BridgeState.sound`; Razzia's own sound
+// button then shows only with its other controls (the deck's Q key).
+export const FEATURES: readonly string[] = [
+  "poll",
+  "pollInline",
+  "pollReview",
+  "sound",
+]
 
 // The poll showing on the stage. Never a name, whatever the poll.
 export interface BridgePoll {
@@ -200,6 +216,9 @@ export interface BridgeState {
   poll: BridgePoll | null
   // Polls that closed in this room, oldest first, at most 50.
   pollsDone: BridgePollDone[]
+  // The host's sound setting, for the deck's own button. Not the silence the
+  // deck asks for while it hides this page.
+  sound: { muted: boolean; volume: number }
 }
 
 export type BridgeErrorCode =

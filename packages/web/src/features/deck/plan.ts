@@ -114,6 +114,7 @@ export interface StateInputs {
   poll?: PollSnapshot | null
   // The closed poll shown again, by id.
   pollReview?: string | null
+  sound?: BridgeState["sound"]
 }
 
 // What a deck may be told of the poll on the stage: never a name, and counts
@@ -156,6 +157,7 @@ export const buildBridgeState = ({
   reviewable,
   poll = null,
   pollReview = null,
+  sound = { muted: false, volume: 1 },
 }: StateInputs): BridgeState => {
   const screen = attached ? (status?.name ?? null) : null
   const data = (attached ? (status?.data ?? {}) : {}) as ScreenData
@@ -201,5 +203,6 @@ export const buildBridgeState = ({
           ...(partial ? { partial: true } : {}),
         }))
       : [],
+    sound: { muted: sound.muted, volume: sound.volume },
   }
 }

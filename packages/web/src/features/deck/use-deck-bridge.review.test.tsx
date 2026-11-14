@@ -44,9 +44,12 @@ vi.mock("@tanstack/react-router", () => ({
 }))
 
 vi.mock("@razzia/web/features/game/stores/sound", () => ({
-  useSoundStore: {
-    getState: () => ({ setSuppressed: mocks.setSuppressed }),
-  },
+  // Read as a hook (the sound setting the deck is told) and through getState.
+  useSoundStore: Object.assign(
+    (select: (_state: { muted: boolean; volume: number }) => unknown) =>
+      select({ muted: false, volume: 1 }),
+    { getState: () => ({ setSuppressed: mocks.setSuppressed }) },
+  ),
 }))
 
 const config = {

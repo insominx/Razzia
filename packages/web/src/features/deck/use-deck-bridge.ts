@@ -97,6 +97,8 @@ export const useDeckBridge = () => {
   const pollShowing = poll !== null
   // What the frame shows, for its sound: a poll on the stage or one shown again.
   const pollOnScreen = pollShowing || pollReview !== null
+  const soundMuted = useSoundStore((store) => store.muted)
+  const soundVolume = useSoundStore((store) => store.volume)
 
   const [deckOrigin, setDeckOrigin] = useState<string | null>(null)
   // The same origin, written the moment a message arrives: a reply sent from
@@ -148,6 +150,7 @@ export const useDeckBridge = () => {
       .sort((a, b) => a - b),
     poll,
     pollReview: pollReview?.id ?? null,
+    sound: { muted: soundMuted, volume: soundVolume },
   })
   const stateRef = useRef(state)
 
@@ -595,6 +598,24 @@ export const useDeckBridge = () => {
 
     if (command.type === "backdrop") {
       applyBackdrop(command.mode)
+
+      return
+    }
+
+    // The deck's sound button. The new setting reaches the deck in the next
+    // status, like any other change.
+    if (command.type === "sound") {
+      const sound = useSoundStore.getState()
+
+      if (command.volume !== undefined) {
+        sound.setVolume(command.volume)
+      }
+
+      if (command.muted !== undefined) {
+        sound.setMuted(command.muted)
+      }
+
+      sound.unlock()
 
       return
     }

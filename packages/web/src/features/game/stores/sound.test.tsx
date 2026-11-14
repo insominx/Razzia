@@ -218,6 +218,21 @@ describe("useSoundStore", () => {
     expect(storage.getItem("sound_muted_player")).toBeNull()
   })
 
+  it("setMuted sets the state asked for, and repeating it changes nothing", async () => {
+    const storage = stubStorage()
+    const useSoundStore = await importStore()
+    useSoundStore.getState().bindSurface("manager")
+
+    useSoundStore.getState().setMuted(true)
+    useSoundStore.getState().setMuted(true)
+    expect(useSoundStore.getState().muted).toBe(true)
+    expect(storage.getItem("sound_muted_manager")).toBe("true")
+
+    useSoundStore.getState().setMuted(false)
+    expect(useSoundStore.getState().muted).toBe(false)
+    expect(storage.getItem("sound_muted_manager")).toBe("false")
+  })
+
   it("toggleMute restores the default when unmuting a zeroed slider", async () => {
     stubStorage()
 

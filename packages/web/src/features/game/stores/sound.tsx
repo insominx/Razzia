@@ -89,6 +89,7 @@ interface SoundStore {
   bindSurface: (_surface: SoundSurface) => void
   setVolume: (_volume: number) => void
   toggleMute: () => void
+  setMuted: (_muted: boolean) => void
   setSuppressed: (_suppressed: boolean) => void
   unlock: () => void
 }
@@ -145,6 +146,14 @@ export const useSoundStore = create<SoundStore>((set, get) => ({
     persist(nextVolume, nextMuted, surface)
     applyToHowler(nextVolume, nextMuted || suppressed)
     set({ volume: nextVolume, muted: nextMuted })
+  },
+
+  // A lecture deck's sound button sends the state it wants, not a toggle, so a
+  // repeated message cannot flip it back.
+  setMuted: (muted) => {
+    if (get().muted !== muted) {
+      get().toggleMute()
+    }
   },
 
   setSuppressed: (suppressed) => {

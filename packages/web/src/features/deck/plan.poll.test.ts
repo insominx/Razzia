@@ -57,12 +57,23 @@ describe("buildBridgeState and polls", () => {
       "poll",
       "pollInline",
       "pollReview",
+      "sound",
     ])
     expect(buildBridgeState(inputs({ attached: false })).features).toEqual([
       "poll",
       "pollInline",
       "pollReview",
+      "sound",
     ])
+  })
+
+  it("reports the sound setting it is given, attached or not", () => {
+    const sound = { muted: true, volume: 0.25 }
+
+    expect(buildBridgeState(inputs({ sound })).sound).toEqual(sound)
+    expect(buildBridgeState(inputs({ attached: false, sound })).sound).toEqual(
+      sound,
+    )
   })
 
   it("reports no poll and none done when nothing has run", () => {

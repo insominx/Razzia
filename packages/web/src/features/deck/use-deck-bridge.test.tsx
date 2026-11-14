@@ -5,6 +5,7 @@ import type { ManagerConfig } from "@razzia/common/types/manager"
 import type { BridgeMessage } from "@razzia/web/features/deck/protocol"
 import { useDeckBridge } from "@razzia/web/features/deck/use-deck-bridge"
 import { useManagerStore } from "@razzia/web/features/game/stores/manager"
+import { useSoundStore } from "@razzia/web/features/game/stores/sound"
 import { act, cleanup, renderHook } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => {
     handlers: new Map<string, Handler>(),
     navigate: vi.fn(),
     setSuppressed: vi.fn(),
+    unlock: vi.fn(),
     router: { pathname: "/manager" },
     connection: { isConnected: true },
     ackEmit,
@@ -46,11 +48,24 @@ vi.mock("@tanstack/react-router", () => ({
   }) => select({ location: { pathname: mocks.router.pathname } }),
 }))
 
-vi.mock("@razzia/web/features/game/stores/sound", () => ({
-  useSoundStore: {
-    getState: () => ({ setSuppressed: mocks.setSuppressed }),
-  },
-}))
+vi.mock("@razzia/web/features/game/stores/sound", async () => {
+  const { create } = await import("zustand")
+  // A stand-in with the real store's mute and volume rules, minus Howler.
+  const store = create(() => ({
+    muted: false,
+    volume: 1,
+    setSuppressed: mocks.setSuppressed,
+    setVolume: (volume: number) => {
+      store.setState({ volume, muted: false })
+    },
+    setMuted: (muted: boolean) => {
+      store.setState({ muted })
+    },
+    unlock: mocks.unlock,
+  }))
+
+  return { useSoundStore: store }
+})
 
 const stubStorage = () => {
   const entries = new Map<string, string>()
@@ -155,6 +170,8 @@ describe("useDeckBridge", () => {
     mocks.handlers.clear()
     mocks.navigate.mockReset()
     mocks.setSuppressed.mockReset()
+    mocks.unlock.mockReset()
+    useSoundStore.setState({ muted: false, volume: 1 })
     mocks.socket.emit.mockReset()
     mocks.ackEmit.mockReset()
     mocks.router.pathname = "/manager"
@@ -220,6 +237,43 @@ describe("useDeckBridge", () => {
 
     sendCommand({ type: "backdrop", mode: "own" })
     expect(document.documentElement.dataset.backdrop).toBeUndefined()
+  })
+
+  it("reports its sound setting and takes the deck's", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+
+    sendCommand({ type: "hello" })
+    expect(lastState()?.features).toContain("sound")
+    expect(lastState()?.sound).toEqual({ muted: false, volume: 1 })
+
+    sendCommand({ type: "sound", muted: true })
+    expect(lastState()?.sound).toEqual({ muted: true, volume: 1 })
+    expect(mocks.unlock).toHaveBeenCalled()
+
+    // Sent again, the same state stays: the deck asks for a state, not a flip.
+    sendCommand({ type: "sound", muted: true })
+    expect(lastState()?.sound).toEqual({ muted: true, volume: 1 })
+
+    // A volume also unmutes, as the slider does.
+    sendCommand({ type: "sound", volume: 0.4 })
+    expect(lastState()?.sound).toEqual({ muted: false, volume: 0.4 })
+  })
+
+  it("ignores a sound message with a volume out of range", () => {
+    stubStorage()
+    renderHook(() => {
+      useDeckBridge()
+    })
+
+    sendCommand({ type: "hello" })
+    sendCommand({ type: "sound", volume: 2 })
+    sendCommand({ type: "sound", muted: "yes" })
+
+    expect(lastState()?.sound).toEqual({ muted: false, volume: 1 })
+    expect(mocks.unlock).not.toHaveBeenCalled()
   })
 
   it("derives optional presence from the roster and omits it on disconnect and restart", () => {

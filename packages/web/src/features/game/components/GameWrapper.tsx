@@ -243,7 +243,9 @@ const GameWrapper = ({
                 )}
               </div>
 
-              <VolumeControl />
+              {/* A lecture deck draws its own sound button while it drives the
+                  game; Razzia's shows with the other controls (the deck's Q). */}
+              {(!manager || hostControls) && <VolumeControl />}
             </div>
 
             {!isConnected && (
