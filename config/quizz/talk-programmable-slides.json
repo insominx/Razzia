@@ -1,0 +1,12 @@
+{
+  "subject": "Programmable Slides and Personal Software",
+  "questions": [
+    {
+      "question": "This room is for the talk's polls. This question is never played.",
+      "answers": ["OK", "Got it"],
+      "solutions": [0],
+      "cooldown": 5,
+      "time": 20
+    }
+  ]
+}

@@ -5,16 +5,16 @@
   "joined_other": "{{count}} joined",
   "disconnected": "Disconnected",
   "correct": "Nice!",
-  "gamePinLabel": "Game PIN:",
+  "gamePinLabel": "PIN",
   "hud": {
     "responses": "Answered",
     "time": "Time",
     "opensIn": "Opens in"
   },
-  "joinInstruction": "Join the game at",
+  "joinInstruction": "Join at",
   "leaderboard": "Leaderboard",
   "pinLabel": "PIN Code",
-  "playersJoined": "Players Joined: ",
+  "playersJoined": "Joined: ",
   "questionPrefix": "Question #",
   "rank": {
     "1": "1st place",
@@ -27,7 +27,7 @@
     "other_ordinal_two": "{{rank}}nd place"
   },
   "rankSuffix": " place",
-  "startGame": "Start Game",
+  "startGame": "Start",
   "usernamePlaceholder": "Username here",
   "waitingForAnswers": "Waiting for the players to answer",
   "waitingForPlayers": "Waiting for players",
@@ -36,7 +36,7 @@
   "kick": {
     "action": "Kick {{name}}",
     "title": "Kick player?",
-    "description": "{{name}} will be removed from this game.",
+    "description": "{{name}} will be removed from this room.",
     "confirm": "Kick"
   },
   "yourAnswer": "Your answer",
@@ -88,7 +88,7 @@
   "standingLevel": "Level with {{name}}. One more fast answer and you pass them.",
   "leave": {
     "title": "Close the room?",
-    "description": "Leaving ends the game for everyone in it.",
+    "description": "Leaving closes it for everyone.",
     "confirm": "Close the room"
   }
 }
